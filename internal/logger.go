@@ -24,4 +24,3 @@ func init() {
 func SetDebugMode() {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 }
-

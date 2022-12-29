@@ -32,9 +32,7 @@ func main() {
 			return internal.LoadConfig(configPath)
 		},
 		Commands: []*cli.Command{
-			&cli.Command{
-
-			},
+			&cli.Command{},
 		},
 	}
 

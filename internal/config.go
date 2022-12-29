@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/spf13/viper"
 	"github.com/caarlos0/env/v6"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -26,6 +26,7 @@ const (
 
 type Config struct {
 	rawConfig rawConfig
+	services  map[string]any
 }
 
 type rawConfig struct {
@@ -45,7 +46,7 @@ func GetConfig() Config {
 func LoadConfig(path *string) error {
 	if path != nil {
 		viper.SetConfigFile(*path)
-		Logger.Debug().Msgf("Loading a config file on %s", path)
+		Logger.Debug().Msgf("Loading a config file on %s", *path)
 	} else {
 		viper.AddConfigPath(".")
 
@@ -69,14 +70,6 @@ func LoadConfig(path *string) error {
 	return nil
 }
 
-func getValueFromEnv(name string) *string {
-		if v, exist := os.LookupEnv(name); exist {
-			return &v
-		} else {
-			return nil
-	}
-}
-
 func (c *Config) getService(name string) (string, any, error) {
 	scopes := []string{servicesKey}
 
@@ -97,53 +90,68 @@ func (c *Config) getService(name string) (string, any, error) {
 	}
 }
 
-func (c *Config) readServiceConfig(name string) (any, error) {
+func (c *Config) configure() error {
+	for name, values := range c.rawConfig.Services {
+		values, correct := values.(map[string]interface{})
+
+		if !correct {
+			return fmt.Errorf("%s must be Mapping", name)
+		}
+
+		holder := ServiceNameHolder{}
+
+		if byte, err := json.Marshal(values); err != nil {
+			return fmt.Errorf("cannot load %s config: %v", name, err)
+		} else if err := json.Unmarshal(byte, &holder); err != nil {
+			return fmt.Errorf("cannot load %s config: %v", name, err)
+		}
+
+		if v, err := provideZeroService(holder.Service); err != nil {
+			return fmt.Errorf("cannot load %s config: %v", name, err)
+		} else if conf, err := loadServiceConfig(v, values); err != nil {
+			return fmt.Errorf("cannot load %s config: %v", name, err)
+		} else {
+			c.services[name] = conf
+		}
+	}
+
+	return nil
+}
+
+func loadServiceConfig(v Validatable, values map[string]interface{}) (any, error) {
 	// 1. Get a service config and read the name first
 	// 2. Set values from environment variables
 	// 3. Overwrite them by the config file
 	// 4. Validate the values
 
-	serviceName, service, err := c.getService(name)
-
-	if err != nil {
-		return nil, err
-	}
-
-	v := (func(name string) any {
-		switch name {
-		case deploygateService:
-			return DeployGateConfig{}
-		}
-
-		return nil
-	})(serviceName)
-
-	if v == nil {
-		return nil, fmt.Errorf("%s is an unknown service", serviceName)
-	}
-
 	if err := env.Parse(&v); err != nil {
-		return nil, fmt.Errorf("Failed to load environment variables for %s: %v", name, err)
-	} else if byte, err := json.Marshal(service); err != nil {
-		return nil, fmt.Errorf("Failed to marshel your %s config: %v", name, err)
+		panic(err)
+	} else if byte, err := json.Marshal(values); err != nil {
+		panic(err)
 	} else if err := json.Unmarshal(byte, &v); err != nil {
-		return nil, fmt.Errorf("Failed to load your %s config: %v", name, err)
-	} else if err := validateServiceConfig(&v); err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return v, nil
+	if err := v.validate(); err != nil {
+		return nil, err
+	} else {
+		return v, nil
+	}
 }
 
-func validateServiceConfig(v any) error {
-	missingKeys := []string{}
+type Validatable interface {
+	validate() error
+}
 
-	property := reflect.ValueOf(v).Elem()
+func validateMissingValues(v any) error {
+	var missingKeys []string
 
-	for i := 0; i < property.NumField(); i++ {
-		value := property.Field(i)
-		field := property.Type().Field(i)
-		tag := property.Type().Field(i).Tag
+	entity := reflect.ValueOf(v).Elem()
+
+	for i := 0; i < entity.NumField(); i++ {
+		value := entity.Field(i)
+		field := entity.Type().Field(i)
+		tag := entity.Type().Field(i).Tag
 
 		Logger.Debug().Msgf("%v = %s: json:\"%s\"", field.Name, value, tag.Get("json"))
 
@@ -152,13 +160,9 @@ func validateServiceConfig(v any) error {
 
 			b, found := tag.Lookup("required")
 
-			if value.IsNil()  {
-				if b == "true" || found {
-					Logger.Error().Msgf("%s is required but not found", key)
-					missingKeys = append(missingKeys, key)
-				} else {
-					Logger.Debug().Msgf("%s is nil but ok", key)
-				}
+			if found && b == "true" && value.IsZero() {
+				Logger.Error().Msgf("%s is required but not assigned", key)
+				missingKeys = append(missingKeys, key)
 			} else {
 				Logger.Debug().Msgf("%s is set", key)
 			}
@@ -166,8 +170,17 @@ func validateServiceConfig(v any) error {
 	}
 
 	if num := len(missingKeys); num > 0 {
-		return fmt.Errorf("%d keys lacked", num)
+		return fmt.Errorf("%d keys lacked or their values are empty", num)
 	} else {
 		return nil
+	}
+}
+
+func provideZeroService(name string) (Validatable, error) {
+	switch name {
+	case deploygateService:
+		return DeployGateConfig{}, nil
+	default:
+		return nil, fmt.Errorf("%s is an unknown service", name)
 	}
 }
