@@ -6,15 +6,14 @@ import (
 	"testing"
 )
 
-type TestConfig struct {
-	ValueParam           string  `json:"param1" env:"TEST_PARAM1"`
-	PointerParam         *string `json:"param2" env:"TEST_PARAM2"`
-	RequiredValueParam   string  `json:"param3" env:"TEST_PARAM3" required:"true"`
-	RequiredPointerParam *string `json:"param4" env:"TEST_PARAM4" required:"true"`
+func (c *Config) equalsTo(other Config) bool {
+	return reflect.DeepEqual(c.services, other.services)
 }
 
-func (c TestConfig) validate() error {
-	return validateMissingValues(&c)
+func (c testConfig) equalsTo(other testConfig) bool {
+	lbytes, _ := json.Marshal(&c)
+	rbytes, _ := json.Marshal(&other)
+	return reflect.DeepEqual(lbytes, rbytes)
 }
 
 func Test_validateMissingValues(t *testing.T) {
@@ -24,11 +23,11 @@ func Test_validateMissingValues(t *testing.T) {
 	sampleValue2 := "Sample2"
 
 	cases := map[string]struct {
-		config            TestConfig
+		config            testConfig
 		expectedValidness bool
 	}{
 		"fully-filled": {
-			config: TestConfig{
+			config: testConfig{
 				ValueParam:           sampleValue1,
 				PointerParam:         &sampleValue2,
 				RequiredValueParam:   sampleValue1,
@@ -37,35 +36,35 @@ func Test_validateMissingValues(t *testing.T) {
 			expectedValidness: true,
 		},
 		"pointer-filled": {
-			config: TestConfig{
+			config: testConfig{
 				PointerParam:         &sampleValue2,
 				RequiredPointerParam: &sampleValue2,
 			},
 			expectedValidness: false,
 		},
 		"pointer-non-filled": {
-			config: TestConfig{
+			config: testConfig{
 				ValueParam:         sampleValue1,
 				RequiredValueParam: sampleValue1,
 			},
 			expectedValidness: false,
 		},
 		"required-values-filled": {
-			config: TestConfig{
+			config: testConfig{
 				RequiredValueParam:   sampleValue1,
 				RequiredPointerParam: &sampleValue2,
 			},
 			expectedValidness: true,
 		},
 		"non-required-values-filled": {
-			config: TestConfig{
+			config: testConfig{
 				ValueParam:   sampleValue1,
 				PointerParam: &sampleValue2,
 			},
 			expectedValidness: false,
 		},
 		"zero": {
-			config:            TestConfig{},
+			config:            testConfig{},
 			expectedValidness: false,
 		},
 	}
@@ -76,7 +75,7 @@ func Test_validateMissingValues(t *testing.T) {
 			t.Parallel()
 
 			if err := validateMissingValues(&c.config); (err == nil) != c.expectedValidness {
-				t.Errorf("%s case is expected to be %t but %t: %v", name, c.expectedValidness, err == nil, err)
+				t.Errorf("%s case is expectedServices to be %t but %t: %v", name, c.expectedValidness, err == nil, err)
 			}
 		})
 	}
@@ -89,7 +88,7 @@ func Test_loadServiceConfig(t *testing.T) {
 	cases := map[string]struct {
 		values   map[string]interface{}
 		envs     map[string]string
-		expected *TestConfig
+		expected *testConfig
 	}{
 		"fully-written": {
 			values: map[string]interface{}{
@@ -98,7 +97,7 @@ func Test_loadServiceConfig(t *testing.T) {
 				"param3": "value3",
 				"param4": pointerValue2,
 			},
-			expected: &TestConfig{
+			expected: &testConfig{
 				ValueParam:           "value1",
 				PointerParam:         &pointerValue1,
 				RequiredValueParam:   "value3",
@@ -112,7 +111,7 @@ func Test_loadServiceConfig(t *testing.T) {
 				"TEST_PARAM3": "value3",
 				"TEST_PARAM4": pointerValue2,
 			},
-			expected: &TestConfig{
+			expected: &testConfig{
 				ValueParam:           "value1",
 				PointerParam:         &pointerValue1,
 				RequiredValueParam:   "value3",
@@ -128,7 +127,7 @@ func Test_loadServiceConfig(t *testing.T) {
 				"TEST_PARAM3": "env.value3",
 				"TEST_PARAM4": pointerValue2,
 			},
-			expected: &TestConfig{
+			expected: &testConfig{
 				PointerParam:         &pointerValue1,
 				RequiredValueParam:   "env.value3",
 				RequiredPointerParam: &pointerValue2,
@@ -139,12 +138,6 @@ func Test_loadServiceConfig(t *testing.T) {
 		},
 	}
 
-	deepEqual := func(lhs TestConfig, rhs TestConfig) bool {
-		lbytes, _ := json.Marshal(&lhs)
-		rbytes, _ := json.Marshal(&rhs)
-		return reflect.DeepEqual(lbytes, rbytes)
-	}
-
 	for name, c := range cases {
 		name, c := name, c
 		t.Run(name, func(t *testing.T) {
@@ -152,12 +145,95 @@ func Test_loadServiceConfig(t *testing.T) {
 				t.Setenv(name, value)
 			}
 
-			actual := TestConfig{}
+			actual := testConfig{}
 
-			if err := loadServiceConfig(&actual, c.values); err != nil && c.expected != nil {
-				t.Errorf("%s case is expected to be success but %v", name, err)
-			} else if c.expected != nil && !deepEqual(actual, *c.expected) {
-				t.Errorf("%v does not equal to %v", actual, c.expected)
+			err := loadServiceConfig(&actual, c.values)
+
+			if c.expected == nil && err != nil {
+				return
+			}
+
+			if c.expected != nil && err == nil {
+				if !actual.equalsTo(*c.expected) {
+					t.Errorf("%v does not equal to %v", actual, c.expected)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Errorf("%s case is expected to be success but not: %v", name, err)
+			} else {
+				t.Errorf("%s case is expected to be failure but not", name)
+			}
+		})
+	}
+}
+
+func Test_Config_configure(t *testing.T) {
+
+	cases := map[string]struct {
+		rawConfig rawConfig
+		expected  *Config
+	}{
+		"fully-written": {
+			rawConfig: rawConfig{
+				Services: map[string]interface{}{
+					"def1": map[string]interface{}{
+						"service":        deploygateService,
+						"app-owner-name": "def1-owner",
+						"api-token":      "def1-token",
+					},
+				},
+			},
+			expected: &Config{
+				services: map[string]interface{}{
+					"def1": DeployGateConfig{
+						AppOwnerName: "def1-owner",
+						ApiToken:     "def1-token",
+					},
+				},
+			},
+		},
+		"lacked": {
+			rawConfig: rawConfig{
+				Services: map[string]interface{}{
+					"def1": map[string]interface{}{
+						"service": deploygateService,
+					},
+				},
+			},
+		},
+		"zero": {
+			rawConfig: rawConfig{},
+			expected:  &Config{},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			config := Config{
+				rawConfig: c.rawConfig,
+			}
+
+			err := config.configure()
+
+			if c.expected == nil && err != nil {
+				return
+			}
+
+			if c.expected != nil && err == nil {
+				if !c.expected.equalsTo(config) {
+					t.Errorf("%v does not equal to %v", config, c.expected)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Errorf("%s case is expected to be success but not: %v", name, err)
+			} else {
+				t.Errorf("%s case is expected to be failure but not", name)
 			}
 		})
 	}

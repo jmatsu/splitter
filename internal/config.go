@@ -24,6 +24,10 @@ const (
 	deploygateService = "deploygate"
 )
 
+type ServiceConfig interface {
+	DeployGateConfig | testConfig
+}
+
 type Config struct {
 	rawConfig rawConfig
 	services  map[string]any
@@ -73,26 +77,6 @@ func LoadConfig(path *string) error {
 	return nil
 }
 
-func (c *Config) getService(name string) (string, any, error) {
-	scopes := []string{servicesKey}
-
-	v := c.rawConfig.Services[name]
-
-	if v == nil {
-		return "", nil, fmt.Errorf("%s is required", strings.Join(append(scopes, name), "."))
-	}
-
-	holder := ServiceNameHolder{}
-
-	if byte, err := json.Marshal(v); err != nil {
-		return "", nil, fmt.Errorf("XYZ")
-	} else if err := json.Unmarshal(byte, &holder); err != nil {
-		return "", nil, err
-	} else {
-		return holder.Service, v, nil
-	}
-}
-
 func (c *Config) configure() error {
 	for name, values := range c.rawConfig.Services {
 		values, correct := values.(map[string]interface{})
@@ -109,19 +93,28 @@ func (c *Config) configure() error {
 			return fmt.Errorf("cannot load %s config: %v", name, err)
 		}
 
-		if v, err := provideZeroService(holder.Service); err != nil {
-			return fmt.Errorf("cannot load %s config: %v", name, err)
-		} else if err := loadServiceConfig(&v, values); err != nil {
-			return fmt.Errorf("cannot load %s config: %v", name, err)
-		} else {
-			c.services[name] = v
+		switch holder.Service {
+		case deploygateService:
+			deploygate := DeployGateConfig{}
+
+			if err := loadServiceConfig(&deploygate, values); err != nil {
+				return fmt.Errorf("cannot load %s config: %v", name, err)
+			}
+
+			if c.services == nil {
+				c.services = map[string]any{}
+			}
+
+			c.services[name] = deploygate
+		default:
+			return fmt.Errorf("%s is an unknown service", holder.Service)
 		}
 	}
 
 	return nil
 }
 
-func loadServiceConfig(v any, values map[string]interface{}) error {
+func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) error {
 	// 1. Get a service config and read the name first
 	// 2. Set values from the config file
 	// 3. Overwrite them by the environment variables
@@ -135,22 +128,28 @@ func loadServiceConfig(v any, values map[string]interface{}) error {
 		panic(err)
 	}
 
-	return v.(Validatable).validate()
-}
-
-type Validatable interface {
-	validate() error
+	return validateMissingValues(v)
 }
 
 func validateMissingValues(v any) error {
 	var missingKeys []string
 
-	entity := reflect.ValueOf(v).Elem()
+	vRef := reflect.ValueOf(v)
 
-	for i := 0; i < entity.NumField(); i++ {
-		value := entity.Field(i)
-		field := entity.Type().Field(i)
-		tag := entity.Type().Field(i).Tag
+	if vRef.Kind() == reflect.Pointer {
+		vRef = vRef.Elem()
+
+		if vRef.Kind() != reflect.Struct {
+			return fmt.Errorf("%v is not a struct", v)
+		}
+	} else if vRef.Kind() != reflect.Struct {
+		return fmt.Errorf("%v is not a struct", v)
+	}
+
+	for i := 0; i < vRef.NumField(); i++ {
+		value := vRef.Field(i)
+		field := vRef.Type().Field(i)
+		tag := vRef.Type().Field(i).Tag
 
 		Logger.Debug().Msgf("%v = %s: json:\"%s\"", field.Name, value, tag.Get("json"))
 
@@ -172,14 +171,5 @@ func validateMissingValues(v any) error {
 		return fmt.Errorf("%d keys lacked or their values are empty", num)
 	} else {
 		return nil
-	}
-}
-
-func provideZeroService(name string) (Validatable, error) {
-	switch name {
-	case deploygateService:
-		return DeployGateConfig{}, nil
-	default:
-		return nil, fmt.Errorf("%s is an unknown service", name)
 	}
 }
