@@ -41,9 +41,7 @@ func IsJson() bool {
 }
 
 func Format(v any, tableBuilder TableBuilder) error {
-	vRef := reflect.ValueOf(v)
-
-	if vRef.Kind() != reflect.Struct {
+	if reflect.ValueOf(v).Kind() != reflect.Struct {
 		panic(fmt.Errorf("v must be struct"))
 	}
 
@@ -52,7 +50,7 @@ func Format(v any, tableBuilder TableBuilder) error {
 
 	switch currentStyle {
 	case Json:
-		if bytes, err := json.Marshal(vRef); err != nil {
+		if bytes, err := json.Marshal(v); err != nil {
 			return fmt.Errorf("cannot marshal this value: %v", err)
 		} else {
 			fmt.Println(string(bytes))
