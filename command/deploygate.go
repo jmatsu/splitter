@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/format"
-	"github.com/jmatsu/splitter/internal"
+	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/provider/deploygate"
 	"github.com/urfave/cli/v2"
 )
@@ -73,7 +73,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 			},
 		},
 		Action: func(context *cli.Context) error {
-			config := internal.DeployGateConfig{
+			config := config.DeployGateConfig{
 				AppOwnerName: context.String("app-owner-name"),
 				ApiToken:     context.String("api-token"),
 			}
@@ -101,7 +101,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 	}
 }
 
-func distributeDeployGate(ctx context.Context, config *internal.DeployGateConfig, filePath string, builder func(req *deploygate.UploadRequest)) error {
+func distributeDeployGate(ctx context.Context, config *config.DeployGateConfig, filePath string, builder func(req *deploygate.UploadRequest)) error {
 	provider := deploygate.NewProvider(ctx, *config)
 	request := deploygate.UploadRequest{
 		FilePath: filePath,

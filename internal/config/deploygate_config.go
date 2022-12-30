@@ -1,4 +1,4 @@
-package internal
+package config
 
 type DeployGateConfig struct {
 	AppOwnerName          string `json:"app-owner-name,omitempty" env:"DEPLOYGATE_APP_OWNER_NAME" required:"true"`

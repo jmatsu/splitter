@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/command"
 	"github.com/jmatsu/splitter/format"
-	"github.com/jmatsu/splitter/internal"
+	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"os"
 
@@ -35,7 +35,7 @@ func main() {
 					}
 				},
 				EnvVars: []string{
-					internal.ToEnvName("CONFIG_FILE"),
+					config.ToEnvName("CONFIG_FILE"),
 				},
 				TakesFile: true,
 			},
@@ -51,7 +51,7 @@ func main() {
 				Required: false,
 				Value:    false,
 				EnvVars: []string{
-					internal.ToEnvName("DEBUG"),
+					config.ToEnvName("DEBUG"),
 				},
 			},
 		},
@@ -66,11 +66,11 @@ func main() {
 				path = &v
 			}
 
-			if err := internal.LoadConfig(path); err != nil {
+			if err := config.LoadConfig(path); err != nil {
 				return err
 			}
 
-			config := internal.GetConfig()
+			config := config.GetConfig()
 
 			if newStyle := context.String("format"); context.IsSet("format") || config.FormatStyle() == "" {
 				config.SetFormatStyle(newStyle)

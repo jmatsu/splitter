@@ -2,7 +2,7 @@ package command
 
 import (
 	"fmt"
-	"github.com/jmatsu/splitter/internal"
+	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/provider/deploygate"
 	"github.com/urfave/cli/v2"
 )
@@ -21,7 +21,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				},
 				Usage:    "distribution name in your configuration file",
 				Required: true,
-				EnvVars:  []string{internal.ToEnvName("DISTRIBUTION_NAME")},
+				EnvVars:  []string{config.ToEnvName("DISTRIBUTION_NAME")},
 			},
 			&cli.PathFlag{
 				Name: "file",
@@ -35,23 +35,23 @@ func Distribute(name string, aliases []string) *cli.Command {
 				Name:     "release-note",
 				Usage:    "An release note of this revision. Some of services may not support this option",
 				Required: false,
-				EnvVars:  []string{internal.ToEnvName("DISTRIBUTION_RELEASE_NOTE")},
+				EnvVars:  []string{config.ToEnvName("DISTRIBUTION_RELEASE_NOTE")},
 			},
 		},
 		Action: func(context *cli.Context) error {
-			config := internal.GetConfig()
+			conf := config.GetConfig()
 
 			name := context.String("name")
 
-			d, err := config.GetDistribution(name)
+			d, err := conf.GetDistribution(name)
 
 			if err != nil {
 				return err
 			}
 
 			switch d.ServiceName {
-			case internal.DeploygateService:
-				dg := d.ServiceConfig.(*internal.DeployGateConfig)
+			case config.DeploygateService:
+				dg := d.ServiceConfig.(*config.DeployGateConfig)
 
 				return distributeDeployGate(context.Context, dg, context.String("file"), func(req *deploygate.UploadRequest) {
 					if v := context.String("release-note"); context.IsSet("release-note") {

@@ -4,26 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jmatsu/splitter/internal"
-	internalHttp "github.com/jmatsu/splitter/internal/http"
+	"github.com/jmatsu/splitter/internal/config"
 	logger2 "github.com/jmatsu/splitter/internal/logger"
+	"github.com/jmatsu/splitter/internal/net"
 	"github.com/rs/zerolog"
 )
 
 var logger zerolog.Logger
-var baseClient *internal.HttpClient
+var baseClient *net.HttpClient
 
 func init() {
 	logger = logger2.Logger.With().Str("provider", "deploygate").Logger()
-	baseClient = internal.GetHttpClient("https://deploygate.com")
+	baseClient = net.GetHttpClient("https://deploygate.com")
 }
 
 type Provider struct {
-	internal.DeployGateConfig
+	config.DeployGateConfig
 	ctx context.Context
 }
 
-func NewProvider(ctx context.Context, config internal.DeployGateConfig) *Provider {
+func NewProvider(ctx context.Context, config config.DeployGateConfig) *Provider {
 	return &Provider{
 		DeployGateConfig: config,
 		ctx:              ctx,
@@ -73,15 +73,15 @@ func (p *Provider) Distribute(request *UploadRequest) ([]byte, error) {
 	}
 }
 
-func (p *Provider) toForm(request *UploadRequest) *internalHttp.Form {
-	form := internalHttp.Form{}
+func (p *Provider) toForm(request *UploadRequest) *net.Form {
+	form := net.Form{}
 
-	form.Set(internalHttp.FileField("file", request.FilePath))
+	form.Set(net.FileField("file", request.FilePath))
 
 	if request.Message != nil {
 		logger.Debug().Msgf("message option was found")
 
-		form.Set(internalHttp.StringField("message", *request.Message))
+		form.Set(net.StringField("message", *request.Message))
 	}
 
 	var distributionOptionFound = request.DistributionOptions.AccessKey != "" || request.DistributionOptions.Name != ""
@@ -92,16 +92,16 @@ func (p *Provider) toForm(request *UploadRequest) *internalHttp.Form {
 
 	if distributionOptionFound {
 		if request.DistributionOptions.AccessKey != "" {
-			form.Set(internalHttp.StringField("distribution_key", request.DistributionOptions.AccessKey))
+			form.Set(net.StringField("distribution_key", request.DistributionOptions.AccessKey))
 		} else if request.DistributionOptions.Name != "" {
-			form.Set(internalHttp.StringField("distribution_name", request.DistributionOptions.Name))
+			form.Set(net.StringField("distribution_name", request.DistributionOptions.Name))
 		}
 
 		if request.DistributionOptions.ReleaseNote != nil {
-			form.Set(internalHttp.StringField("release_note", *request.DistributionOptions.ReleaseNote))
+			form.Set(net.StringField("release_note", *request.DistributionOptions.ReleaseNote))
 		} else if request.Message != nil {
 			logger.Debug().Msgf("set message as release note as a fallback")
-			form.Set(internalHttp.StringField("release_note", *request.Message))
+			form.Set(net.StringField("release_note", *request.Message))
 		}
 	} else {
 		logger.Debug().Msgf("distribution options were empty")
@@ -110,7 +110,7 @@ func (p *Provider) toForm(request *UploadRequest) *internalHttp.Form {
 	var iosOptionFound = request.IOSOptions.DisableNotification
 
 	if iosOptionFound {
-		form.Set(internalHttp.BooleanField("disable_notify", request.IOSOptions.DisableNotification))
+		form.Set(net.BooleanField("disable_notify", request.IOSOptions.DisableNotification))
 	}
 
 	return &form
