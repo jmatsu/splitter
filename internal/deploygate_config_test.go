@@ -49,7 +49,7 @@ func Test_DeployGateConfig_validateMissingValues(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			if err := validateMissingValues(c.config); (err == nil) != c.expectedValidness {
+			if err := validateMissingValues(&c.config); (err == nil) != c.expectedValidness {
 				t.Errorf("%s case is expectedServices to be %t but %t", name, c.expectedValidness, err == nil)
 			}
 		})

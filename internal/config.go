@@ -107,7 +107,7 @@ func (c *Config) configure() error {
 
 			c.services[name] = deploygate
 		default:
-			return fmt.Errorf("%s is an unknown service", holder.Service)
+			return fmt.Errorf("%s of %s is an unknown service", holder.Service, name)
 		}
 	}
 
@@ -120,9 +120,9 @@ func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) err
 	// 3. Overwrite them by the environment variables
 	// 4. Validate the values
 
-	if byte, err := json.Marshal(values); err != nil {
+	if bytes, err := json.Marshal(values); err != nil {
 		panic(err)
-	} else if err := json.Unmarshal(byte, v); err != nil {
+	} else if err := json.Unmarshal(bytes, v); err != nil {
 		panic(err)
 	} else if err := env.Parse(v); err != nil {
 		panic(err)
@@ -131,18 +131,12 @@ func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) err
 	return validateMissingValues(v)
 }
 
-func validateMissingValues(v any) error {
+func validateMissingValues[T ServiceConfig](v *T) error {
 	var missingKeys []string
 
-	vRef := reflect.ValueOf(v)
+	vRef := reflect.ValueOf(v).Elem()
 
-	if vRef.Kind() == reflect.Pointer {
-		vRef = vRef.Elem()
-
-		if vRef.Kind() != reflect.Struct {
-			return fmt.Errorf("%v is not a struct", v)
-		}
-	} else if vRef.Kind() != reflect.Struct {
+	if vRef.Kind() != reflect.Struct {
 		return fmt.Errorf("%v is not a struct", v)
 	}
 
@@ -175,7 +169,7 @@ func validateMissingValues(v any) error {
 	}
 
 	if num := len(missingKeys); num > 0 {
-		return fmt.Errorf("%d keys lacked or their values are empty", num)
+		return fmt.Errorf("%d keys lacked or their values are empty: %s", num, strings.Join(missingKeys, ","))
 	} else {
 		return nil
 	}
