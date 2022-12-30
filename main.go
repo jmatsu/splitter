@@ -16,15 +16,18 @@ func main() {
 		Name:  "splitter",
 		Usage: "An isolated command to distribute your apps to elsewhere",
 		Flags: []cli.Flag{
-			&cli.StringFlag{
+			&cli.PathFlag{
 				Name:     "config",
 				Required: false,
-				Action: func(context *cli.Context, s string) error {
+				Action: func(context *cli.Context, s cli.Path) error {
 					if _, err := os.Stat(s); err == nil {
 						return nil
 					} else {
 						return fmt.Errorf("%s is not found", s)
 					}
+				},
+				EnvVars: []string{
+					internal.ToEnvName("CONFIG_FILE"),
 				},
 			},
 			&cli.StringFlag{
@@ -38,37 +41,36 @@ func main() {
 				Usage:    "Show debug logs",
 				Required: false,
 				Value:    false,
+				EnvVars: []string{
+					internal.ToEnvName("DEBUG"),
+				},
+				Action: func(context *cli.Context, b bool) error {
+					if b {
+						logger.SetDebugMode()
+					}
+
+					return nil
+				},
 			},
 		},
 		Before: func(context *cli.Context) error {
-			if context.Bool("debug") {
-				logger.SetDebugMode()
+			var path *string
+
+			if v := context.Path("path"); context.IsSet("path") {
+				path = &v
 			}
 
-			if context.IsSet("path") {
-				path := context.String("path")
-				if err := internal.LoadConfig(&path); err != nil {
-					return err
-				}
-			} else {
-				if err := internal.LoadConfig(nil); err != nil {
-					return err
-				}
+			if err := internal.LoadConfig(path); err != nil {
+				return err
 			}
 
 			config := internal.GetConfig()
 
-			if config.Debug() {
-				logger.SetDebugMode()
+			if newStyle := context.String("format"); context.IsSet("format") || config.FormatStyle() == "" {
+				config.SetFormatStyle(newStyle)
 			}
 
-			style := context.String("format")
-
-			if newStyle, ok := config.FormatStyle(); !context.IsSet("format") && ok {
-				style = newStyle
-			}
-
-			if err := format.SetStyle(style); err != nil {
+			if err := format.SetStyle(config.FormatStyle()); err != nil {
 				return err
 			}
 

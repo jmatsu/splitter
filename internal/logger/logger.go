@@ -13,7 +13,7 @@ var Logger zerolog.Logger
 func init() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	writer := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+	writer := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
 	writer.FormatLevel = func(i interface{}) string {
 		return strings.ToUpper(fmt.Sprintf("| %-6s|", i))
 	}

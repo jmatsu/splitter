@@ -19,16 +19,22 @@ func init() {
 	viper.SetConfigName(baseName)
 	viper.SetConfigType(extName)
 
-	viper.SetEnvPrefix("SPLITTER_")
+	viper.SetEnvPrefix(envPrefix)
 }
 
 const (
+	envPrefix = "SPLITTER_"
+
 	DefaultConfigName = "splitter.yml"
 
 	distributionsKey = "distributions"
 
 	deploygateService = "deploygate"
 )
+
+func ToEnvName(name string) string {
+	return fmt.Sprintf("%s%s", envPrefix, strings.ToUpper(name))
+}
 
 type ServiceConfig interface {
 	testConfig | DeployGateConfig
@@ -41,7 +47,6 @@ type Config struct {
 
 type rawConfig struct {
 	Distributions map[string]interface{} `yaml:"distributions"`
-	Debug         bool                   `yaml:"debug,omitempty"`
 	FormatStyle   string                 `yaml:"format-style,omitempty"`
 }
 
@@ -80,7 +85,6 @@ func LoadConfig(path *string) error {
 	config = Config{
 		rawConfig: rawConfig{
 			Distributions: viper.GetStringMap(distributionsKey),
-			Debug:         viper.GetBool("debug"),
 			FormatStyle:   viper.GetString("format-style"),
 		},
 	}
@@ -129,12 +133,12 @@ func (c *Config) configure() error {
 	return nil
 }
 
-func (c *Config) Debug() bool {
-	return c.rawConfig.Debug
+func (c *Config) FormatStyle() string {
+	return c.rawConfig.FormatStyle
 }
 
-func (c *Config) FormatStyle() (string, bool) {
-	return c.rawConfig.FormatStyle, c.rawConfig.FormatStyle != ""
+func (c *Config) SetFormatStyle(style string) {
+	c.rawConfig.FormatStyle = style
 }
 
 func (c *Config) Dump(path string) error {
