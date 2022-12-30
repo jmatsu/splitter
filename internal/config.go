@@ -29,7 +29,7 @@ const (
 
 	distributionsKey = "distributions"
 
-	deploygateService = "deploygate"
+	DeploygateService = "deploygate"
 )
 
 func ToEnvName(name string) string {
@@ -42,7 +42,7 @@ type ServiceConfig interface {
 
 type Config struct {
 	rawConfig rawConfig
-	services  map[string]any
+	services  map[string]*Distribution
 }
 
 type rawConfig struct {
@@ -52,6 +52,11 @@ type rawConfig struct {
 
 type serviceNameHolder struct {
 	ServiceName string `json:"service"`
+}
+
+type Distribution struct {
+	ServiceName   string
+	ServiceConfig any
 }
 
 var config Config
@@ -72,7 +77,7 @@ func LoadConfig(path *string) error {
 		viper.AddConfigPath(".")
 
 		if wd, err := os.Getwd(); err == nil {
-			logger.Logger.Debug().Msgf("Loading a config file on %s", wd)
+			logger.Logger.Debug().Msgf("Loading a config file on the current directory: %s", wd)
 		} else {
 			logger.Logger.Debug().Err(err).Msgf("Cannot loading the current working directory")
 		}
@@ -98,6 +103,8 @@ func LoadConfig(path *string) error {
 
 func (c *Config) configure() error {
 	for name, values := range c.rawConfig.Distributions {
+		logger.Logger.Debug().Msgf("Configuring %s", name)
+
 		values, correct := values.(map[string]interface{})
 
 		if !correct {
@@ -113,7 +120,7 @@ func (c *Config) configure() error {
 		}
 
 		switch holder.ServiceName {
-		case deploygateService:
+		case DeploygateService:
 			deploygate := DeployGateConfig{}
 
 			if err := loadServiceConfig(&deploygate, values); err != nil {
@@ -121,10 +128,13 @@ func (c *Config) configure() error {
 			}
 
 			if c.services == nil {
-				c.services = map[string]any{}
+				c.services = map[string]*Distribution{}
 			}
 
-			c.services[name] = deploygate
+			c.services[name] = &Distribution{
+				ServiceName:   DeploygateService,
+				ServiceConfig: &deploygate,
+			}
 		default:
 			return fmt.Errorf("%s of %s is an unknown service", holder.ServiceName, name)
 		}
@@ -151,11 +161,27 @@ func (c *Config) Dump(path string) error {
 	return nil
 }
 
+func (c *Config) GetDistribution(name string) (*Distribution, error) {
+	if d := c.services[name]; d != nil {
+		switch d.ServiceName {
+		case DeploygateService:
+			config := d.ServiceConfig.(*DeployGateConfig)
+
+			if err := evaluateAndValidate(config); err != nil {
+				return nil, err
+			}
+		}
+
+		return d, nil
+	} else {
+		return nil, fmt.Errorf("%s distribution is not found", name)
+	}
+}
+
 func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) error {
 	// 1. Get a service config and read the name first
 	// 2. Set values from the config file
 	// 3. Overwrite them by the environment variables
-	// 4. Validate the values
 
 	if bytes, err := json.Marshal(values); err != nil {
 		panic(err)
@@ -165,7 +191,48 @@ func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) err
 		panic(err)
 	}
 
-	return validateMissingValues(v)
+	return nil
+}
+
+func evaluateAndValidate[T ServiceConfig](v *T) error {
+	if err := evaluateValues(v); err != nil {
+		return err
+	} else if err := validateMissingValues(v); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func evaluateValues[T ServiceConfig](v *T) error {
+	vRef := reflect.ValueOf(v).Elem()
+
+	if vRef.Kind() != reflect.Struct {
+		return fmt.Errorf("%v is not a struct", v)
+	}
+
+	for i := 0; i < vRef.NumField(); i++ {
+		value := vRef.Field(i)
+		field := vRef.Type().Field(i)
+		tag := vRef.Type().Field(i).Tag
+
+		if _, found := tag.Lookup("json"); !found {
+			continue
+		}
+
+		if value.Kind() == reflect.String {
+			if prefix, format, ok := strings.Cut(value.String(), ":"); ok && prefix == "format" {
+				newValue := os.ExpandEnv(format)
+				value.SetString(newValue)
+
+				logger.Logger.Debug().Msgf("%s = %v: is evaluated", field.Name, newValue)
+			} else {
+				logger.Logger.Debug().Msgf("%s = %v: needn't be evaluated", field.Name, value)
+			}
+		}
+	}
+
+	return nil
 }
 
 func validateMissingValues[T ServiceConfig](v *T) error {

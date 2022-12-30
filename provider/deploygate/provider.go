@@ -65,8 +65,10 @@ func (p *Provider) Distribute(request *UploadRequest) ([]byte, error) {
 
 		if err := json.Unmarshal(bytes, &errorResponse); err != nil {
 			return nil, fmt.Errorf("failed to upload your app to DeployGate due to: %s, %v", string(bytes), err)
-		} else {
+		} else if errorResponse.Message != "" {
 			return nil, fmt.Errorf("failed to upload your app to DeployGate due to '%s'", errorResponse.Message)
+		} else {
+			return nil, fmt.Errorf("failed to upload your app to DeployGate due to '%s'", string(bytes))
 		}
 	}
 }

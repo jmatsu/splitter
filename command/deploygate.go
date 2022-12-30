@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/format"
@@ -51,7 +52,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				Required: false,
 			},
 			&cli.StringFlag{
-				Name:     "distribution-key",
+				Name:     "distribution-access-key",
 				Usage:    "An access key of a distribution that must exist. If the both of key and name are specified, key takes priority.",
 				Required: false,
 			},
@@ -77,42 +78,48 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				ApiToken:     context.String("api-token"),
 			}
 
-			var response deploygate.UploadResponse
+			return distributeDeployGate(context.Context, &config, context.String("file"), func(req *deploygate.UploadRequest) {
+				if v := context.String("message"); context.IsSet("message") {
+					req.Message = &v
+				}
 
-			provider := deploygate.NewProvider(context.Context, config)
-			request := deploygate.UploadRequest{
-				FilePath: context.String("file"),
-			}
+				if v := context.String("distribution-key"); context.IsSet("distribution-key") {
+					req.DistributionOptions.AccessKey = v
+				}
 
-			if v := context.String("message"); context.IsSet("message") {
-				request.Message = &v
-			}
+				if v := context.String("distribution-name"); context.IsSet("distribution-name") {
+					req.DistributionOptions.Name = v
+				}
 
-			if v := context.String("distribution-key"); context.IsSet("distribution-key") {
-				request.DistributionOptions.AccessKey = v
-			}
+				if v := context.String("release-note"); context.IsSet("release-note") {
+					req.DistributionOptions.ReleaseNote = &v
+				}
 
-			if v := context.String("distribution-name"); context.IsSet("distribution-name") {
-				request.DistributionOptions.Name = v
-			}
-
-			if v := context.String("release-note"); context.IsSet("release-note") {
-				request.DistributionOptions.ReleaseNote = &v
-			}
-
-			request.IOSOptions.DisableNotification = context.Bool("disable-ios-notification")
-
-			if bytes, err := provider.Distribute(&request); err != nil {
-				return err
-			} else if format.IsJson() {
-				fmt.Println(string(bytes))
-			} else if err := json.Unmarshal(bytes, &response); err != nil {
-				return fmt.Errorf("failed to parse the response of your app to DeployGate but succeeded to upload: %v", err)
-			} else if err := format.Format(response, deploygate.TableBuilder); err != nil {
-				return fmt.Errorf("cannot format the response: %v", err)
-			}
-
-			return nil
+				req.IOSOptions.DisableNotification = context.Bool("disable-ios-notification")
+			})
 		},
 	}
+}
+
+func distributeDeployGate(ctx context.Context, config *internal.DeployGateConfig, filePath string, builder func(req *deploygate.UploadRequest)) error {
+	provider := deploygate.NewProvider(ctx, *config)
+	request := deploygate.UploadRequest{
+		FilePath: filePath,
+	}
+
+	builder(&request)
+
+	var response deploygate.UploadResponse
+
+	if bytes, err := provider.Distribute(&request); err != nil {
+		return err
+	} else if format.IsJson() {
+		fmt.Println(string(bytes))
+	} else if err := json.Unmarshal(bytes, &response); err != nil {
+		return fmt.Errorf("failed to parse the response of your app to DeployGate but succeeded to upload: %v", err)
+	} else if err := format.Format(response, deploygate.TableBuilder); err != nil {
+		return fmt.Errorf("cannot format the response: %v", err)
+	}
+
+	return nil
 }

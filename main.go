@@ -44,19 +44,16 @@ func main() {
 				EnvVars: []string{
 					internal.ToEnvName("DEBUG"),
 				},
-				Action: func(context *cli.Context, b bool) error {
-					if b {
-						logger.SetDebugMode()
-					}
-
-					return nil
-				},
 			},
 		},
 		Before: func(context *cli.Context) error {
+			if context.Bool("debug") {
+				logger.SetDebugMode()
+			}
+
 			var path *string
 
-			if v := context.Path("path"); context.IsSet("path") {
+			if v := context.Path("config"); context.IsSet("config") {
 				path = &v
 			}
 
@@ -79,10 +76,7 @@ func main() {
 		Commands: []*cli.Command{
 			command.InitConfig("init", []string{}),
 			command.DeployGate("deploygate", []string{"dg"}),
-			{
-				Name:        "distribute",
-				Subcommands: []*cli.Command{},
-			},
+			command.Distribute("distribute", []string{}),
 		},
 	}
 
