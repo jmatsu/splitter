@@ -58,13 +58,16 @@ func LoadConfig(path *string) error {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		return fmt.Errorf("Failed to read a config file: %v", err)
+		return fmt.Errorf("failed to read a config file: %v", err)
 	}
 
 	config = Config{
 		rawConfig: rawConfig{
 			Services: viper.GetStringMap("services"),
 		},
+	}
+	if err := config.configure(); err != nil {
+		return fmt.Errorf("your config file may not contain some of required values or they are invalid: %v", err)
 	}
 
 	return nil
@@ -100,43 +103,39 @@ func (c *Config) configure() error {
 
 		holder := ServiceNameHolder{}
 
-		if byte, err := json.Marshal(values); err != nil {
+		if bytes, err := json.Marshal(values); err != nil {
 			return fmt.Errorf("cannot load %s config: %v", name, err)
-		} else if err := json.Unmarshal(byte, &holder); err != nil {
+		} else if err := json.Unmarshal(bytes, &holder); err != nil {
 			return fmt.Errorf("cannot load %s config: %v", name, err)
 		}
 
 		if v, err := provideZeroService(holder.Service); err != nil {
 			return fmt.Errorf("cannot load %s config: %v", name, err)
-		} else if conf, err := loadServiceConfig(v, values); err != nil {
+		} else if err := loadServiceConfig(&v, values); err != nil {
 			return fmt.Errorf("cannot load %s config: %v", name, err)
 		} else {
-			c.services[name] = conf
+			c.services[name] = v
 		}
 	}
 
 	return nil
 }
 
-func loadServiceConfig(v Validatable, values map[string]interface{}) (any, error) {
+func loadServiceConfig(v any, values map[string]interface{}) error {
 	// 1. Get a service config and read the name first
-	// 2. Set values from environment variables
-	// 3. Overwrite them by the config file
+	// 2. Set values from the config file
+	// 3. Overwrite them by the environment variables
 	// 4. Validate the values
 
-	if err := env.Parse(&v); err != nil {
+	if byte, err := json.Marshal(values); err != nil {
 		panic(err)
-	} else if byte, err := json.Marshal(values); err != nil {
+	} else if err := json.Unmarshal(byte, v); err != nil {
 		panic(err)
-	} else if err := json.Unmarshal(byte, &v); err != nil {
+	} else if err := env.Parse(v); err != nil {
 		panic(err)
 	}
 
-	if err := v.validate(); err != nil {
-		return nil, err
-	} else {
-		return v, nil
-	}
+	return v.(Validatable).validate()
 }
 
 type Validatable interface {
