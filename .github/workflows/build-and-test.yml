@@ -12,34 +12,28 @@ on:
 
 jobs:
   build:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version-file: ./go.mod
-          cache: true
+      - uses: ./.github/actions/setup-go
       - run: go build -v ./...
       - run: go test -v ./...
 
   format:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version-file: ./go.mod
-          cache: true
+      - uses: ./.github/actions/setup-go
       - run: go mod tidy
-      - run: go mod vendor
       - run: go fmt ./...
+      - run: git diff --exit-code --stat
 
   lint:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version-file: ./go.mod
-          cache: true
+      - uses: ./.github/actions/setup-go
       - uses: reviewdog/action-golangci-lint@v2

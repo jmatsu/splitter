@@ -248,3 +248,4 @@ vendor/
 
 # Disable for now
 .idea/
+dist/
