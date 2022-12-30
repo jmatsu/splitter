@@ -151,19 +151,26 @@ func validateMissingValues(v any) error {
 		field := vRef.Type().Field(i)
 		tag := vRef.Type().Field(i).Tag
 
-		Logger.Debug().Msgf("%v = %s: json:\"%s\"", field.Name, value, tag.Get("json"))
+		t, found := tag.Lookup("json")
 
-		if t, found := tag.Lookup("json"); found {
-			key := strings.SplitN(t, ",", 2)[0]
+		if !found {
+			Logger.Debug().Msgf("%v is ignored", field.Name)
+			continue
+		}
 
-			b, found := tag.Lookup("required")
+		Logger.Debug().Msgf("%s = %v: json:\"%s\"", field.Name, value, t)
 
-			if found && b == "true" && value.IsZero() {
+		key, _, _ := strings.Cut(t, ",")
+
+		if b, found := tag.Lookup("required"); found && b == "true" {
+			if value.IsZero() {
 				Logger.Error().Msgf("%s is required but not assigned", key)
 				missingKeys = append(missingKeys, key)
 			} else {
 				Logger.Debug().Msgf("%s is set", key)
 			}
+		} else {
+			Logger.Debug().Msgf("%s is optional", key)
 		}
 	}
 
