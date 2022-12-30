@@ -245,3 +245,6 @@ tags
 
 # go mod vendor
 vendor/
+
+# Disable for now
+.idea/
