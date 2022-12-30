@@ -25,7 +25,7 @@ const (
 )
 
 type ServiceConfig interface {
-	DeployGateConfig | testConfig
+	testConfig | DeployGateConfig
 }
 
 type Config struct {
@@ -37,8 +37,8 @@ type rawConfig struct {
 	Services map[string]interface{}
 }
 
-type ServiceNameHolder struct {
-	Service string `json:"service"`
+type serviceNameHolder struct {
+	ServiceName string `json:"service"`
 }
 
 var config Config
@@ -67,7 +67,7 @@ func LoadConfig(path *string) error {
 
 	config = Config{
 		rawConfig: rawConfig{
-			Services: viper.GetStringMap("services"),
+			Services: viper.GetStringMap(servicesKey),
 		},
 	}
 	if err := config.configure(); err != nil {
@@ -85,7 +85,7 @@ func (c *Config) configure() error {
 			return fmt.Errorf("%s must be Mapping", name)
 		}
 
-		holder := ServiceNameHolder{}
+		holder := serviceNameHolder{}
 
 		if bytes, err := json.Marshal(values); err != nil {
 			return fmt.Errorf("cannot load %s config: %v", name, err)
@@ -93,7 +93,7 @@ func (c *Config) configure() error {
 			return fmt.Errorf("cannot load %s config: %v", name, err)
 		}
 
-		switch holder.Service {
+		switch holder.ServiceName {
 		case deploygateService:
 			deploygate := DeployGateConfig{}
 
@@ -107,7 +107,7 @@ func (c *Config) configure() error {
 
 			c.services[name] = deploygate
 		default:
-			return fmt.Errorf("%s of %s is an unknown service", holder.Service, name)
+			return fmt.Errorf("%s of %s is an unknown service", holder.ServiceName, name)
 		}
 	}
 

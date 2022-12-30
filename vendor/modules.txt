@@ -82,7 +82,10 @@ github.com/urfave/cli/v2
 # github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673
 ## explicit
 github.com/xrash/smetrics
-# golang.org/x/sys v0.0.0-20220908164124-27713097b956
+# golang.org/x/exp v0.0.0-20221229233502-02c3fc3b3eb4
+## explicit; go 1.18
+golang.org/x/exp/maps
+# golang.org/x/sys v0.1.0
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
