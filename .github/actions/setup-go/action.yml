@@ -1,0 +1,9 @@
+name: Setup go
+description: Configure the environment to execute Go and related commands
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v3
+      with:
+        go-version-file: ./go.mod
+        cache: true

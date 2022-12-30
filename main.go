@@ -11,13 +11,21 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	version   = "undefined"
+	commit    = "undefined"
+	timestamp = "undefined" // Dummy
+)
+
 func main() {
 	app := &cli.App{
-		Name:  "splitter",
-		Usage: "An isolated command to distribute your apps to elsewhere",
+		Name:    "splitter",
+		Usage:   "An isolated command to distribute your apps to elsewhere",
+		Version: fmt.Sprintf("%s (git revision %s) %s", version, commit, timestamp),
 		Flags: []cli.Flag{
 			&cli.PathFlag{
 				Name:     "config",
+				Usage:    "A path to a config file.",
 				Required: false,
 				Action: func(context *cli.Context, s cli.Path) error {
 					if _, err := os.Stat(s); err == nil {
@@ -29,10 +37,11 @@ func main() {
 				EnvVars: []string{
 					internal.ToEnvName("CONFIG_FILE"),
 				},
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name:     "format",
-				Usage:    "Print command outputs by following the specified style. This may work only for some commands.",
+				Usage:    "The output style of command outputs. This may work only for some commands.",
 				Required: false,
 				Value:    "pretty",
 			},
