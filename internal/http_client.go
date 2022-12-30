@@ -68,17 +68,17 @@ func (c *HttpClient) WithHeaders(headers http.Header) *HttpClient {
 	return &newClient
 }
 
-func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, form *internalHttp.Form) ([]byte, error) {
+func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, form *internalHttp.Form) (int, []byte, error) {
 	contentType, buffer, err := form.Serialize()
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize the request form: %v", err)
+		return 0, nil, fmt.Errorf("failed to serialize the request form: %v", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL.JoinPath(paths...).String(), buffer)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to build the request: %v", err)
+		return 0, nil, fmt.Errorf("failed to build the request: %v", err)
 	}
 
 	request.Header.Set("Content-Type", contentType)
@@ -86,16 +86,16 @@ func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, fo
 	resp, err := c.client.Do(request)
 
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 
 	//goland:noinspection GoUnhandledErrorResult
 	defer resp.Body.Close()
 
 	if bytes, err := io.ReadAll(resp.Body); err != nil {
-		return nil, err
+		return 0, nil, err
 	} else {
-		return bytes, nil
+		return resp.StatusCode, bytes, nil
 	}
 }
 

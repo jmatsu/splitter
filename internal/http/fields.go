@@ -67,6 +67,14 @@ type Form struct {
 	Fields []ValueField
 }
 
+func (f *Form) Set(field ValueField) {
+	if f.Fields == nil {
+		f.Fields = []ValueField{field}
+	} else {
+		f.Fields = append(f.Fields, field)
+	}
+}
+
 func (f *Form) Serialize() (string, *bytes.Buffer, error) {
 	var buffer bytes.Buffer
 

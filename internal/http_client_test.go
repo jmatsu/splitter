@@ -291,7 +291,7 @@ func Test_HttpClient_DoPostMultipartForm(t *testing.T) {
 
 			var resp testResponse
 
-			if bytes, err := client.DoPostMultipartForm(ctx, c.paths, &c.form); err != nil {
+			if _, bytes, err := client.DoPostMultipartForm(ctx, c.paths, &c.form); err != nil {
 				t.Errorf("%s is expected to be success but not: %v", name, err)
 			} else if err := json.Unmarshal(bytes, &resp); err != nil {
 				t.Errorf("%s is expected to be success but not due to comparison failure: %s", name, string(bytes))
