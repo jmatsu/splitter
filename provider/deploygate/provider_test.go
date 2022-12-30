@@ -28,7 +28,7 @@ func Test_Provider_toForm(t *testing.T) {
 		"with fully ios options": {
 			request: UploadRequest{
 				FilePath:   "path/to/file",
-				IOSOptions: &struct{ DisableNotification bool }{DisableNotification: true},
+				IOSOptions: struct{ DisableNotification bool }{DisableNotification: true},
 			},
 			expected: http.Form{
 				Fields: []http.ValueField{
@@ -40,7 +40,7 @@ func Test_Provider_toForm(t *testing.T) {
 		"with too much distribution options": {
 			request: UploadRequest{
 				FilePath: "path/to/file",
-				DistributionOptions: &struct {
+				DistributionOptions: struct {
 					Name        string
 					AccessKey   string
 					ReleaseNote *string
@@ -59,7 +59,7 @@ func Test_Provider_toForm(t *testing.T) {
 		"with fully distribution options": {
 			request: UploadRequest{
 				FilePath: "path/to/file",
-				DistributionOptions: &struct {
+				DistributionOptions: struct {
 					Name        string
 					AccessKey   string
 					ReleaseNote *string
@@ -80,7 +80,7 @@ func Test_Provider_toForm(t *testing.T) {
 			request: UploadRequest{
 				FilePath: "path/to/file",
 				Message:  &sampleMessage1,
-				DistributionOptions: &struct {
+				DistributionOptions: struct {
 					Name        string
 					AccessKey   string
 					ReleaseNote *string

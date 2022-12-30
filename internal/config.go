@@ -3,6 +3,8 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jmatsu/splitter/internal/logger"
+	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
 	"strings"
@@ -12,14 +14,18 @@ import (
 )
 
 func init() {
-	viper.SetConfigName("splitter")
-	viper.SetConfigType("yml")
+	baseName, extName, _ := strings.Cut(DefaultConfigName, ".")
+
+	viper.SetConfigName(baseName)
+	viper.SetConfigType(extName)
 
 	viper.SetEnvPrefix("SPLITTER_")
 }
 
 const (
-	servicesKey = "services"
+	DefaultConfigName = "splitter.yml"
+
+	distributionsKey = "distributions"
 
 	deploygateService = "deploygate"
 )
@@ -34,7 +40,9 @@ type Config struct {
 }
 
 type rawConfig struct {
-	Services map[string]interface{}
+	Distributions map[string]interface{} `yaml:"distributions"`
+	Debug         bool                   `yaml:"debug,omitempty"`
+	FormatStyle   string                 `yaml:"format-style,omitempty"`
 }
 
 type serviceNameHolder struct {
@@ -43,6 +51,10 @@ type serviceNameHolder struct {
 
 var config Config
 
+func NewConfig() Config {
+	return Config{}
+}
+
 func GetConfig() Config {
 	return config
 }
@@ -50,26 +62,29 @@ func GetConfig() Config {
 func LoadConfig(path *string) error {
 	if path != nil {
 		viper.SetConfigFile(*path)
-		Logger.Debug().Msgf("Loading a config file on %s", *path)
+		logger.Logger.Debug().Msgf("Loading a config file on %s", *path)
 	} else {
 		viper.AddConfigPath(".")
 
 		if wd, err := os.Getwd(); err == nil {
-			Logger.Debug().Msgf("Loading a config file on %s", wd)
+			logger.Logger.Debug().Msgf("Loading a config file on %s", wd)
 		} else {
-			Logger.Debug().Err(err).Msgf("Cannot loading the current working directory")
+			logger.Logger.Debug().Err(err).Msgf("Cannot loading the current working directory")
 		}
 	}
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err := viper.ReadInConfig(); path != nil && err != nil {
 		return fmt.Errorf("failed to read a config file: %v", err)
 	}
 
 	config = Config{
 		rawConfig: rawConfig{
-			Services: viper.GetStringMap(servicesKey),
+			Distributions: viper.GetStringMap(distributionsKey),
+			Debug:         viper.GetBool("debug"),
+			FormatStyle:   viper.GetString("format-style"),
 		},
 	}
+
 	if err := config.configure(); err != nil {
 		return fmt.Errorf("your config file may not contain some of required values or they are invalid: %v", err)
 	}
@@ -78,7 +93,7 @@ func LoadConfig(path *string) error {
 }
 
 func (c *Config) configure() error {
-	for name, values := range c.rawConfig.Services {
+	for name, values := range c.rawConfig.Distributions {
 		values, correct := values.(map[string]interface{})
 
 		if !correct {
@@ -109,6 +124,24 @@ func (c *Config) configure() error {
 		default:
 			return fmt.Errorf("%s of %s is an unknown service", holder.ServiceName, name)
 		}
+	}
+
+	return nil
+}
+
+func (c *Config) Debug() bool {
+	return c.rawConfig.Debug
+}
+
+func (c *Config) FormatStyle() (string, bool) {
+	return c.rawConfig.FormatStyle, c.rawConfig.FormatStyle != ""
+}
+
+func (c *Config) Dump(path string) error {
+	if bytes, err := yaml.Marshal(c.rawConfig); err != nil {
+		return fmt.Errorf("failed to parse a config file to %s: %v", path, err)
+	} else if err := os.WriteFile(path, bytes, 0644); err != nil {
+		return fmt.Errorf("failed to dump a config file to %s: %v", path, err)
 	}
 
 	return nil
@@ -148,23 +181,23 @@ func validateMissingValues[T ServiceConfig](v *T) error {
 		t, found := tag.Lookup("json")
 
 		if !found {
-			Logger.Debug().Msgf("%v is ignored", field.Name)
+			logger.Logger.Debug().Msgf("%v is ignored", field.Name)
 			continue
 		}
 
-		Logger.Debug().Msgf("%s = %v: json:\"%s\"", field.Name, value, t)
+		logger.Logger.Debug().Msgf("%s = %v: json:\"%s\"", field.Name, value, t)
 
 		key, _, _ := strings.Cut(t, ",")
 
 		if b, found := tag.Lookup("required"); found && b == "true" {
 			if value.IsZero() {
-				Logger.Error().Msgf("%s is required but not assigned", key)
+				logger.Logger.Error().Msgf("%s is required but not assigned", key)
 				missingKeys = append(missingKeys, key)
 			} else {
-				Logger.Debug().Msgf("%s is set", key)
+				logger.Logger.Debug().Msgf("%s is set", key)
 			}
 		} else {
-			Logger.Debug().Msgf("%s is optional", key)
+			logger.Logger.Debug().Msgf("%s is optional", key)
 		}
 	}
 

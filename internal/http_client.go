@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"github.com/jmatsu/splitter/internal/logger"
 	"golang.org/x/exp/maps"
 	"io"
 	"net/http"
@@ -24,7 +25,7 @@ func GetHttpClient(baseUrl string) *HttpClient {
 	baseURL, err := url.ParseRequestURI(baseUrl)
 
 	if err != nil {
-		Logger.Err(err).Msgf("%s is invalid", baseUrl)
+		logger.Logger.Err(err).Msgf("%s is invalid", baseUrl)
 		return nil
 	}
 
@@ -79,6 +80,10 @@ func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, fo
 
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to build the request: %v", err)
+	}
+
+	for name, value := range c.headers {
+		request.Header.Set(name, value[0])
 	}
 
 	request.Header.Set("Content-Type", contentType)

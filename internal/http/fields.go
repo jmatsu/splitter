@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"fmt"
+	"github.com/jmatsu/splitter/internal/logger"
 	"io"
 	"mime/multipart"
 	"os"
@@ -51,12 +52,16 @@ func BooleanField(name string, value bool) ValueField {
 func (f *ValueField) Open() (string, io.Reader, error) {
 	switch f.Kind {
 	case File:
+		logger.Logger.Debug().Msgf("File: %s = %s", f.FieldName, f.Value)
+
 		if ref, err := os.Open(f.Value); err != nil {
 			return f.FieldName, nil, err
 		} else {
 			return f.FieldName, ref, nil
 		}
 	case NonFile:
+		logger.Logger.Debug().Msgf("NonFile: %s = %s", f.FieldName, f.Value)
+
 		return f.FieldName, strings.NewReader(f.Value), nil
 	default:
 		panic(fmt.Errorf("unsupported field kind: %v", f.Kind))

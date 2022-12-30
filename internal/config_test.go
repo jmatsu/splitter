@@ -178,7 +178,7 @@ func Test_Config_configure(t *testing.T) {
 	}{
 		"fully-written": {
 			rawConfig: rawConfig{
-				Services: map[string]interface{}{
+				Distributions: map[string]interface{}{
 					"def1": map[string]interface{}{
 						"service":        deploygateService,
 						"app-owner-name": "def1-owner",
@@ -197,7 +197,7 @@ func Test_Config_configure(t *testing.T) {
 		},
 		"lacked": {
 			rawConfig: rawConfig{
-				Services: map[string]interface{}{
+				Distributions: map[string]interface{}{
 					"def1": map[string]interface{}{
 						"service": deploygateService,
 					},
