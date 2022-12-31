@@ -13,6 +13,7 @@ const (
 	scope = "https://www.googleapis.com/auth/cloud-platform"
 )
 
+// Token fetches a new token from a credentials file. Currently, only non-interactive way is supported.
 func Token(ctx context.Context, credentialsPath string) (*oauth2.Token, error) {
 	var jsonContent string
 

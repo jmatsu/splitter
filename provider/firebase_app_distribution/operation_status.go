@@ -28,6 +28,7 @@ type v1UploadReleaseResponse struct {
 	}
 }
 
+// Wait until the processing in app distribution has done
 func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*getOperationStateResponse, error) {
 	waitTimeout := config.GetGlobalConfig().WaitTimeout()
 
