@@ -6,6 +6,7 @@ import (
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 	"os"
 
@@ -44,13 +45,19 @@ func main() {
 				Name:     "format",
 				Usage:    "The output style of command outputs. This may work only for some commands.",
 				Required: false,
-				Value:    "pretty",
+				Value:    config.DefaultFormat,
+				EnvVars: []string{
+					config.ToEnvName("FORMAT"),
+				},
 			},
 			&cli.BoolFlag{
 				Name:     "async",
 				Usage:    "Do not wait for the processing on the provider if awaiting is supported.",
 				Required: false,
 				Value:    false,
+				EnvVars: []string{
+					config.ToEnvName("ASYNC"),
+				},
 			},
 			&cli.StringFlag{
 				Name:     "log-level",
@@ -58,6 +65,25 @@ func main() {
 				Required: false,
 				EnvVars: []string{
 					config.ToEnvName("LOG_LEVEL"),
+				},
+				DefaultText: logger.DefaultLogLevel,
+			},
+			&cli.StringFlag{
+				Name:        "network-timeout",
+				Usage:       "Set network timeout for read/connection timeout",
+				Required:    false,
+				DefaultText: config.DefaultNetworkTimeout,
+				EnvVars: []string{
+					config.ToEnvName("NETWORK_TIMEOUT"),
+				},
+			},
+			&cli.StringFlag{
+				Name:        "wait-timeout",
+				Usage:       "Set wait timeout for polling services' processing states",
+				Required:    false,
+				DefaultText: config.DefaultWaitTimeout,
+				EnvVars: []string{
+					config.ToEnvName("WAIT_TIMEOUT"),
 				},
 			},
 		},
@@ -78,17 +104,28 @@ func main() {
 
 			conf := config.GetGlobalConfig()
 
-			if newStyle := context.String("format"); context.IsSet("format") || conf.FormatStyle() == "" {
-				conf.SetFormatStyle(newStyle)
+			if v := context.String("format"); context.IsSet("format") {
+				conf.SetFormatStyle(v)
 			}
 
-			if async := context.Bool("async"); context.IsSet("async") {
-				conf.Async = async
+			if v := context.String("network-timeout"); context.IsSet("network-timeout") {
+				conf.SetNetworkTimeout(v)
 			}
 
-			if err := format.SetStyle(conf.FormatStyle()); err != nil {
-				return err
+			if v := context.String("wait-timeout"); context.IsSet("wait-timeout") {
+				conf.SetWaitTimeout(v)
 			}
+
+			if v := context.Bool("async"); context.IsSet("async") {
+				conf.Async = v
+			}
+
+			if err := conf.Validate(); err != nil {
+				return errors.Wrap(err, "options contain invalid values or conflict with the current config file")
+			}
+
+			net.Configure(conf.NetworkTimeout())
+			format.Configure(conf.FormatStyle())
 
 			logger.Logger.Debug().Msgf("format style: %s", conf.FormatStyle())
 			logger.Logger.Debug().Msgf("async mode: %t", conf.Async)
@@ -97,8 +134,8 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			command.InitConfig("init", []string{}),
-			command.DeployGate("deploygate", []string{"dg"}),
 			command.Local("local", []string{""}),
+			command.DeployGate("deploygate", []string{"dg"}),
 			command.FirebaseAppDistribution("firebase-app-distribution", []string{"firebase", "fad"}),
 			command.Distribute("distribute", []string{}),
 		},

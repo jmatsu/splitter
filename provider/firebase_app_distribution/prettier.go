@@ -17,6 +17,10 @@ type uploadResponse struct {
 var TableBuilder = func(w table.Writer, v any) {
 	resp := v.(DistributionResult)
 
+	w.AppendHeader(table.Row{
+		"Key", "Value",
+	})
+
 	if resp.v1UploadReleaseResponse == nil {
 		w.SetCaption("In async mode, only a few information is available.")
 	}

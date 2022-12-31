@@ -12,9 +12,14 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
-func Test_GetHttpClient(t *testing.T) {
+func init() {
+	Configure(5 * time.Minute)
+}
+
+func Test_NewHttpClient(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
@@ -59,7 +64,7 @@ func Test_GetHttpClient(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			client := GetHttpClient(c.baseUrl)
+			client := NewHttpClient(c.baseUrl)
 			actual := client != nil
 
 			if actual == c.expectedSuccess {
@@ -98,7 +103,7 @@ func Test_HttpClient_SetDefaultHeaders(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			client := GetHttpClient("https://example.com")
+			client := NewHttpClient("https://example.com")
 			client.setDefaultHeaders(c.defaultHeaders)
 
 			if c.defaultHeaders != nil {
@@ -139,7 +144,7 @@ func Test_HttpClient_WithHeaders(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			client := GetHttpClient("https://example.com")
+			client := NewHttpClient("https://example.com")
 			newClient := client.WithHeaders(c.newHeaders)
 
 			if client == newClient {
@@ -279,7 +284,7 @@ func Test_HttpClient_DoPostMultipartForm(t *testing.T) {
 		},
 	}
 
-	client := GetHttpClient(server.URL)
+	client := NewHttpClient(server.URL)
 
 	for name, c := range cases {
 		name, c := name, c
@@ -303,7 +308,7 @@ func Test_HttpClient_DoPostMultipartForm(t *testing.T) {
 }
 
 func Test_HttpClient_clone(t *testing.T) {
-	client := GetHttpClient("https://example.com")
+	client := NewHttpClient("https://example.com")
 
 	newClient := client.clone(func(newClient *HttpClient) {
 		if client == newClient {

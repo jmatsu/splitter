@@ -1,44 +1,27 @@
 package format
 
 import (
-	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/pkg/errors"
-	"golang.org/x/exp/slices"
+	"github.com/jmatsu/splitter/internal/config"
+	"github.com/jmatsu/splitter/internal/logger"
 	"os"
 	"reflect"
 )
 
-type FormatStyle = string
-
-const (
-	Pretty   FormatStyle = "pretty"
-	Raw      FormatStyle = "raw"
-	Markdown FormatStyle = "markdown"
-)
-
-var styles = []FormatStyle{
-	Pretty,
-	Raw,
-	Markdown,
-}
-
-var currentStyle FormatStyle
+var currentStyle config.FormatStyle
 
 type TableBuilder = func(writer table.Writer, v any)
 
-func SetStyle(style FormatStyle) error {
-	if !slices.Contains(styles, style) {
-		return errors.New(fmt.Sprintf("%s is unknown style", style))
-	}
-
+func Configure(style config.FormatStyle) {
 	currentStyle = style
 
-	return nil
+	logger.Logger.Debug().
+		Str("style", style).
+		Msg("Configuring formatter")
 }
 
 func IsRaw() bool {
-	return currentStyle == Raw
+	return currentStyle == config.RawFormat
 }
 
 func Format(v any, tableBuilder TableBuilder) error {
@@ -52,13 +35,13 @@ func Format(v any, tableBuilder TableBuilder) error {
 	tableBuilder(w, v)
 
 	switch currentStyle {
-	case Raw:
+	case config.RawFormat:
 		panic("call fmt.Printf directly in advance")
-	case Pretty:
+	case config.PrettyFormat:
 		w.SetStyle(table.StyleDefault)
 
 		w.Render()
-	case Markdown:
+	case config.MarkdownFormat:
 		w.RenderMarkdown()
 	}
 

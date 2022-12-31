@@ -22,7 +22,7 @@ var logger zerolog.Logger
 
 func init() {
 	logger = logger2.Logger.With().Str("provider", "firebase app distribution").Logger()
-	baseClient = net.GetHttpClient(endpoint)
+	baseClient = net.NewHttpClient(endpoint)
 }
 
 type Provider struct {

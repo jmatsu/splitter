@@ -9,10 +9,14 @@ import (
 	"time"
 )
 
+const (
+	DefaultLogLevel = "warn"
+)
+
 var Logger zerolog.Logger
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	zerolog.SetGlobalLevel(zerolog.WarnLevel)
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 
 	writer := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
@@ -38,7 +42,7 @@ func SetLogLevel(level string) {
 	case "error":
 		logLevel = zerolog.ErrorLevel
 	default:
-		logLevel = zerolog.InfoLevel
+		logLevel = zerolog.WarnLevel
 	}
 
 	zerolog.SetGlobalLevel(logLevel)

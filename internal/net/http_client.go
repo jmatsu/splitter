@@ -13,15 +13,23 @@ import (
 	"time"
 )
 
-func init() {
-	client = http.Client{
-		Timeout: 10 * time.Minute, // TODO it's better to configure the timeout by users
+var client *http.Client
+
+func Configure(timeout time.Duration) {
+	if client != nil {
+		panic("client has already been initialized")
+	}
+
+	logger.Logger.Debug().
+		Str("timeout", timeout.String()).
+		Msg("Configuring http client")
+
+	client = &http.Client{
+		Timeout: timeout,
 	}
 }
 
-var client http.Client
-
-func GetHttpClient(baseUrl string) *HttpClient {
+func NewHttpClient(baseUrl string) *HttpClient {
 	baseURL, err := url.ParseRequestURI(baseUrl)
 
 	if err != nil {
@@ -44,7 +52,7 @@ func GetHttpClient(baseUrl string) *HttpClient {
 }
 
 type HttpClient struct {
-	client  http.Client
+	client  *http.Client
 	baseURL *url.URL
 	headers http.Header
 }

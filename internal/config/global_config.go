@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/caarlos0/env/v6"
 	"github.com/spf13/viper"
@@ -51,8 +53,10 @@ type GlobalConfig struct {
 }
 
 type rawConfig struct {
-	Distributions map[string]interface{} `yaml:"distributions"`
-	FormatStyle   string                 `yaml:"format-style,omitempty"`
+	Distributions  map[string]interface{} `yaml:"distributions"`
+	FormatStyle    string                 `yaml:"format-style,omitempty"`
+	NetworkTimeout string                 `yaml:"network-timeout,omitempty"`
+	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
 }
 
 type serviceNameHolder struct {
@@ -62,6 +66,25 @@ type serviceNameHolder struct {
 type Distribution struct {
 	ServiceName   string
 	ServiceConfig any
+}
+
+type FormatStyle = string
+
+const (
+	PrettyFormat   FormatStyle = "pretty"
+	RawFormat      FormatStyle = "raw"
+	MarkdownFormat FormatStyle = "markdown"
+
+	DefaultFormat = PrettyFormat
+
+	DefaultNetworkTimeout = "10m"
+	DefaultWaitTimeout    = "5m"
+)
+
+var styles = []FormatStyle{
+	PrettyFormat,
+	RawFormat,
+	MarkdownFormat,
 }
 
 var config *GlobalConfig
@@ -94,8 +117,10 @@ func LoadGlobalConfig(path *string) error {
 
 	config = &GlobalConfig{
 		rawConfig: rawConfig{
-			Distributions: viper.GetStringMap(distributionsKey),
-			FormatStyle:   viper.GetString("format-style"),
+			Distributions:  viper.GetStringMap(distributionsKey),
+			FormatStyle:    viper.GetString("format-style"),
+			WaitTimeout:    viper.GetString("wait-timeout"),
+			NetworkTimeout: viper.GetString("network-timeout"),
 		},
 	}
 
@@ -109,6 +134,18 @@ func LoadGlobalConfig(path *string) error {
 func (c *GlobalConfig) configure() error {
 	if c.services == nil {
 		c.services = map[string]*Distribution{}
+	}
+
+	if c.rawConfig.FormatStyle == "" {
+		c.rawConfig.FormatStyle = DefaultFormat
+	}
+
+	if c.rawConfig.NetworkTimeout == "" {
+		c.rawConfig.NetworkTimeout = DefaultNetworkTimeout
+	}
+
+	if c.rawConfig.WaitTimeout == "" {
+		c.rawConfig.WaitTimeout = DefaultWaitTimeout
 	}
 
 	for name, values := range c.rawConfig.Distributions {
@@ -167,6 +204,42 @@ func (c *GlobalConfig) configure() error {
 		}
 	}
 
+	return c.Validate()
+}
+
+func (c *GlobalConfig) Validate() error {
+	if c.rawConfig.FormatStyle != "" {
+		if !slices.Contains(styles, c.rawConfig.FormatStyle) {
+			return errors.New(fmt.Sprintf("%s is unknown format style", c.rawConfig.FormatStyle))
+		}
+	} else {
+		return errors.New("empty format is invalid")
+	}
+
+	if c.rawConfig.NetworkTimeout != "" {
+		if v, err := time.ParseDuration(c.rawConfig.NetworkTimeout); err != nil {
+			return errors.Wrapf(err, "network timeout is not valid time format: %s", c.rawConfig.NetworkTimeout)
+		} else if v < 0 {
+			return errors.Wrapf(err, "network timeout must be positive")
+		} else if v.Minutes() > 30 {
+			return errors.Wrapf(err, "network timeout must be equal or less than 30 minutes")
+		}
+	} else {
+		return errors.New("empty network timeout is invalid")
+	}
+
+	if c.rawConfig.WaitTimeout != "" {
+		if v, err := time.ParseDuration(c.rawConfig.WaitTimeout); err != nil {
+			return errors.Wrapf(err, "wait timeout is not valid time format: %s", c.rawConfig.WaitTimeout)
+		} else if v < 0 {
+			return errors.Wrapf(err, "wait timeout must be positive")
+		} else if v.Minutes() > 10 {
+			return errors.Wrapf(err, "wait timeout must be equal or less than 10 minutes")
+		}
+	} else {
+		return errors.New("empty wait timeout is invalid")
+	}
+
 	return nil
 }
 
@@ -174,8 +247,40 @@ func (c *GlobalConfig) FormatStyle() string {
 	return c.rawConfig.FormatStyle
 }
 
-func (c *GlobalConfig) SetFormatStyle(style string) {
-	c.rawConfig.FormatStyle = style
+func (c *GlobalConfig) SetFormatStyle(value string) {
+	c.rawConfig.FormatStyle = value
+}
+
+func (c *GlobalConfig) NetworkTimeout() time.Duration {
+	var value = DefaultNetworkTimeout
+
+	if c.rawConfig.NetworkTimeout != "" {
+		value = c.rawConfig.NetworkTimeout
+	}
+
+	timeout, _ := time.ParseDuration(value)
+
+	return timeout
+}
+
+func (c *GlobalConfig) SetNetworkTimeout(value string) {
+	c.rawConfig.NetworkTimeout = value
+}
+
+func (c *GlobalConfig) WaitTimeout() time.Duration {
+	var value = DefaultWaitTimeout
+
+	if c.rawConfig.WaitTimeout != "" {
+		value = c.rawConfig.WaitTimeout
+	}
+
+	timeout, _ := time.ParseDuration(value)
+
+	return timeout
+}
+
+func (c *GlobalConfig) SetWaitTimeout(value string) {
+	c.rawConfig.WaitTimeout = value
 }
 
 func (c *GlobalConfig) Dump(path string) error {

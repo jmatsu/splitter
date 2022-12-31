@@ -13,7 +13,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Distribute your apps with following the configuration",
+		Usage:       "Manage your apps' deployments with following the configuration",
 		Description: "You can distribute your apps to supported services based on pre-defined service configuration.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{

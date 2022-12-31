@@ -17,6 +17,14 @@ func (c *GlobalConfig) assertEquals(other GlobalConfig) error {
 		return errors.New(fmt.Sprintf("%v does not equal to %v due to #FormatStyle", c.FormatStyle(), other.FormatStyle()))
 	}
 
+	if c.NetworkTimeout() != other.NetworkTimeout() {
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #NetworkTimeout", c.NetworkTimeout(), other.NetworkTimeout()))
+	}
+
+	if c.WaitTimeout() != other.WaitTimeout() {
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #WaitTimeout", c.WaitTimeout(), other.WaitTimeout()))
+	}
+
 	for name, v := range c.services {
 		if !reflect.DeepEqual(v, other.services[name]) {
 			return nil
@@ -251,7 +259,6 @@ func Test_loadServiceConfig(t *testing.T) {
 }
 
 func Test_Config_configure(t *testing.T) {
-
 	cases := map[string]struct {
 		rawConfig rawConfig
 		expected  *GlobalConfig
@@ -278,6 +285,11 @@ func Test_Config_configure(t *testing.T) {
 				},
 			},
 			expected: &GlobalConfig{
+				rawConfig: rawConfig{
+					FormatStyle:    DefaultFormat,
+					NetworkTimeout: DefaultNetworkTimeout,
+					WaitTimeout:    DefaultWaitTimeout,
+				},
 				services: map[string]*Distribution{
 					"def1": {
 						ServiceName: DeploygateService,
@@ -317,6 +329,11 @@ func Test_Config_configure(t *testing.T) {
 				},
 			},
 			expected: &GlobalConfig{
+				rawConfig: rawConfig{
+					FormatStyle:    DefaultFormat,
+					NetworkTimeout: DefaultNetworkTimeout,
+					WaitTimeout:    DefaultWaitTimeout,
+				},
 				services: map[string]*Distribution{
 					"def1": {
 						ServiceName:   DeploygateService,
@@ -335,7 +352,13 @@ func Test_Config_configure(t *testing.T) {
 		},
 		"zero": {
 			rawConfig: rawConfig{},
-			expected:  &GlobalConfig{},
+			expected: &GlobalConfig{
+				rawConfig: rawConfig{
+					FormatStyle:    DefaultFormat,
+					NetworkTimeout: DefaultNetworkTimeout,
+					WaitTimeout:    DefaultWaitTimeout,
+				},
+			},
 		},
 	}
 

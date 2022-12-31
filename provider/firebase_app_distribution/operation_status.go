@@ -3,6 +3,7 @@ package firebase_app_distribution
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jmatsu/splitter/internal/config"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -28,6 +29,8 @@ type v1UploadReleaseResponse struct {
 }
 
 func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*getOperationStateResponse, error) {
+	waitTimeout := config.GetGlobalConfig().WaitTimeout()
+
 	var retryCount int
 
 	pipeline := make(chan *getOperationStateResponse, 1)
@@ -67,7 +70,7 @@ func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*get
 		return nil, err
 	case resp := <-pipeline:
 		return resp, nil
-	case <-time.After(5 * time.Minute): // TODO it's better to be flexible
+	case <-time.After(waitTimeout):
 		return nil, errors.New("time limit exceeded while waiting for the operation")
 	}
 }

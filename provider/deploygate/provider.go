@@ -16,7 +16,7 @@ var baseClient *net.HttpClient
 
 func init() {
 	logger = logger2.Logger.With().Str("provider", "deploygate").Logger()
-	baseClient = net.GetHttpClient("https://deploygate.com")
+	baseClient = net.NewHttpClient("https://deploygate.com")
 }
 
 type Provider struct {
