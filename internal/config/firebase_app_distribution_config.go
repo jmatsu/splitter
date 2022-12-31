@@ -5,10 +5,17 @@ import (
 	"strings"
 )
 
+// FirebaseAppDistributionConfig contains the enough values to use Firebase App Distribution.
+// ref: https://firebase.google.com/docs/app-distribution
 type FirebaseAppDistributionConfig struct {
-	AccessToken           string `json:"access-token,omitempty"`
+	// Access token that has permission to use App Distribution
+	AccessToken string `json:"access-token,omitempty"`
+
+	// A path to credentials file. If the both of this and access token are given, access token takes priority.
 	GoogleCredentialsPath string `json:"credentials-path,omitempty" env:"GOOGLE_APPLICATION_CREDENTIALS"`
-	AppId                 string `json:"app-id,omitempty" required:"true"`
+
+	// An app ID. You can get this value from the firebase console's project setting.
+	AppId string `json:"app-id,omitempty" required:"true"`
 }
 
 func (c *FirebaseAppDistributionConfig) Validate() error {
@@ -19,7 +26,7 @@ func (c *FirebaseAppDistributionConfig) Validate() error {
 	if c.AccessToken == "" && c.GoogleCredentialsPath == "" {
 		logger.Logger.Warn().Msg("we recommend specifying a token or credentials path explicitly")
 	} else if c.AccessToken != "" && c.GoogleCredentialsPath != "" {
-		logger.Logger.Warn().Msg("the both of firebase token and google credentials path are specified")
+		logger.Logger.Warn().Msg("the specified access token is prioritized")
 	}
 
 	return nil
