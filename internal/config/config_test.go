@@ -263,6 +263,17 @@ func Test_Config_configure(t *testing.T) {
 						"app-owner-name": "def1-owner",
 						"api-token":      "def1-token",
 					},
+					"def2": map[string]interface{}{
+						"service":        FirebaseAppDistributionService,
+						"project-number": "123456",
+						"access-token":   "def2-token",
+						"os-name":        "android",
+						"package-name":   "com.example.android",
+					},
+					"def3": map[string]interface{}{
+						"service":          LocalService,
+						"destination-path": "def3-destination-path",
+					},
 				},
 			},
 			expected: &Config{
@@ -274,6 +285,21 @@ func Test_Config_configure(t *testing.T) {
 							ApiToken:     "def1-token",
 						},
 					},
+					"def2": {
+						ServiceName: FirebaseAppDistributionService,
+						ServiceConfig: FirebaseAppDistributionConfig{
+							AccessToken:   "def2-token",
+							ProjectNumber: "123456",
+							OsName:        "android",
+							PackageName:   "com.example.android",
+						},
+					},
+					"def3": {
+						ServiceName: LocalService,
+						ServiceConfig: LocalConfig{
+							DestinationPath: "def3-destination-path",
+						},
+					},
 				},
 			},
 		},
@@ -283,6 +309,12 @@ func Test_Config_configure(t *testing.T) {
 					"def1": map[string]interface{}{
 						"service": DeploygateService,
 					},
+					"def2": map[string]interface{}{
+						"service": FirebaseAppDistributionService,
+					},
+					"def3": map[string]interface{}{
+						"service": LocalService,
+					},
 				},
 			},
 			expected: &Config{
@@ -290,6 +322,14 @@ func Test_Config_configure(t *testing.T) {
 					"def1": {
 						ServiceName:   DeploygateService,
 						ServiceConfig: DeployGateConfig{},
+					},
+					"def2": {
+						ServiceName:   FirebaseAppDistributionService,
+						ServiceConfig: FirebaseAppDistributionConfig{},
+					},
+					"def3": {
+						ServiceName:   LocalService,
+						ServiceConfig: LocalConfig{},
 					},
 				},
 			},

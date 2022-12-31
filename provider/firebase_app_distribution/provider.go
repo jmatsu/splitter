@@ -36,19 +36,30 @@ func NewProvider(ctx context.Context, config *config.FirebaseAppDistributionConf
 }
 
 type UploadRequest struct {
-	OsName      string
-	PackageName string
-	FilePath    string
+	osName      string
+	packageName string
+	filePath    string
+	releaseNote *string
+}
+
+func (r *UploadRequest) SetReleaseNote(value string) {
+	if value != "" {
+		r.releaseNote = &value
+	} else {
+		r.releaseNote = nil
+	}
 }
 
 func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
 	request := &UploadRequest{
-		OsName:      p.OsName,
-		PackageName: p.PackageName,
-		FilePath:    filePath,
+		osName:      p.OsName,
+		packageName: p.PackageName,
+		filePath:    filePath,
 	}
 
 	builder(request)
+
+	logger.Debug().Msgf("the request has been built: %v", *request)
 
 	var response uploadResponse
 
@@ -67,15 +78,15 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 // https://firebase.google.com/docs/reference/app-distribution/rest/v1/upload.v1.projects.apps.releases/upload
 // required: firebaseappdistro.releases.update
 func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
-	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s:%s/releases:upload", p.ProjectNumber, request.OsName, request.PackageName)
+	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s:%s/releases:upload", p.ProjectNumber, request.osName, request.packageName)
 
 	client := baseClient.WithHeaders(map[string][]string{
 		"Authorization":           {fmt.Sprintf("Bearer %s", p.AccessToken)},
-		"X-Goog-Upload-File-Name": {filepath.Base(request.FilePath)},
+		"X-Goog-Upload-File-Name": {filepath.Base(request.filePath)},
 		"X-Goog-Upload-Protocol":  {"raw"},
 	})
 
-	code, bytes, err := client.DoPostFileBody(p.ctx, []string{path}, request.FilePath)
+	code, bytes, err := client.DoPostFileBody(p.ctx, []string{path}, request.filePath)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to distribute to Firebase App Distribution: %v", err)

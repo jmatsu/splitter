@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/provider/deploygate"
+	"github.com/jmatsu/splitter/provider/firebase_app_distribution"
 	"github.com/urfave/cli/v2"
 )
 
@@ -49,11 +50,13 @@ func Distribute(name string, aliases []string) *cli.Command {
 				return err
 			}
 
+			sourceFilePath := context.String("source-file")
+
 			switch d.ServiceName {
 			case config.DeploygateService:
 				dg := d.ServiceConfig.(*config.DeployGateConfig)
 
-				return distributeDeployGate(context.Context, dg, context.String("source-file"), func(req *deploygate.UploadRequest) {
+				return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *deploygate.UploadRequest) {
 					if v := context.String("release-note"); context.IsSet("release-note") {
 						req.SetMessage(v)
 						req.SetDistributionReleaseNote(v)
@@ -62,7 +65,15 @@ func Distribute(name string, aliases []string) *cli.Command {
 			case config.LocalService:
 				lo := d.ServiceConfig.(*config.LocalConfig)
 
-				return distributeLocal(context.Context, lo, context.String("source-file"))
+				return distributeLocal(context.Context, lo, sourceFilePath)
+			case config.FirebaseAppDistributionService:
+				fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
+
+				return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *firebase_app_distribution.UploadRequest) {
+					if v := context.String("release-note"); context.IsSet("release-note") {
+						req.SetReleaseNote(v)
+					}
+				})
 			default:
 				return fmt.Errorf("%s is not implemented yet", d.ServiceName)
 			}

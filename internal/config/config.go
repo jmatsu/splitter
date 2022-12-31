@@ -29,8 +29,9 @@ const (
 
 	distributionsKey = "distributions"
 
-	DeploygateService = "deploygate"
-	LocalService      = "local"
+	DeploygateService              = "deploygate"
+	LocalService                   = "local"
+	FirebaseAppDistributionService = "firebase-app-distribution"
 )
 
 func ToEnvName(name string) string {
@@ -103,6 +104,10 @@ func LoadConfig(path *string) error {
 }
 
 func (c *Config) configure() error {
+	if c.services == nil {
+		c.services = map[string]*Distribution{}
+	}
+
 	for name, values := range c.rawConfig.Distributions {
 		logger.Logger.Debug().Msgf("Configuring %s", name)
 
@@ -128,13 +133,31 @@ func (c *Config) configure() error {
 				return fmt.Errorf("cannot load %s config: %v", name, err)
 			}
 
-			if c.services == nil {
-				c.services = map[string]*Distribution{}
+			c.services[name] = &Distribution{
+				ServiceName:   holder.ServiceName,
+				ServiceConfig: &deploygate,
+			}
+		case FirebaseAppDistributionService:
+			firebase := FirebaseAppDistributionConfig{}
+
+			if err := loadServiceConfig(&firebase, values); err != nil {
+				return fmt.Errorf("cannot load %s config: %v", name, err)
 			}
 
 			c.services[name] = &Distribution{
-				ServiceName:   DeploygateService,
-				ServiceConfig: &deploygate,
+				ServiceName:   holder.ServiceName,
+				ServiceConfig: &firebase,
+			}
+		case LocalService:
+			local := LocalConfig{}
+
+			if err := loadServiceConfig(&local, values); err != nil {
+				return fmt.Errorf("cannot load %s config: %v", name, err)
+			}
+
+			c.services[name] = &Distribution{
+				ServiceName:   holder.ServiceName,
+				ServiceConfig: &local,
 			}
 		default:
 			return fmt.Errorf("%s of %s is an unknown service", holder.ServiceName, name)
@@ -167,6 +190,18 @@ func (c *Config) GetDistribution(name string) (*Distribution, error) {
 		switch d.ServiceName {
 		case DeploygateService:
 			config := d.ServiceConfig.(*DeployGateConfig)
+
+			if err := evaluateAndValidate(config); err != nil {
+				return nil, err
+			}
+		case FirebaseAppDistributionService:
+			config := d.ServiceConfig.(*FirebaseAppDistributionConfig)
+
+			if err := evaluateAndValidate(config); err != nil {
+				return nil, err
+			}
+		case LocalService:
+			config := d.ServiceConfig.(*LocalConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
 				return nil, err
