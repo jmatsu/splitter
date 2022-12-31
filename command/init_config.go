@@ -37,8 +37,8 @@ func InitConfig(name string, aliases []string) *cli.Command {
 				return fmt.Errorf("%s already exists. Please add --overwrite option to overwrite the file anyway", path)
 			}
 
-			config := config.NewConfig()
-			return config.Dump(path)
+			conf := config.NewConfig()
+			return conf.Dump(path)
 		},
 	}
 }

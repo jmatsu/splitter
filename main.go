@@ -46,6 +46,12 @@ func main() {
 				Value:    "pretty",
 			},
 			&cli.BoolFlag{
+				Name:     "async",
+				Usage:    "Do not wait for the processing on the provider if awaiting is supported.",
+				Required: false,
+				Value:    false,
+			},
+			&cli.BoolFlag{
 				Name:     "debug",
 				Usage:    "Show debug logs",
 				Required: false,
@@ -76,9 +82,16 @@ func main() {
 				conf.SetFormatStyle(newStyle)
 			}
 
+			if async := context.Bool("async"); context.IsSet("async") {
+				conf.Async = async
+			}
+
 			if err := format.SetStyle(conf.FormatStyle()); err != nil {
 				return err
 			}
+
+			logger.Logger.Debug().Msgf("format style: %s", conf.FormatStyle())
+			logger.Logger.Debug().Msgf("async mode: %t", conf.Async)
 
 			return nil
 		},

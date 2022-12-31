@@ -42,9 +42,11 @@ type ServiceConfig interface {
 	testConfig | DeployGateConfig | LocalConfig | FirebaseAppDistributionConfig
 }
 
-type Config struct {
+type GlobalConfig struct {
 	rawConfig rawConfig
 	services  map[string]*Distribution
+
+	Async bool
 }
 
 type rawConfig struct {
@@ -61,13 +63,13 @@ type Distribution struct {
 	ServiceConfig any
 }
 
-var config Config
+var config *GlobalConfig
 
-func NewConfig() Config {
-	return Config{}
+func NewConfig() *GlobalConfig {
+	return &GlobalConfig{}
 }
 
-func GetConfig() Config {
+func GetConfig() *GlobalConfig {
 	return config
 }
 
@@ -89,7 +91,7 @@ func LoadConfig(path *string) error {
 		return fmt.Errorf("failed to read a config file: %v", err)
 	}
 
-	config = Config{
+	config = &GlobalConfig{
 		rawConfig: rawConfig{
 			Distributions: viper.GetStringMap(distributionsKey),
 			FormatStyle:   viper.GetString("format-style"),
@@ -103,7 +105,7 @@ func LoadConfig(path *string) error {
 	return nil
 }
 
-func (c *Config) configure() error {
+func (c *GlobalConfig) configure() error {
 	if c.services == nil {
 		c.services = map[string]*Distribution{}
 	}
@@ -167,15 +169,15 @@ func (c *Config) configure() error {
 	return nil
 }
 
-func (c *Config) FormatStyle() string {
+func (c *GlobalConfig) FormatStyle() string {
 	return c.rawConfig.FormatStyle
 }
 
-func (c *Config) SetFormatStyle(style string) {
+func (c *GlobalConfig) SetFormatStyle(style string) {
 	c.rawConfig.FormatStyle = style
 }
 
-func (c *Config) Dump(path string) error {
+func (c *GlobalConfig) Dump(path string) error {
 	if bytes, err := yaml.Marshal(c.rawConfig); err != nil {
 		return fmt.Errorf("failed to parse a config file to %s: %v", path, err)
 	} else if err := os.WriteFile(path, bytes, 0644); err != nil {
@@ -185,7 +187,7 @@ func (c *Config) Dump(path string) error {
 	return nil
 }
 
-func (c *Config) GetDistribution(name string) (*Distribution, error) {
+func (c *GlobalConfig) GetDistribution(name string) (*Distribution, error) {
 	if d := c.services[name]; d != nil {
 		switch d.ServiceName {
 		case DeploygateService:

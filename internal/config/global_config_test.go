@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func (c *Config) assertEquals(other Config) error {
+func (c *GlobalConfig) assertEquals(other GlobalConfig) error {
 	if len(c.services) != len(other.services) {
 		return fmt.Errorf("%v does not equal to %v due to #services", c.services, other.services)
 	}
@@ -253,7 +253,7 @@ func Test_Config_configure(t *testing.T) {
 
 	cases := map[string]struct {
 		rawConfig rawConfig
-		expected  *Config
+		expected  *GlobalConfig
 	}{
 		"fully-written": {
 			rawConfig: rawConfig{
@@ -276,7 +276,7 @@ func Test_Config_configure(t *testing.T) {
 					},
 				},
 			},
-			expected: &Config{
+			expected: &GlobalConfig{
 				services: map[string]*Distribution{
 					"def1": {
 						ServiceName: DeploygateService,
@@ -315,7 +315,7 @@ func Test_Config_configure(t *testing.T) {
 					},
 				},
 			},
-			expected: &Config{
+			expected: &GlobalConfig{
 				services: map[string]*Distribution{
 					"def1": {
 						ServiceName:   DeploygateService,
@@ -334,13 +334,13 @@ func Test_Config_configure(t *testing.T) {
 		},
 		"zero": {
 			rawConfig: rawConfig{},
-			expected:  &Config{},
+			expected:  &GlobalConfig{},
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			config := Config{
+			config := GlobalConfig{
 				rawConfig: c.rawConfig,
 			}
 

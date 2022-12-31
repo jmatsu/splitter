@@ -46,11 +46,16 @@ func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*get
 					return
 				}
 
+				logger.Warn().Msg("The processing of Firebase seems to be unstable. We are retrying to watch the status.")
+
 				retryCount++
 			} else if resp.Done {
+				logger.Info().Msg("The processing of Firebase has done.")
 				pipeline <- resp
 				return
 			}
+
+			logger.Info().Msg("Waiting for the processing of Firebase...")
 
 			time.Sleep(5 * time.Second) // experimental
 		}

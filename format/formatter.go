@@ -54,7 +54,7 @@ func Format(v any, tableBuilder TableBuilder) error {
 	case Raw:
 		panic(fmt.Errorf("call fmt.Printf directly in advance"))
 	case Pretty:
-		w.SetStyle(table.StyleBold)
+		w.SetStyle(table.StyleDefault)
 
 		w.Render()
 	case Markdown:

@@ -64,6 +64,8 @@ func (r *UploadRequest) fileType() string {
 }
 
 func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
+	logger.Info().Msg("preparing to upload...")
+
 	request := &UploadRequest{
 		projectNumber: p.ProjectNumber(),
 		appId:         p.AppId,
@@ -95,16 +97,23 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, fmt.Errorf("failed to parse the response of your app to Firebase App Distribution but succeeded to upload: %v", err)
-	} else if doneResp, err := p.waitForOperationDone(&getOperationStateRequest{
-		operationName: response.OperationName,
-	}); err != nil {
-		return nil, err
-	} else {
+	} else if config.GetConfig().Async {
 		return &DistributionResult{
-			v1UploadReleaseResponse: *doneResp.Response,
-			aabInfo:                 aabInfo,
-			RawJson:                 string(bytes),
+			aabInfo: aabInfo,
+			RawJson: string(bytes),
 		}, nil
+	} else {
+		if doneResp, err := p.waitForOperationDone(&getOperationStateRequest{
+			operationName: response.OperationName,
+		}); err != nil {
+			return nil, err
+		} else {
+			return &DistributionResult{
+				v1UploadReleaseResponse: doneResp.Response,
+				aabInfo:                 aabInfo,
+				RawJson:                 string(bytes),
+			}, nil
+		}
 	}
 }
 
