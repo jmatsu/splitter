@@ -86,6 +86,7 @@ func main() {
 			command.InitConfig("init", []string{}),
 			command.DeployGate("deploygate", []string{"dg"}),
 			command.Local("local", []string{""}),
+			command.FirebaseAppDistribution("firebase-app-distribution", []string{"firebase", "fad"}),
 			command.Distribute("distribute", []string{}),
 		},
 	}

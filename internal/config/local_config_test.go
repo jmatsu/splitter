@@ -46,7 +46,7 @@ func Test_LocalConfig_validateMissingValues(t *testing.T) {
 			t.Parallel()
 
 			if err := validateMissingValues(&c.config); (err == nil) != c.expectedValidness {
-				t.Errorf("%s case is expectedServices to be %t but %t", name, c.expectedValidness, err == nil)
+				t.Errorf("%s case is expected to be %t but %t", name, c.expectedValidness, err == nil)
 			}
 		})
 	}

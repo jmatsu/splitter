@@ -107,6 +107,8 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 
 	builder(request)
 
+	logger.Debug().Msgf("the request has been built: %v", *request)
+
 	var response uploadResponse
 
 	if bytes, err := p.distribute(request); err != nil {

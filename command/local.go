@@ -74,7 +74,7 @@ func distributeLocal(ctx context.Context, conf *config.LocalConfig, filePath str
 		return err
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
-	} else if err := format.Format(response, local.TableBuilder); err != nil {
+	} else if err := format.Format(*response, local.TableBuilder); err != nil {
 		return fmt.Errorf("cannot format the response: %v", err)
 	}
 
