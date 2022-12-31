@@ -37,7 +37,7 @@ type MoveRequest struct {
 	DeleteResource      bool
 }
 
-func (p *Provider) Distribute(filePath string) ([]byte, error) {
+func (p *Provider) Distribute(filePath string) (*DistributionResult, error) {
 	request := MoveRequest{
 		SourceFilePath:      filePath,
 		DestinationFilePath: p.DestinationPath,
@@ -51,7 +51,18 @@ func (p *Provider) Distribute(filePath string) ([]byte, error) {
 		request.FileMode = v.Mode()
 	}
 
-	return p.distribute(&request)
+	var response moveResponse
+
+	if bytes, err := p.distribute(&request); err != nil {
+		return nil, err
+	} else if err := json.Unmarshal(bytes, &response); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+	} else {
+		return &DistributionResult{
+			moveResponse: response,
+			RawJson:      string(bytes),
+		}, nil
+	}
 }
 
 func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
@@ -127,7 +138,7 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 		logger.Debug().Msgf("%s has been changed to permission %d", request.DestinationFilePath, request.FileMode)
 	}
 
-	resp := MoveResponse{
+	resp := moveResponse{
 		SourceFilePath:      request.SourceFilePath,
 		DestinationFilePath: request.DestinationFilePath,
 		SideEffect:          sideEffect,

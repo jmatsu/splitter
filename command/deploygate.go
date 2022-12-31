@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
@@ -108,14 +107,10 @@ func DeployGate(name string, aliases []string) *cli.Command {
 func distributeDeployGate(ctx context.Context, conf *config.DeployGateConfig, filePath string, builder func(req *deploygate.UploadRequest)) error {
 	provider := deploygate.NewProvider(ctx, conf)
 
-	var response deploygate.UploadResponse
-
-	if bytes, err := provider.Distribute(filePath, builder); err != nil {
+	if response, err := provider.Distribute(filePath, builder); err != nil {
 		return err
 	} else if format.IsRaw() {
-		fmt.Println(string(bytes))
-	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return fmt.Errorf("failed to parse the response of your app to DeployGate but succeeded to upload: %v", err)
+		fmt.Println(response.RawJson)
 	} else if err := format.Format(response, deploygate.TableBuilder); err != nil {
 		return fmt.Errorf("cannot format the response: %v", err)
 	}

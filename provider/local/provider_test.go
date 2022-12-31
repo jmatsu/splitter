@@ -2,7 +2,6 @@ package local
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/jmatsu/splitter/internal/config"
 	"os"
 	"strings"
@@ -134,17 +133,14 @@ func Test_Provider_Distribute(t *testing.T) {
 				DestinationPath: dest.Name(),
 			})
 
-			var response MoveResponse
+			response, err := provider.Distribute(source.Name())
 
-			if bytes, err := provider.Distribute(source.Name()); err != nil {
+			if err != nil {
 				if !c.Overwrite && strings.Contains(err.Error(), "overwriting is disabled") {
 					return // OK
 				}
 
 				t.Errorf("failed to distribute: %v", err)
-				return
-			} else if err := json.Unmarshal(bytes, &response); err != nil {
-				t.Errorf("failed to unmarshal the results: %v", err)
 				return
 			}
 

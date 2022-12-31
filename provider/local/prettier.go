@@ -13,14 +13,19 @@ const (
 	moveAndOverride sideEffect = "moved and overwrote"
 )
 
-type MoveResponse struct {
+type DistributionResult struct {
+	moveResponse
+	RawJson string
+}
+
+type moveResponse struct {
 	SourceFilePath      string     `json:"source_file_path"`
 	DestinationFilePath string     `json:"destination_file_path"`
 	SideEffect          sideEffect `json:"side_effect"`
 }
 
 var TableBuilder = func(w table.Writer, v any) {
-	resp := v.(MoveResponse)
+	resp := v.(DistributionResult)
 
 	w.AppendRows([]table.Row{
 		{"Source Path", resp.SourceFilePath},

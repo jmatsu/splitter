@@ -5,7 +5,12 @@ import (
 	"strings"
 )
 
-type UploadResponse struct {
+type DistributionResult struct {
+	uploadResponse
+	RawJson string
+}
+
+type uploadResponse struct {
 	Results struct {
 		OsName string `json:"os_name"`
 
@@ -31,7 +36,7 @@ type UploadResponse struct {
 }
 
 var TableBuilder = func(w table.Writer, v any) {
-	resp := v.(UploadResponse).Results
+	resp := v.(DistributionResult).Results
 
 	w.AppendRows([]table.Row{
 		{"DeployGate Property", ""},

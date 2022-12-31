@@ -102,12 +102,23 @@ type errorResponse struct {
 	Message string `json:"message"`
 }
 
-func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) ([]byte, error) {
+func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
 	request := NewUploadRequest(filePath)
 
 	builder(request)
 
-	return p.distribute(request)
+	var response uploadResponse
+
+	if bytes, err := p.distribute(request); err != nil {
+		return nil, err
+	} else if err := json.Unmarshal(bytes, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse the response of your app to DeployGate but succeeded to upload: %v", err)
+	} else {
+		return &DistributionResult{
+			uploadResponse: response,
+			RawJson:        string(bytes),
+		}, nil
+	}
 }
 
 func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {

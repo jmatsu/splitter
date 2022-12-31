@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
@@ -71,14 +70,10 @@ func Local(name string, aliases []string) *cli.Command {
 func distributeLocal(ctx context.Context, conf *config.LocalConfig, filePath string) error {
 	provider := local.NewProvider(ctx, conf)
 
-	var response local.MoveResponse
-
-	if bytes, err := provider.Distribute(filePath); err != nil {
+	if response, err := provider.Distribute(filePath); err != nil {
 		return err
 	} else if format.IsRaw() {
-		fmt.Println(string(bytes))
-	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return fmt.Errorf("failed to parse the response of your app to DeployGate but succeeded to upload: %v", err)
+		fmt.Println(response.RawJson)
 	} else if err := format.Format(response, local.TableBuilder); err != nil {
 		return fmt.Errorf("cannot format the response: %v", err)
 	}
