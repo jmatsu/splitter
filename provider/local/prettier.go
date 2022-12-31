@@ -7,10 +7,10 @@ import (
 type sideEffect = string
 
 const (
-	copyOnly        sideEffect = "copied without overwriting"
-	moveOnly        sideEffect = "moved without overwriting"
-	copyAndOverride sideEffect = "copied and overwrote"
-	moveAndOverride sideEffect = "moved and overwrote"
+	copyOnly         sideEffect = "copied without overwriting"
+	moveOnly         sideEffect = "moved without overwriting"
+	copyAndOverwrite sideEffect = "copied and overwrote"
+	moveAndOverwrite sideEffect = "moved and overwrote"
 )
 
 type DistributionResult struct {

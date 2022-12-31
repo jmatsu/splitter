@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// Distribute command distributes your app to pre-defined services in your config file.
 func Distribute(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
@@ -45,7 +46,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 
 			name := context.String("name")
 
-			d, err := conf.GetDistribution(name)
+			d, err := conf.Distribution(name)
 
 			if err != nil {
 				return err

@@ -25,13 +25,13 @@ type certificate struct {
 type integrationState = string
 
 const (
-	aabIntegrationUnspecified     integrationState = "AAB_INTEGRATION_STATE_UNSPECIFIED"
-	aabIntegrationIntegrated      integrationState = "INTEGRATED"
-	aabIntegrationNotLinked       integrationState = "PLAY_ACCOUNT_NOT_LINKED"
-	aabIntegrationNoAppFound      integrationState = "NO_APP_WITH_GIVEN_BUNDLE_ID_IN_PLAY_ACCOUNT"
-	aabIntegrationNonPublished    integrationState = "APP_NOT_PUBLISHED"
-	aabIntegrationUnavailable     integrationState = "AAB_STATE_UNAVAILABLE"
-	aabIntegrationTermsUnaccepted integrationState = "PLAY_IAS_TERMS_NOT_ACCEPTED"
+	aabIntegrationUnspecified     integrationState = "AAB_INTEGRATION_STATE_UNSPECIFIED"           // Unknown
+	aabIntegrationIntegrated      integrationState = "INTEGRATED"                                  // Available
+	aabIntegrationNotLinked       integrationState = "PLAY_ACCOUNT_NOT_LINKED"                     // Users need to link their play store account and firebase project
+	aabIntegrationNoAppFound      integrationState = "NO_APP_WITH_GIVEN_BUNDLE_ID_IN_PLAY_ACCOUNT" // Given apps do not register to play store. . App bundle is unavailable by spec.
+	aabIntegrationNonPublished    integrationState = "APP_NOT_PUBLISHED"                           // Users have not published their apps yet. App bundle is unavailable by spec.
+	aabIntegrationUnavailable     integrationState = "AAB_STATE_UNAVAILABLE"                       // Play store may have some troubles.
+	aabIntegrationTermsUnaccepted integrationState = "PLAY_IAS_TERMS_NOT_ACCEPTED"                 // Users need to agree the terms first
 )
 
 func (p *Provider) getAabInfo(request *aabInfoRequest) (*aabInfoResponse, error) {

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 )
 
+// InitConfig command create a template config file.
 func InitConfig(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,

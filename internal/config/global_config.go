@@ -26,15 +26,15 @@ func init() {
 }
 
 const (
-	envPrefix = "SPLITTER_"
+	envPrefix = "SPLITTER_" // The prefix of environment variables used for splitter's global options.
 
 	DefaultConfigName = "splitter.yml"
 
-	distributionsKey = "distributions"
+	distributionsKey = "distributions" // distribution definitions' key in the config file.
 
-	DeploygateService              = "deploygate"
-	LocalService                   = "local"
-	FirebaseAppDistributionService = "firebase-app-distribution"
+	DeploygateService              = "deploygate"                // represents DeployGateConfig
+	LocalService                   = "local"                     // represents LocalConfig
+	FirebaseAppDistributionService = "firebase-app-distribution" // represents FirebaseAppDistributionConfig
 )
 
 func ToEnvName(name string) string {
@@ -45,6 +45,7 @@ type ServiceConfig interface {
 	testConfig | DeployGateConfig | LocalConfig | FirebaseAppDistributionConfig
 }
 
+// GlobalConfig is a shared configuration in one command execution.
 type GlobalConfig struct {
 	rawConfig rawConfig
 	services  map[string]*Distribution
@@ -63,9 +64,10 @@ type serviceNameHolder struct {
 	ServiceName string `json:"service"`
 }
 
+// Distribution holds a service name and its config struct
 type Distribution struct {
 	ServiceName   string
-	ServiceConfig any
+	ServiceConfig any // See ServiceConfig interface
 }
 
 type FormatStyle = string
@@ -251,6 +253,7 @@ func (c *GlobalConfig) SetFormatStyle(value string) {
 	c.rawConfig.FormatStyle = value
 }
 
+// NetworkTimeout is a read/connection timeout for requests
 func (c *GlobalConfig) NetworkTimeout() time.Duration {
 	var value = DefaultNetworkTimeout
 
@@ -267,6 +270,7 @@ func (c *GlobalConfig) SetNetworkTimeout(value string) {
 	c.rawConfig.NetworkTimeout = value
 }
 
+// WaitTimeout is a timeout for polling service's processing
 func (c *GlobalConfig) WaitTimeout() time.Duration {
 	var value = DefaultWaitTimeout
 
@@ -293,7 +297,7 @@ func (c *GlobalConfig) Dump(path string) error {
 	return nil
 }
 
-func (c *GlobalConfig) GetDistribution(name string) (*Distribution, error) {
+func (c *GlobalConfig) Distribution(name string) (*Distribution, error) {
 	if d := c.services[name]; d != nil {
 		switch d.ServiceName {
 		case DeploygateService:
@@ -322,11 +326,18 @@ func (c *GlobalConfig) GetDistribution(name string) (*Distribution, error) {
 	}
 }
 
-func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) error {
-	// 1. Get a service config and read the name first
-	// 2. Set values from the config file
-	// 3. Overwrite them by the environment variables
+func evaluateAndValidate[T ServiceConfig](v *T) error {
+	if err := evaluateValues(v); err != nil {
+		return err
+	} else if err := validateMissingValues(v); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+// Set values to the config. Priority: Environment Variables > Given values
+func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) error {
 	if bytes, err := json.Marshal(values); err != nil {
 		panic(err)
 	} else if err := json.Unmarshal(bytes, v); err != nil {
@@ -338,16 +349,7 @@ func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) err
 	return nil
 }
 
-func evaluateAndValidate[T ServiceConfig](v *T) error {
-	if err := evaluateValues(v); err != nil {
-		return err
-	} else if err := validateMissingValues(v); err != nil {
-		return err
-	}
-
-	return nil
-}
-
+// Evaluate the styled format for the embedded variables.
 func evaluateValues[T ServiceConfig](v *T) error {
 	vRef := reflect.ValueOf(v).Elem()
 
@@ -379,6 +381,7 @@ func evaluateValues[T ServiceConfig](v *T) error {
 	return nil
 }
 
+// Collect errors via the reflection. Target fields must have json tag. Required fields must not be zero values.
 func validateMissingValues[T ServiceConfig](v *T) error {
 	var missingKeys []string
 

@@ -11,6 +11,7 @@ import (
 	"os"
 )
 
+// Local command copy/move your app to another location. This command is standalone so this does not use the values for Local in your config file.
 func Local(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
@@ -38,7 +39,7 @@ func Local(name string, aliases []string) *cli.Command {
 				Value:    false,
 			},
 			&cli.BoolFlag{
-				Name:     "override",
+				Name:     "overwrite",
 				Usage:    "Specify true if you allow to overwrite the existing destination file.",
 				Required: false,
 				Value:    false,
@@ -55,7 +56,7 @@ func Local(name string, aliases []string) *cli.Command {
 			conf := config.LocalConfig{
 				DestinationPath: context.String("destination"),
 				DeleteSource:    context.Bool("delete-source"),
-				AllowOverwrite:  context.Bool("override"),
+				AllowOverwrite:  context.Bool("overwrite"),
 				FileMode:        os.FileMode(context.Uint("mode")),
 			}
 
