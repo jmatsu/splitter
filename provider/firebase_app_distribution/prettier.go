@@ -5,7 +5,8 @@ import (
 )
 
 type DistributionResult struct {
-	*v1UploadReleaseResponse
+	Result string
+	*release
 	aabInfo *aabInfoResponse
 	RawJson string
 }
@@ -21,7 +22,7 @@ var TableBuilder = func(w table.Writer, v any) {
 		"Key", "Value",
 	})
 
-	if resp.v1UploadReleaseResponse == nil {
+	if resp.release == nil {
 		w.SetCaption("In async mode, only a few information is available.")
 	}
 
@@ -30,11 +31,18 @@ var TableBuilder = func(w table.Writer, v any) {
 	})
 	w.AppendSeparator()
 
-	if resp.v1UploadReleaseResponse != nil {
+	if resp.release != nil {
 		w.AppendRows([]table.Row{
 			{"Processed State", resp.Result},
-			{"First Uploaded At", resp.Release.CreatedAt},
+			{"First Uploaded At", resp.release.CreatedAt},
+			{"First Uploaded At", resp.release.CreatedAt},
 		})
+
+		if resp.release.ReleaseNote != nil {
+			w.AppendRows([]table.Row{
+				{"Release Note", resp.release.ReleaseNote.Text},
+			})
+		}
 	}
 
 	// it's okay to use aabInfo != nil as *if android*
@@ -53,15 +61,15 @@ var TableBuilder = func(w table.Writer, v any) {
 		}
 	}
 
-	if resp.v1UploadReleaseResponse != nil {
+	if resp.release != nil {
 		w.AppendSeparator()
 		w.AppendRows([]table.Row{
 			{"App Property", ""},
 		})
 		w.AppendSeparator()
 		w.AppendRows([]table.Row{
-			{"App Version Code", resp.Release.BuildVersion},
-			{"App Version Name", resp.Release.DisplayVersion},
+			{"App Version Code", resp.release.BuildVersion},
+			{"App Version Name", resp.release.DisplayVersion},
 		})
 	}
 }

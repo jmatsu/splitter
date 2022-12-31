@@ -20,12 +20,7 @@ type getOperationStateResponse struct {
 
 type v1UploadReleaseResponse struct {
 	Result  string `json:"result"`
-	Release struct {
-		Name           string `json:"name"`
-		DisplayVersion string `json:"displayVersion"`
-		BuildVersion   string `json:"buildVersion"`
-		CreatedAt      string `json:"createTime"`
-	}
+	Release release
 }
 
 // Wait until the processing in app distribution has done

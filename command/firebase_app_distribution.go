@@ -50,6 +50,11 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Usage:    "A path to a credentials json file",
 				Required: false,
 			},
+			&cli.StringFlag{
+				Name:     "release-note",
+				Usage:    "An release note of this revision",
+				Required: false,
+			},
 		},
 		Action: func(context *cli.Context) error {
 			conf := config.FirebaseAppDistributionConfig{
@@ -63,7 +68,9 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 			}
 
 			return distributeFirebaseAppDistribution(context.Context, &conf, context.String("source-file"), func(req *firebase_app_distribution.UploadRequest) {
-
+				if v := context.String("release-note"); context.IsSet("release-note") {
+					req.SetReleaseNote(v)
+				}
 			})
 		},
 	}
