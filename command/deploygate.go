@@ -35,7 +35,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				EnvVars:  []string{"DEPLOYGATE_API_TOKEN"},
 			},
 			&cli.PathFlag{
-				Name: "file",
+				Name: "source-file",
 				Aliases: []string{
 					"f",
 				},
@@ -81,7 +81,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				return fmt.Errorf("given flags may be insufficient or invalid: %v", err)
 			}
 
-			return distributeDeployGate(context.Context, &conf, context.String("file"), func(req *deploygate.UploadRequest) {
+			return distributeDeployGate(context.Context, &conf, context.String("source-file"), func(req *deploygate.UploadRequest) {
 				if v := context.String("message"); context.IsSet("message") {
 					req.SetMessage(v)
 				}

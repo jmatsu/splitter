@@ -41,10 +41,10 @@ type UploadRequest struct {
 	FilePath    string
 }
 
-func (p *Provider) Distribute(ctx context.Context, filePath, osName, packageName string, builder func(req *UploadRequest)) (*DistributionResult, error) {
+func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
 	request := &UploadRequest{
-		OsName:      osName,
-		PackageName: packageName,
+		OsName:      p.OsName,
+		PackageName: p.PackageName,
 		FilePath:    filePath,
 	}
 
@@ -52,7 +52,7 @@ func (p *Provider) Distribute(ctx context.Context, filePath, osName, packageName
 
 	var response uploadResponse
 
-	if bytes, err := p.distribute(ctx, request); err != nil {
+	if bytes, err := p.distribute(request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, fmt.Errorf("failed to parse the response of your app to Firebase App Distribution but succeeded to upload: %v", err)
@@ -66,7 +66,7 @@ func (p *Provider) Distribute(ctx context.Context, filePath, osName, packageName
 
 // https://firebase.google.com/docs/reference/app-distribution/rest/v1/upload.v1.projects.apps.releases/upload
 // required: firebaseappdistro.releases.update
-func (p *Provider) distribute(ctx context.Context, request *UploadRequest) ([]byte, error) {
+func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
 	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s:%s/releases:upload", p.ProjectNumber, request.OsName, request.PackageName)
 
 	client := baseClient.WithHeaders(map[string][]string{
@@ -75,7 +75,7 @@ func (p *Provider) distribute(ctx context.Context, request *UploadRequest) ([]by
 		"X-Goog-Upload-Protocol":  {"raw"},
 	})
 
-	code, bytes, err := client.DoPostFileBody(ctx, []string{path}, request.FilePath)
+	code, bytes, err := client.DoPostFileBody(p.ctx, []string{path}, request.FilePath)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to distribute to Firebase App Distribution: %v", err)
