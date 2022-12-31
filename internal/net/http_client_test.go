@@ -12,12 +12,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 )
-
-func init() {
-	Configure(5 * time.Minute)
-}
 
 func Test_NewHttpClient(t *testing.T) {
 	t.Parallel()

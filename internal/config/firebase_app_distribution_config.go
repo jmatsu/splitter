@@ -1,14 +1,28 @@
 package config
 
-import "strings"
+import (
+	"github.com/jmatsu/splitter/internal/logger"
+	"strings"
+)
 
 type FirebaseAppDistributionConfig struct {
-	AccessToken string `json:"access-token,omitempty" required:"true"`
-	AppId       string `json:"app-id,omitempty" required:"true"`
+	AccessToken           string `json:"access-token,omitempty"`
+	GoogleCredentialsPath string `json:"credentials-path,omitempty" env:"GOOGLE_APPLICATION_CREDENTIALS"`
+	AppId                 string `json:"app-id,omitempty" required:"true"`
 }
 
 func (c *FirebaseAppDistributionConfig) Validate() error {
-	return validateMissingValues(c)
+	if err := validateMissingValues(c); err != nil {
+		return err
+	}
+
+	if c.AccessToken == "" && c.GoogleCredentialsPath == "" {
+		logger.Logger.Warn().Msg("we recommend specifying a token or credentials path explicitly")
+	} else if c.AccessToken != "" && c.GoogleCredentialsPath != "" {
+		logger.Logger.Warn().Msg("the both of firebase token and google credentials path are specified")
+	}
+
+	return nil
 }
 
 func (c *FirebaseAppDistributionConfig) ProjectNumber() string {

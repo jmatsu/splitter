@@ -15,18 +15,18 @@ import (
 
 var client *http.Client
 
-func Configure(timeout time.Duration) {
-	if client != nil {
-		panic("client has already been initialized")
+func init() {
+	client = &http.Client{
+		Timeout: 1 * time.Minute, // this value will be used only for testing
 	}
+}
 
+func SetTimeout(timeout time.Duration) {
 	logger.Logger.Debug().
 		Str("timeout", timeout.String()).
 		Msg("Configuring http client")
 
-	client = &http.Client{
-		Timeout: timeout,
-	}
+	client.Timeout = timeout
 }
 
 func NewHttpClient(baseUrl string) *HttpClient {
@@ -39,7 +39,7 @@ func NewHttpClient(baseUrl string) *HttpClient {
 
 	return &HttpClient{
 		client:  client,
-		baseURL: baseURL,
+		baseURL: *baseURL,
 		headers: http.Header{
 			"User-Agent": {
 				"splitter/", // TODO assign versions
@@ -53,7 +53,7 @@ func NewHttpClient(baseUrl string) *HttpClient {
 
 type HttpClient struct {
 	client  *http.Client
-	baseURL *url.URL
+	baseURL url.URL
 	headers http.Header
 }
 

@@ -249,3 +249,5 @@ vendor/
 # Disable for now
 .idea/
 dist/
+
+.fixtures/

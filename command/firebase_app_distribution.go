@@ -23,15 +23,6 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Required: true,
 				EnvVars:  []string{"FIREBASE_APP_ID"},
 			},
-			&cli.StringFlag{
-				Name: "access-token",
-				Aliases: []string{
-					"t",
-				},
-				Usage:    "The access token to use for this distribution",
-				Required: true,
-				EnvVars:  []string{"FIREBASE_CLI_TOKEN"},
-			},
 			&cli.PathFlag{
 				Name: "source-file",
 				Aliases: []string{
@@ -40,11 +31,29 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Usage:    "A path to an app file",
 				Required: true,
 			},
+			&cli.StringFlag{
+				Name: "access-token",
+				Aliases: []string{
+					"t",
+				},
+				Usage:    "The access token to use for this distribution",
+				Required: false,
+				EnvVars:  []string{"FIREBASE_CLI_TOKEN"},
+			},
+			&cli.PathFlag{
+				Name: "credentials",
+				Aliases: []string{
+					"c",
+				},
+				Usage:    "A path to a credentials json file",
+				Required: false,
+			},
 		},
 		Action: func(context *cli.Context) error {
 			conf := config.FirebaseAppDistributionConfig{
-				AccessToken: context.String("access-token"),
-				AppId:       context.String("app-id"),
+				AccessToken:           context.String("access-token"),
+				GoogleCredentialsPath: context.String("credentials"),
+				AppId:                 context.String("app-id"),
 			}
 
 			if err := conf.Validate(); err != nil {

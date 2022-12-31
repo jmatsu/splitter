@@ -64,8 +64,25 @@ func (r *UploadRequest) fileType() string {
 	}
 }
 
+func (p *Provider) fetchToken() error {
+	if p.AccessToken == "" && p.GoogleCredentialsPath != "" {
+		if t, err := Token(p.ctx, p.GoogleCredentialsPath); err != nil {
+			return errors.Wrap(err, "cannot fetch a token")
+		} else {
+			p.AccessToken = t.AccessToken
+			p.GoogleCredentialsPath = ""
+		}
+	}
+
+	return nil
+}
+
 func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
 	logger.Info().Msg("preparing to upload...")
+
+	if err := p.fetchToken(); err != nil {
+		return nil, errors.Wrap(err, "a valid token is required to make requests")
+	}
 
 	request := &UploadRequest{
 		projectNumber: p.ProjectNumber(),
