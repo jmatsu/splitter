@@ -31,7 +31,7 @@ func Test_Provider_Distribute(t *testing.T) {
 
 			expected: struct {
 				SideEffect sideEffect
-			}{SideEffect: copyAndOverride},
+			}{SideEffect: copyAndOverwrite},
 		},
 		"copy but do not overwrite": {
 			DestinationExists: false,
@@ -63,7 +63,7 @@ func Test_Provider_Distribute(t *testing.T) {
 
 			expected: struct {
 				SideEffect sideEffect
-			}{SideEffect: moveAndOverride},
+			}{SideEffect: moveAndOverwrite},
 		},
 		"move but do not overwrite": {
 			DestinationExists: false,

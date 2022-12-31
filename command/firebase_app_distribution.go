@@ -10,6 +10,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// FirebaseAppDistribution command distributes your app to Firebase App Distribution. This command is standalone so this does not use the values for Firebase App Distribution in your config file.
+// ref: https://firebase.google.com/docs/app-distribution
 func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,

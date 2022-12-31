@@ -33,7 +33,7 @@ func NewProvider(ctx context.Context, config *config.LocalConfig) *Provider {
 type MoveRequest struct {
 	SourceFilePath      string
 	DestinationFilePath string
-	AllowOverride       bool
+	AllowOverwrite      bool
 	FileMode            os.FileMode
 	DeleteResource      bool
 }
@@ -42,7 +42,7 @@ func (p *Provider) Distribute(filePath string) (*DistributionResult, error) {
 	request := MoveRequest{
 		SourceFilePath:      filePath,
 		DestinationFilePath: p.DestinationPath,
-		AllowOverride:       p.AllowOverwrite,
+		AllowOverwrite:      p.AllowOverwrite,
 		DeleteResource:      p.DeleteSource,
 	}
 
@@ -73,16 +73,16 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 		if _, err := os.Stat(request.SourceFilePath); err != nil {
 			return "", errors.New(fmt.Sprintf("%s does not exist", request.SourceFilePath))
 		} else if di, err := os.Stat(request.DestinationFilePath); err == nil {
-			if !request.AllowOverride {
+			if !request.AllowOverwrite {
 				return "", errors.New(fmt.Sprintf("%s exists but overwriting is disabled", request.DestinationFilePath))
 			} else if di.IsDir() {
 				return "", errors.New(fmt.Sprintf("directory (%s) as a destination is not supported", request.DestinationFilePath))
 			}
 
 			if request.DeleteResource {
-				sideEffect = moveAndOverride
+				sideEffect = moveAndOverwrite
 			} else {
-				sideEffect = copyAndOverride
+				sideEffect = copyAndOverwrite
 			}
 		} else {
 			if request.DeleteResource {

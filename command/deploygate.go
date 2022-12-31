@@ -10,6 +10,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// DeployGate command distributes your app to DeployGate. This command is standalone so this does not use the values for DeployGate in your config file.
+// ref: https://deploygate.com/
 func DeployGate(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
