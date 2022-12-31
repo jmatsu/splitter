@@ -1,0 +1,33 @@
+package local
+
+import (
+	"github.com/jedib0t/go-pretty/v6/table"
+)
+
+type sideEffect = string
+
+const (
+	copyOnly        sideEffect = "copied without overwriting"
+	moveOnly        sideEffect = "moved without overwriting"
+	copyAndOverride sideEffect = "copied and overwrote"
+	moveAndOverride sideEffect = "moved and overwrote"
+)
+
+type MoveResponse struct {
+	SourceFilePath      string     `json:"source_file_path"`
+	DestinationFilePath string     `json:"destination_file_path"`
+	SideEffect          sideEffect `json:"side_effect"`
+}
+
+var TableBuilder = func(w table.Writer, v any) {
+	resp := v.(MoveResponse)
+
+	w.AppendRows([]table.Row{
+		{"Source Path", resp.SourceFilePath},
+		{"Destination Path", resp.DestinationFilePath},
+	})
+
+	w.AppendRows([]table.Row{
+		{"SideEffect", resp.SideEffect},
+	})
+}

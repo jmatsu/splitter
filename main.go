@@ -70,13 +70,13 @@ func main() {
 				return err
 			}
 
-			config := config.GetConfig()
+			conf := config.GetConfig()
 
-			if newStyle := context.String("format"); context.IsSet("format") || config.FormatStyle() == "" {
-				config.SetFormatStyle(newStyle)
+			if newStyle := context.String("format"); context.IsSet("format") || conf.FormatStyle() == "" {
+				conf.SetFormatStyle(newStyle)
 			}
 
-			if err := format.SetStyle(config.FormatStyle()); err != nil {
+			if err := format.SetStyle(conf.FormatStyle()); err != nil {
 				return err
 			}
 
@@ -85,6 +85,7 @@ func main() {
 		Commands: []*cli.Command{
 			command.InitConfig("init", []string{}),
 			command.DeployGate("deploygate", []string{"dg"}),
+			command.Local("local", []string{""}),
 			command.Distribute("distribute", []string{}),
 		},
 	}

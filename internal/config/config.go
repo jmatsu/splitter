@@ -30,6 +30,7 @@ const (
 	distributionsKey = "distributions"
 
 	DeploygateService = "deploygate"
+	LocalService      = "local"
 )
 
 func ToEnvName(name string) string {
@@ -37,7 +38,7 @@ func ToEnvName(name string) string {
 }
 
 type ServiceConfig interface {
-	testConfig | DeployGateConfig
+	testConfig | DeployGateConfig | LocalConfig
 }
 
 type Config struct {

@@ -6,3 +6,7 @@ type DeployGateConfig struct {
 	DistributionAccessKey string `json:"distribution-access-key,omitempty" env:"DEPLOYGATE_DISTRIBUTION_KEY"`
 	DistributionName      string `json:"distribution-name,omitempty" env:"DEPLOYGATE_DISTRIBUTION_NAME"`
 }
+
+func (c *DeployGateConfig) Validate() error {
+	return validateMissingValues(c)
+}

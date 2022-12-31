@@ -27,8 +27,8 @@ func Test_Provider_toForm(t *testing.T) {
 	}{
 		"with fully ios options": {
 			request: UploadRequest{
-				FilePath:   "path/to/file",
-				IOSOptions: struct{ DisableNotification bool }{DisableNotification: true},
+				filePath:   "path/to/file",
+				iOSOptions: struct{ DisableNotification bool }{DisableNotification: true},
 			},
 			expected: net.Form{
 				Fields: []net.ValueField{
@@ -39,12 +39,8 @@ func Test_Provider_toForm(t *testing.T) {
 		},
 		"with too much distribution options": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
-				DistributionOptions: struct {
-					Name        string
-					AccessKey   string
-					ReleaseNote *string
-				}{
+				filePath: "path/to/file",
+				distributionOptions: &distributionOptions{
 					AccessKey: "dist_key",
 					Name:      "dist_name",
 				},
@@ -58,12 +54,8 @@ func Test_Provider_toForm(t *testing.T) {
 		},
 		"with fully distribution options": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
-				DistributionOptions: struct {
-					Name        string
-					AccessKey   string
-					ReleaseNote *string
-				}{
+				filePath: "path/to/file",
+				distributionOptions: &distributionOptions{
 					AccessKey:   "dist_key",
 					ReleaseNote: &sampleMessage1,
 				},
@@ -78,13 +70,9 @@ func Test_Provider_toForm(t *testing.T) {
 		},
 		"with partial distribution options": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
-				Message:  &sampleMessage1,
-				DistributionOptions: struct {
-					Name        string
-					AccessKey   string
-					ReleaseNote *string
-				}{
+				filePath: "path/to/file",
+				message:  &sampleMessage1,
+				distributionOptions: &distributionOptions{
 					Name: "dist_name1",
 				},
 			},
@@ -99,7 +87,7 @@ func Test_Provider_toForm(t *testing.T) {
 		},
 		"minimum": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
+				filePath: "path/to/file",
 			},
 			expected: net.Form{
 				Fields: []net.ValueField{

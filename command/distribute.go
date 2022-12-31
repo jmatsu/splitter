@@ -24,7 +24,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				EnvVars:  []string{config.ToEnvName("DISTRIBUTION_NAME")},
 			},
 			&cli.PathFlag{
-				Name: "file",
+				Name: "source-file",
 				Aliases: []string{
 					"f",
 				},
@@ -53,11 +53,16 @@ func Distribute(name string, aliases []string) *cli.Command {
 			case config.DeploygateService:
 				dg := d.ServiceConfig.(*config.DeployGateConfig)
 
-				return distributeDeployGate(context.Context, dg, context.String("file"), func(req *deploygate.UploadRequest) {
+				return distributeDeployGate(context.Context, dg, context.String("source-file"), func(req *deploygate.UploadRequest) {
 					if v := context.String("release-note"); context.IsSet("release-note") {
-						req.Message = &v
+						req.SetMessage(v)
+						req.SetDistributionReleaseNote(v)
 					}
 				})
+			case config.LocalService:
+				lo := d.ServiceConfig.(*config.LocalConfig)
+
+				return distributeLocal(context.Context, lo, context.String("source-file"))
 			default:
 				return fmt.Errorf("%s is not implemented yet", d.ServiceName)
 			}

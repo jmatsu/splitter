@@ -73,47 +73,46 @@ func DeployGate(name string, aliases []string) *cli.Command {
 			},
 		},
 		Action: func(context *cli.Context) error {
-			config := config.DeployGateConfig{
+			conf := config.DeployGateConfig{
 				AppOwnerName: context.String("app-owner-name"),
 				ApiToken:     context.String("api-token"),
 			}
 
-			return distributeDeployGate(context.Context, &config, context.String("file"), func(req *deploygate.UploadRequest) {
+			if err := conf.Validate(); err != nil {
+				return fmt.Errorf("given flags may be insufficient or invalid: %v", err)
+			}
+
+			return distributeDeployGate(context.Context, &conf, context.String("file"), func(req *deploygate.UploadRequest) {
 				if v := context.String("message"); context.IsSet("message") {
-					req.Message = &v
+					req.SetMessage(v)
 				}
 
 				if v := context.String("distribution-key"); context.IsSet("distribution-key") {
-					req.DistributionOptions.AccessKey = v
+					req.SetDistributionAccessKey(v)
 				}
 
 				if v := context.String("distribution-name"); context.IsSet("distribution-name") {
-					req.DistributionOptions.Name = v
+					req.SetDistributionName(v)
 				}
 
 				if v := context.String("release-note"); context.IsSet("release-note") {
-					req.DistributionOptions.ReleaseNote = &v
+					req.SetDistributionReleaseNote(v)
 				}
 
-				req.IOSOptions.DisableNotification = context.Bool("disable-ios-notification")
+				req.SetIOSDisableNotification(context.Bool("disable-ios-notification"))
 			})
 		},
 	}
 }
 
-func distributeDeployGate(ctx context.Context, config *config.DeployGateConfig, filePath string, builder func(req *deploygate.UploadRequest)) error {
-	provider := deploygate.NewProvider(ctx, *config)
-	request := deploygate.UploadRequest{
-		FilePath: filePath,
-	}
-
-	builder(&request)
+func distributeDeployGate(ctx context.Context, conf *config.DeployGateConfig, filePath string, builder func(req *deploygate.UploadRequest)) error {
+	provider := deploygate.NewProvider(ctx, conf)
 
 	var response deploygate.UploadResponse
 
-	if bytes, err := provider.Distribute(&request); err != nil {
+	if bytes, err := provider.Distribute(filePath, builder); err != nil {
 		return err
-	} else if format.IsJson() {
+	} else if format.IsRaw() {
 		fmt.Println(string(bytes))
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return fmt.Errorf("failed to parse the response of your app to DeployGate but succeeded to upload: %v", err)
