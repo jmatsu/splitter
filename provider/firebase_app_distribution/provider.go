@@ -110,29 +110,55 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 	}
 
 	var response uploadResponse
+	var rawJson string
 
 	if bytes, err := p.distribute(request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, errors.Wrap(err, "failed to parse the response of your app to Firebase App Distribution but succeeded to upload")
-	} else if config.GetGlobalConfig().Async {
+	} else if rawJson = string(bytes); config.GetGlobalConfig().Async {
+		if request.releaseNote != nil {
+			logger.Warn().Msg("release note cannot be updated in async mode")
+		}
+
 		return &DistributionResult{
 			aabInfo: aabInfo,
-			RawJson: string(bytes),
+			RawJson: rawJson,
 		}, nil
+	}
+
+	var release release
+	var result string
+
+	logger.Debug().Msgf("start waiting for %s", response.OperationName)
+
+	if resp, err := p.waitForOperationDone(&getOperationStateRequest{
+		operationName: response.OperationName,
+	}); err != nil {
+		return nil, err
 	} else {
-		if doneResp, err := p.waitForOperationDone(&getOperationStateRequest{
-			operationName: response.OperationName,
-		}); err != nil {
-			return nil, err
+		release = resp.Response.Release
+		result = resp.Response.Result
+	}
+
+	if request.releaseNote != nil {
+		logger.Debug().Msg("start updating the release note")
+
+		req := newUpdateReleaseRequest(release, *request.releaseNote)
+
+		if resp, err := p.updateReleaseNote(req); err != nil {
+			logger.Warn().Err(err).Msg("failed to update the release note")
 		} else {
-			return &DistributionResult{
-				v1UploadReleaseResponse: doneResp.Response,
-				aabInfo:                 aabInfo,
-				RawJson:                 string(bytes),
-			}, nil
+			release = resp.release
 		}
 	}
+
+	return &DistributionResult{
+		release: &release,
+		Result:  result,
+		aabInfo: aabInfo,
+		RawJson: rawJson,
+	}, nil
 }
 
 // https://firebase.google.com/docs/reference/app-distribution/rest/v1/upload.v1.projects.apps.releases/upload
