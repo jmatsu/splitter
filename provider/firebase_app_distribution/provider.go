@@ -9,6 +9,7 @@ import (
 	"github.com/jmatsu/splitter/internal/net"
 	"github.com/rs/zerolog"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -36,10 +37,10 @@ func NewProvider(ctx context.Context, config *config.FirebaseAppDistributionConf
 }
 
 type UploadRequest struct {
-	osName      string
-	packageName string
-	filePath    string
-	releaseNote *string
+	projectNumber string
+	appId         string
+	filePath      string
+	releaseNote   *string
 }
 
 func (r *UploadRequest) SetReleaseNote(value string) {
@@ -50,16 +51,43 @@ func (r *UploadRequest) SetReleaseNote(value string) {
 	}
 }
 
+func (r *UploadRequest) OsName() string {
+	return strings.SplitN(r.appId, ":", 4)[2]
+}
+
+func (r *UploadRequest) fileType() string {
+	if s, ext, found := strings.Cut(filepath.Ext(r.filePath), "."); found {
+		return strings.ToLower(ext)
+	} else {
+		return strings.ToLower(s)
+	}
+}
+
 func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
 	request := &UploadRequest{
-		osName:      p.OsName,
-		packageName: p.PackageName,
-		filePath:    filePath,
+		projectNumber: p.ProjectNumber(),
+		appId:         p.AppId,
+		filePath:      filePath,
 	}
 
 	builder(request)
 
 	logger.Debug().Msgf("the request has been built: %v", *request)
+
+	var aabInfo *aabInfoResponse
+
+	if request.OsName() == "android" {
+		aabInfo, _ = p.getAabInfo(&aabInfoRequest{
+			appId:         request.appId,
+			projectNumber: request.projectNumber,
+		})
+
+		if request.fileType() == "aab" {
+			if err := checkIntegrationState(aabInfo.IntegrationState); err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	var response uploadResponse
 
@@ -67,10 +95,15 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, fmt.Errorf("failed to parse the response of your app to Firebase App Distribution but succeeded to upload: %v", err)
+	} else if doneResp, err := p.waitForOperationDone(&getOperationStateRequest{
+		operationName: response.OperationName,
+	}); err != nil {
+		return nil, err
 	} else {
 		return &DistributionResult{
-			uploadResponse: response,
-			RawJson:        string(bytes),
+			v1UploadReleaseResponse: *doneResp.Response,
+			aabInfo:                 aabInfo,
+			RawJson:                 string(bytes),
 		}, nil
 	}
 }
@@ -78,7 +111,7 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 // https://firebase.google.com/docs/reference/app-distribution/rest/v1/upload.v1.projects.apps.releases/upload
 // required: firebaseappdistro.releases.update
 func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
-	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s:%s/releases:upload", p.ProjectNumber, request.osName, request.packageName)
+	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s/releases:upload", request.projectNumber, request.appId)
 
 	client := baseClient.WithHeaders(map[string][]string{
 		"Authorization":           {fmt.Sprintf("Bearer %s", p.AccessToken)},

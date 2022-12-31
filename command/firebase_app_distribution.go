@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
-	"github.com/jmatsu/splitter/provider/deploygate"
 	"github.com/jmatsu/splitter/provider/firebase_app_distribution"
 	"github.com/urfave/cli/v2"
-	"strings"
 )
 
 func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
@@ -19,13 +17,10 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 		Description: "You can distribute your apps to Firebase App Distribution. Please note that this command does not respect for static config files. All parameters have to be specified from command line options.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: "project-number",
-				Aliases: []string{
-					"n",
-				},
-				Usage:    "Firebase Project Number (not ID)",
+				Name:     "app-id",
+				Usage:    "Firebase App ID e.g. 1:123456578:android:xxxxxxx",
 				Required: true,
-				EnvVars:  []string{"FIREBASE_PROJECT_NUMBER"},
+				EnvVars:  []string{"FIREBASE_APP_ID"},
 			},
 			&cli.StringFlag{
 				Name: "access-token",
@@ -34,6 +29,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				},
 				Usage:    "The access token to use for this distribution",
 				Required: true,
+				EnvVars:  []string{"FIREBASE_CLI_TOKEN"},
 			},
 			&cli.PathFlag{
 				Name: "source-file",
@@ -43,23 +39,11 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Usage:    "A path to an app file",
 				Required: true,
 			},
-			&cli.StringFlag{
-				Name:     "os",
-				Usage:    "OS name of an app: android or ios (case-insensitive)",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:     "package-name",
-				Usage:    "A package name of an app to distribute.",
-				Required: true,
-			},
 		},
 		Action: func(context *cli.Context) error {
 			conf := config.FirebaseAppDistributionConfig{
-				AccessToken:   context.String("access-token"),
-				ProjectNumber: context.String("project-number"),
-				OsName:        strings.ToLower(context.String("os")),
-				PackageName:   context.String("package-name"),
+				AccessToken: context.String("access-token"),
+				AppId:       context.String("app-id"),
 			}
 
 			if err := conf.Validate(); err != nil {
@@ -80,7 +64,7 @@ func distributeFirebaseAppDistribution(ctx context.Context, conf *config.Firebas
 		return err
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
-	} else if err := format.Format(response, deploygate.TableBuilder); err != nil {
+	} else if err := format.Format(*response, firebase_app_distribution.TableBuilder); err != nil {
 		return fmt.Errorf("cannot format the response: %v", err)
 	}
 

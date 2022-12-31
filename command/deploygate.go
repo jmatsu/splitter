@@ -111,7 +111,7 @@ func distributeDeployGate(ctx context.Context, conf *config.DeployGateConfig, fi
 		return err
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
-	} else if err := format.Format(response, deploygate.TableBuilder); err != nil {
+	} else if err := format.Format(*response, deploygate.TableBuilder); err != nil {
 		return fmt.Errorf("cannot format the response: %v", err)
 	}
 

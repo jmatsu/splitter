@@ -288,10 +288,8 @@ func Test_Config_configure(t *testing.T) {
 					"def2": {
 						ServiceName: FirebaseAppDistributionService,
 						ServiceConfig: FirebaseAppDistributionConfig{
-							AccessToken:   "def2-token",
-							ProjectNumber: "123456",
-							OsName:        "android",
-							PackageName:   "com.example.android",
+							AccessToken: "def2-token",
+							AppId:       "1:123456:android:xxxxx",
 						},
 					},
 					"def3": {

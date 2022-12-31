@@ -11,10 +11,8 @@ func Test_FirebaseAppDistributionConfig_validateMissingValues(t *testing.T) {
 	}{
 		"fully-filled": {
 			config: FirebaseAppDistributionConfig{
-				AccessToken:   "AccessToken",
-				ProjectNumber: "ProjectNumber",
-				PackageName:   "PackageName",
-				OsName:        "android",
+				AccessToken: "AccessToken",
+				AppId:       "AppId",
 			},
 			expectedValidness: true,
 		},

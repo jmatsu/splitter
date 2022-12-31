@@ -69,6 +69,43 @@ func (c *HttpClient) setDefaultHeaders(headers http.Header) {
 	maps.Copy(c.headers, headers)
 }
 
+func (c *HttpClient) DoGet(ctx context.Context, paths []string, queries map[string]string) (int, []byte, error) {
+	uri := c.baseURL.JoinPath(paths...)
+	q := uri.Query()
+
+	for name, value := range queries {
+		q.Set(name, value)
+	}
+
+	uri.RawQuery = q.Encode()
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
+
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to build the request: %v", err)
+	}
+
+	for name, value := range c.headers {
+		request.Header.Set(name, value[0])
+	}
+
+	resp, err := c.client.Do(request)
+
+	if err != nil {
+		return 0, nil, err
+	}
+
+	//goland:noinspection GoUnhandledErrorResult
+	defer resp.Body.Close()
+
+	if //goland:noinspection GoImportUsedAsName
+	bytes, err := io.ReadAll(resp.Body); err != nil {
+		return 0, nil, err
+	} else {
+		return resp.StatusCode, bytes, nil
+	}
+}
+
 func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, filePath string) (int, []byte, error) {
 	if f, err := os.Open(filePath); err != nil {
 		return 0, nil, fmt.Errorf("%s is not found: %v", filePath, err)
