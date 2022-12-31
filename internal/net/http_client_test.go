@@ -1,4 +1,4 @@
-package internal
+package net
 
 import (
 	"context"
@@ -12,8 +12,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	internalHttp "github.com/jmatsu/splitter/internal/http"
 )
 
 func Test_GetHttpClient(t *testing.T) {
@@ -250,15 +248,15 @@ func Test_HttpClient_DoPostMultipartForm(t *testing.T) {
 
 	cases := map[string]struct {
 		paths    []string
-		form     internalHttp.Form
+		form     Form
 		expected testResponse
 	}{
 		"filled": {
 			paths: []string{"path1", "path2"},
-			form: internalHttp.Form{
-				Fields: []internalHttp.ValueField{
-					internalHttp.StringField("param1", "value1"),
-					internalHttp.FileField("file1", testFilePath),
+			form: Form{
+				Fields: []ValueField{
+					StringField("param1", "value1"),
+					FileField("file1", testFilePath),
 				},
 			},
 			expected: testResponse{

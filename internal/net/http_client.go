@@ -1,4 +1,4 @@
-package internal
+package net
 
 import (
 	"context"
@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	internalHttp "github.com/jmatsu/splitter/internal/http"
 )
 
 func init() {
@@ -69,7 +67,7 @@ func (c *HttpClient) WithHeaders(headers http.Header) *HttpClient {
 	return &newClient
 }
 
-func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, form *internalHttp.Form) (int, []byte, error) {
+func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, form *Form) (int, []byte, error) {
 	contentType, buffer, err := form.Serialize()
 
 	if err != nil {

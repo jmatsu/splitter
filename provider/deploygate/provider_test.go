@@ -2,8 +2,8 @@ package deploygate
 
 import (
 	"context"
-	"github.com/jmatsu/splitter/internal"
-	"github.com/jmatsu/splitter/internal/http"
+	"github.com/jmatsu/splitter/internal/config"
+	"github.com/jmatsu/splitter/internal/net"
 	"reflect"
 	"testing"
 )
@@ -12,7 +12,7 @@ func Test_Provider_toForm(t *testing.T) {
 	t.Parallel()
 
 	provider := Provider{
-		DeployGateConfig: internal.DeployGateConfig{
+		DeployGateConfig: config.DeployGateConfig{
 			ApiToken:     "ApiToken",
 			AppOwnerName: "AppOwnerName",
 		},
@@ -23,95 +23,83 @@ func Test_Provider_toForm(t *testing.T) {
 
 	cases := map[string]struct {
 		request  UploadRequest
-		expected http.Form
+		expected net.Form
 	}{
 		"with fully ios options": {
 			request: UploadRequest{
-				FilePath:   "path/to/file",
-				IOSOptions: struct{ DisableNotification bool }{DisableNotification: true},
+				filePath:   "path/to/file",
+				iOSOptions: struct{ DisableNotification bool }{DisableNotification: true},
 			},
-			expected: http.Form{
-				Fields: []http.ValueField{
-					http.FileField("file", "path/to/file"),
-					http.BooleanField("disable_notify", true),
+			expected: net.Form{
+				Fields: []net.ValueField{
+					net.FileField("file", "path/to/file"),
+					net.BooleanField("disable_notify", true),
 				},
 			},
 		},
 		"with too much distribution options": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
-				DistributionOptions: struct {
-					Name        string
-					AccessKey   string
-					ReleaseNote *string
-				}{
+				filePath: "path/to/file",
+				distributionOptions: &distributionOptions{
 					AccessKey: "dist_key",
 					Name:      "dist_name",
 				},
 			},
-			expected: http.Form{
-				Fields: []http.ValueField{
-					http.FileField("file", "path/to/file"),
-					http.StringField("distribution_key", "dist_key"),
+			expected: net.Form{
+				Fields: []net.ValueField{
+					net.FileField("file", "path/to/file"),
+					net.StringField("distribution_key", "dist_key"),
 				},
 			},
 		},
 		"with fully distribution options": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
-				DistributionOptions: struct {
-					Name        string
-					AccessKey   string
-					ReleaseNote *string
-				}{
+				filePath: "path/to/file",
+				distributionOptions: &distributionOptions{
 					AccessKey:   "dist_key",
 					ReleaseNote: &sampleMessage1,
 				},
 			},
-			expected: http.Form{
-				Fields: []http.ValueField{
-					http.FileField("file", "path/to/file"),
-					http.StringField("distribution_key", "dist_key"),
-					http.StringField("release_note", "sample1"),
+			expected: net.Form{
+				Fields: []net.ValueField{
+					net.FileField("file", "path/to/file"),
+					net.StringField("distribution_key", "dist_key"),
+					net.StringField("release_note", "sample1"),
 				},
 			},
 		},
 		"with partial distribution options": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
-				Message:  &sampleMessage1,
-				DistributionOptions: struct {
-					Name        string
-					AccessKey   string
-					ReleaseNote *string
-				}{
+				filePath: "path/to/file",
+				message:  &sampleMessage1,
+				distributionOptions: &distributionOptions{
 					Name: "dist_name1",
 				},
 			},
-			expected: http.Form{
-				Fields: []http.ValueField{
-					http.FileField("file", "path/to/file"),
-					http.StringField("message", "sample1"),
-					http.StringField("distribution_name", "dist_name1"),
-					http.StringField("release_note", "sample1"),
+			expected: net.Form{
+				Fields: []net.ValueField{
+					net.FileField("file", "path/to/file"),
+					net.StringField("message", "sample1"),
+					net.StringField("distribution_name", "dist_name1"),
+					net.StringField("release_note", "sample1"),
 				},
 			},
 		},
 		"minimum": {
 			request: UploadRequest{
-				FilePath: "path/to/file",
+				filePath: "path/to/file",
 			},
-			expected: http.Form{
-				Fields: []http.ValueField{
-					http.FileField("file", "path/to/file"),
+			expected: net.Form{
+				Fields: []net.ValueField{
+					net.FileField("file", "path/to/file"),
 				},
 			},
 		},
 		"zero": {
 			request: UploadRequest{},
-			expected: http.Form{
-				Fields: []http.ValueField{
-					http.FileField("file", ""),
+			expected: net.Form{
+				Fields: []net.ValueField{
+					net.FileField("file", ""),
 				},
 			},
 		},
@@ -141,7 +129,7 @@ func Test_Provider_toForm(t *testing.T) {
 	}
 }
 
-func findField(fields []http.ValueField, name string) *http.ValueField {
+func findField(fields []net.ValueField, name string) *net.ValueField {
 	for _, field := range fields {
 		if field.FieldName == name {
 			return &field

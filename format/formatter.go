@@ -1,7 +1,6 @@
 package format
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"golang.org/x/exp/slices"
@@ -13,13 +12,14 @@ type FormatStyle = string
 
 const (
 	Pretty   FormatStyle = "pretty"
-	Json     FormatStyle = "json"
+	Raw      FormatStyle = "raw"
 	Markdown FormatStyle = "markdown"
 )
 
 var styles = []FormatStyle{
 	Pretty,
-	Json,
+	Raw,
+	Markdown,
 }
 
 var currentStyle FormatStyle
@@ -36,8 +36,8 @@ func SetStyle(style FormatStyle) error {
 	return nil
 }
 
-func IsJson() bool {
-	return currentStyle == Json
+func IsRaw() bool {
+	return currentStyle == Raw
 }
 
 func Format(v any, tableBuilder TableBuilder) error {
@@ -48,23 +48,17 @@ func Format(v any, tableBuilder TableBuilder) error {
 	w := table.NewWriter()
 	w.SetOutputMirror(os.Stdout)
 
+	tableBuilder(w, v)
+
 	switch currentStyle {
-	case Json:
-		if bytes, err := json.Marshal(v); err != nil {
-			return fmt.Errorf("cannot marshal this value: %v", err)
-		} else {
-			fmt.Println(string(bytes))
-		}
-	case Pretty, Markdown:
-		tableBuilder(w, v)
+	case Raw:
+		panic(fmt.Errorf("call fmt.Printf directly in advance"))
+	case Pretty:
+		w.SetStyle(table.StyleBold)
 
-		if currentStyle == Pretty {
-			w.SetStyle(table.StyleBold)
-
-			w.Render()
-		} else {
-			w.RenderMarkdown()
-		}
+		w.Render()
+	case Markdown:
+		w.RenderMarkdown()
 	}
 
 	return nil
