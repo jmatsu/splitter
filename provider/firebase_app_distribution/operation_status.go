@@ -3,6 +3,7 @@ package firebase_app_distribution
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -42,7 +43,7 @@ func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*get
 			if resp, err := p.getOperationState(request); err != nil {
 				// experimental
 				if retryCount >= 5 {
-					stopper <- fmt.Errorf("retry limit exceeded while waiting for the operation: %v", err)
+					stopper <- errors.Wrap(err, "retry limit exceeded while waiting for the operation")
 					return
 				}
 
@@ -67,7 +68,7 @@ func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*get
 	case resp := <-pipeline:
 		return resp, nil
 	case <-time.After(5 * time.Minute): // TODO it's better to be flexible
-		return nil, fmt.Errorf("time limit exceeded while waiting for the opration")
+		return nil, errors.New("time limit exceeded while waiting for the operation")
 	}
 }
 
@@ -81,18 +82,18 @@ func (p *Provider) getOperationState(request *getOperationStateRequest) (*getOpe
 	code, bytes, err := client.DoGet(p.ctx, []string{path}, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get a response from operation state api")
 	}
 
 	var response getOperationStateResponse
 
 	if 200 <= code && code < 300 {
 		if err := json.Unmarshal(bytes, &response); err != nil {
-			return nil, fmt.Errorf(": %v", err)
+			return nil, errors.Wrap(err, "cannot unmarshal operation state response")
 		} else {
 			return &response, nil
 		}
 	} else {
-		return nil, fmt.Errorf("got %d response: %s", code, string(bytes))
+		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
 	}
 }

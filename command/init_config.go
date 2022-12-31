@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"os"
 	"path/filepath"
@@ -28,13 +29,13 @@ func InitConfig(name string, aliases []string) *cli.Command {
 			if context.IsSet("path") {
 				path = context.String("path")
 			} else if wd, err := os.Getwd(); err != nil {
-				return fmt.Errorf("cannot get the current working directory: %v", err)
+				return errors.Wrap(err, "cannot get the current working directory")
 			} else {
 				path = filepath.Join(wd, config.DefaultConfigName)
 			}
 
 			if _, err := os.Stat(path); err == nil && !context.Bool("overwrite") {
-				return fmt.Errorf("%s already exists. Please add --overwrite option to overwrite the file anyway", path)
+				return errors.New(fmt.Sprintf("%s already exists. Please add --overwrite option to overwrite the file anyway", path))
 			}
 
 			conf := config.NewConfig()

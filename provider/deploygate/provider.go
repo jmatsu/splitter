@@ -7,6 +7,7 @@ import (
 	"github.com/jmatsu/splitter/internal/config"
 	logger2 "github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/internal/net"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -114,7 +115,7 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 	if bytes, err := p.distribute(request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse the response of your app to DeployGate but succeeded to upload: %v", err)
+		return nil, errors.Wrap(err, "failed to parse the response of your app to DeployGate but succeeded to upload")
 	} else {
 		return &DistributionResult{
 			uploadResponse: response,
@@ -131,7 +132,7 @@ func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
 	code, bytes, err := client.DoPostMultipartForm(p.ctx, []string{"api", "users", p.AppOwnerName, "apps"}, p.toForm(request))
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to upload your app to DeployGate: %v", err)
+		return nil, errors.Wrap(err, "failed to upload your app to DeployGate")
 	}
 
 	if 200 <= code && code < 300 {
@@ -140,11 +141,11 @@ func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
 		var errorResponse errorResponse
 
 		if err := json.Unmarshal(bytes, &errorResponse); err != nil {
-			return nil, fmt.Errorf("failed to upload your app to DeployGate due to: %s, %v", string(bytes), err)
+			return nil, errors.Wrapf(err, "failed to upload your app to DeployGate due to: %s", string(bytes))
 		} else if errorResponse.Message != "" {
-			return nil, fmt.Errorf("failed to upload your app to DeployGate due to '%s'", errorResponse.Message)
+			return nil, errors.New(fmt.Sprintf("failed to upload your app to DeployGate due to '%s'", errorResponse.Message))
 		} else {
-			return nil, fmt.Errorf("failed to upload your app to DeployGate due to '%s'", string(bytes))
+			return nil, errors.New(fmt.Sprintf("failed to upload your app to DeployGate due to '%s'", string(bytes)))
 		}
 	}
 }

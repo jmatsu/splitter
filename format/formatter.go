@@ -3,6 +3,7 @@ package format
 import (
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
 	"os"
 	"reflect"
@@ -28,7 +29,7 @@ type TableBuilder = func(writer table.Writer, v any)
 
 func SetStyle(style FormatStyle) error {
 	if !slices.Contains(styles, style) {
-		return fmt.Errorf("%s is unknown style", style)
+		return errors.New(fmt.Sprintf("%s is unknown style", style))
 	}
 
 	currentStyle = style
@@ -42,7 +43,7 @@ func IsRaw() bool {
 
 func Format(v any, tableBuilder TableBuilder) error {
 	if reflect.ValueOf(v).Kind() != reflect.Struct {
-		panic(fmt.Errorf("v must be struct"))
+		panic("v must be struct")
 	}
 
 	w := table.NewWriter()
@@ -52,7 +53,7 @@ func Format(v any, tableBuilder TableBuilder) error {
 
 	switch currentStyle {
 	case Raw:
-		panic(fmt.Errorf("call fmt.Printf directly in advance"))
+		panic("call fmt.Printf directly in advance")
 	case Pretty:
 		w.SetStyle(table.StyleDefault)
 

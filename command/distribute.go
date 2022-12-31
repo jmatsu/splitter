@@ -5,6 +5,7 @@ import (
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/provider/deploygate"
 	"github.com/jmatsu/splitter/provider/firebase_app_distribution"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
 
@@ -40,7 +41,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 			},
 		},
 		Action: func(context *cli.Context) error {
-			conf := config.GetConfig()
+			conf := config.GetGlobalConfig()
 
 			name := context.String("name")
 
@@ -75,7 +76,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 					}
 				})
 			default:
-				return fmt.Errorf("%s is not implemented yet", d.ServiceName)
+				return errors.New(fmt.Sprintf("%s is not implemented yet", d.ServiceName))
 			}
 		},
 	}

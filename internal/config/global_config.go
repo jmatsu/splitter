@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
@@ -69,11 +70,11 @@ func NewConfig() *GlobalConfig {
 	return &GlobalConfig{}
 }
 
-func GetConfig() *GlobalConfig {
+func GetGlobalConfig() *GlobalConfig {
 	return config
 }
 
-func LoadConfig(path *string) error {
+func LoadGlobalConfig(path *string) error {
 	if path != nil {
 		viper.SetConfigFile(*path)
 		logger.Logger.Debug().Msgf("Loading a config file on %s", *path)
@@ -88,7 +89,7 @@ func LoadConfig(path *string) error {
 	}
 
 	if err := viper.ReadInConfig(); path != nil && err != nil {
-		return fmt.Errorf("failed to read a config file: %v", err)
+		return errors.Wrap(err, "failed to read a config file")
 	}
 
 	config = &GlobalConfig{
@@ -99,7 +100,7 @@ func LoadConfig(path *string) error {
 	}
 
 	if err := config.configure(); err != nil {
-		return fmt.Errorf("your config file may not contain some of required values or they are invalid: %v", err)
+		return errors.Wrap(err, "your config file may not contain some of required values or they are invalid")
 	}
 
 	return nil
@@ -116,15 +117,15 @@ func (c *GlobalConfig) configure() error {
 		values, correct := values.(map[string]interface{})
 
 		if !correct {
-			return fmt.Errorf("%s must be Mapping", name)
+			return errors.New(fmt.Sprintf("%s must be Mapping", name))
 		}
 
 		holder := serviceNameHolder{}
 
 		if bytes, err := json.Marshal(values); err != nil {
-			return fmt.Errorf("cannot load %s config: %v", name, err)
+			return errors.Wrapf(err, "cannot load %s config", name)
 		} else if err := json.Unmarshal(bytes, &holder); err != nil {
-			return fmt.Errorf("cannot load %s config: %v", name, err)
+			return errors.Wrapf(err, "cannot load %s config", name)
 		}
 
 		switch holder.ServiceName {
@@ -132,7 +133,7 @@ func (c *GlobalConfig) configure() error {
 			deploygate := DeployGateConfig{}
 
 			if err := loadServiceConfig(&deploygate, values); err != nil {
-				return fmt.Errorf("cannot load %s config: %v", name, err)
+				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
 			c.services[name] = &Distribution{
@@ -143,7 +144,7 @@ func (c *GlobalConfig) configure() error {
 			firebase := FirebaseAppDistributionConfig{}
 
 			if err := loadServiceConfig(&firebase, values); err != nil {
-				return fmt.Errorf("cannot load %s config: %v", name, err)
+				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
 			c.services[name] = &Distribution{
@@ -154,7 +155,7 @@ func (c *GlobalConfig) configure() error {
 			local := LocalConfig{}
 
 			if err := loadServiceConfig(&local, values); err != nil {
-				return fmt.Errorf("cannot load %s config: %v", name, err)
+				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
 			c.services[name] = &Distribution{
@@ -162,7 +163,7 @@ func (c *GlobalConfig) configure() error {
 				ServiceConfig: &local,
 			}
 		default:
-			return fmt.Errorf("%s of %s is an unknown service", holder.ServiceName, name)
+			return errors.New(fmt.Sprintf("%s of %s is an unknown service", holder.ServiceName, name))
 		}
 	}
 
@@ -179,9 +180,9 @@ func (c *GlobalConfig) SetFormatStyle(style string) {
 
 func (c *GlobalConfig) Dump(path string) error {
 	if bytes, err := yaml.Marshal(c.rawConfig); err != nil {
-		return fmt.Errorf("failed to parse a config file to %s: %v", path, err)
+		return errors.Wrapf(err, "failed to parse a config file to %s", path)
 	} else if err := os.WriteFile(path, bytes, 0644); err != nil {
-		return fmt.Errorf("failed to dump a config file to %s: %v", path, err)
+		return errors.Wrapf(err, "failed to dump a config file to %s", path)
 	}
 
 	return nil
@@ -212,7 +213,7 @@ func (c *GlobalConfig) GetDistribution(name string) (*Distribution, error) {
 
 		return d, nil
 	} else {
-		return nil, fmt.Errorf("%s distribution is not found", name)
+		return nil, errors.New(fmt.Sprintf("%s distribution is not found", name))
 	}
 }
 
@@ -246,7 +247,7 @@ func evaluateValues[T ServiceConfig](v *T) error {
 	vRef := reflect.ValueOf(v).Elem()
 
 	if vRef.Kind() != reflect.Struct {
-		return fmt.Errorf("%v is not a struct", v)
+		return errors.New(fmt.Sprintf("%v is not a struct", v))
 	}
 
 	for i := 0; i < vRef.NumField(); i++ {
@@ -279,7 +280,7 @@ func validateMissingValues[T ServiceConfig](v *T) error {
 	vRef := reflect.ValueOf(v).Elem()
 
 	if vRef.Kind() != reflect.Struct {
-		return fmt.Errorf("%v is not a struct", v)
+		return errors.New(fmt.Sprintf("%v is not a struct", v))
 	}
 
 	for i := 0; i < vRef.NumField(); i++ {
@@ -311,7 +312,7 @@ func validateMissingValues[T ServiceConfig](v *T) error {
 	}
 
 	if num := len(missingKeys); num > 0 {
-		return fmt.Errorf("%d keys lacked or their values are empty: %s", num, strings.Join(missingKeys, ","))
+		return errors.New(fmt.Sprintf("%d keys lacked or their values are empty: %s", num, strings.Join(missingKeys, ",")))
 	} else {
 		return nil
 	}

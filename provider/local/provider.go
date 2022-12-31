@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	logger2 "github.com/jmatsu/splitter/internal/logger"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"io"
 	"os"
@@ -56,7 +57,7 @@ func (p *Provider) Distribute(filePath string) (*DistributionResult, error) {
 	if bytes, err := p.distribute(&request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+		return nil, errors.Wrap(err, "failed to unmarshal")
 	} else {
 		return &DistributionResult{
 			moveResponse: response,
@@ -70,12 +71,12 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 		var sideEffect sideEffect
 
 		if _, err := os.Stat(request.SourceFilePath); err != nil {
-			return "", fmt.Errorf("%s does not exist", request.SourceFilePath)
+			return "", errors.New(fmt.Sprintf("%s does not exist", request.SourceFilePath))
 		} else if di, err := os.Stat(request.DestinationFilePath); err == nil {
 			if !request.AllowOverride {
-				return "", fmt.Errorf("%s exists but overwriting is disabled", request.DestinationFilePath)
+				return "", errors.New(fmt.Sprintf("%s exists but overwriting is disabled", request.DestinationFilePath))
 			} else if di.IsDir() {
-				return "", fmt.Errorf("directory (%s) as a destination is not supported", request.DestinationFilePath)
+				return "", errors.New(fmt.Sprintf("directory (%s) as a destination is not supported", request.DestinationFilePath))
 			}
 
 			if request.DeleteResource {
@@ -97,7 +98,7 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 			var tmp *os.File
 
 			if v, err := os.CreateTemp("", "local-dest-*"); err != nil {
-				return "", fmt.Errorf("failed to create a temp file: %v", err)
+				return "", errors.Wrap(err, "failed to create a temp file")
 			} else {
 				tmp = v
 				defer tmp.Close()
@@ -107,18 +108,18 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 			src, err := os.Open(request.SourceFilePath)
 
 			if err != nil {
-				return "", fmt.Errorf("failed to open %s: %v", request.SourceFilePath, err)
+				return "", errors.Wrapf(err, "failed to open %s", request.SourceFilePath)
 			}
 
 			defer src.Close()
 
 			if _, err := io.Copy(tmp, src); err != nil {
-				return "", fmt.Errorf("failed to copy %s to %s: %v", request.SourceFilePath, tmp.Name(), err)
+				return "", errors.Wrapf(err, "failed to copy %s to %s", request.SourceFilePath, tmp.Name())
 			}
 		}
 
 		if err := os.Rename(renameFromPath, request.DestinationFilePath); err != nil {
-			return "", fmt.Errorf("failed to rename %s to %s: %v", renameFromPath, request.DestinationFilePath, err)
+			return "", errors.Wrapf(err, "failed to rename %s to %s", renameFromPath, request.DestinationFilePath)
 		}
 
 		return sideEffect, nil
@@ -133,7 +134,7 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 	} else if v.Mode() == request.FileMode {
 		logger.Debug().Msgf("%s already has permission %d", request.DestinationFilePath, request.FileMode)
 	} else if err := os.Chmod(request.DestinationFilePath, request.FileMode); err != nil {
-		return nil, fmt.Errorf("failed to change file mode of %s to %s: %v", request.DestinationFilePath, v.Mode().String(), err)
+		return nil, errors.Wrapf(err, "failed to change file mode of %s to %s", request.DestinationFilePath, v.Mode().String())
 	} else {
 		logger.Debug().Msgf("%s has been changed to permission %d", request.DestinationFilePath, request.FileMode)
 	}
@@ -145,7 +146,7 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 	}
 
 	if bytes, err := json.Marshal(resp); err != nil {
-		return nil, err
+		panic(err)
 	} else {
 		return bytes, nil
 	}

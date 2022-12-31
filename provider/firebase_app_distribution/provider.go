@@ -7,6 +7,7 @@ import (
 	"github.com/jmatsu/splitter/internal/config"
 	logger2 "github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/internal/net"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"path/filepath"
 	"strings"
@@ -96,8 +97,8 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 	if bytes, err := p.distribute(request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse the response of your app to Firebase App Distribution but succeeded to upload: %v", err)
-	} else if config.GetConfig().Async {
+		return nil, errors.Wrap(err, "failed to parse the response of your app to Firebase App Distribution but succeeded to upload")
+	} else if config.GetGlobalConfig().Async {
 		return &DistributionResult{
 			aabInfo: aabInfo,
 			RawJson: string(bytes),
@@ -131,12 +132,12 @@ func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
 	code, bytes, err := client.DoPostFileBody(p.ctx, []string{path}, request.filePath)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to distribute to Firebase App Distribution: %v", err)
+		return nil, errors.Wrap(err, "failed to distribute to Firebase App Distribution")
 	}
 
 	if code <= 200 && code < 300 {
 		return bytes, nil
 	} else {
-		return nil, fmt.Errorf("failed to upload your app to Firebase App Distribution due to '%s'", string(bytes))
+		return nil, errors.New(fmt.Sprintf("failed to upload your app to Firebase App Distribution due to '%s'", string(bytes)))
 	}
 }

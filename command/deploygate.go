@@ -6,6 +6,7 @@ import (
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/provider/deploygate"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
 
@@ -78,7 +79,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 			}
 
 			if err := conf.Validate(); err != nil {
-				return fmt.Errorf("given flags may be insufficient or invalid: %v", err)
+				return errors.Wrap(err, "given flags may be insufficient or invalid")
 			}
 
 			return distributeDeployGate(context.Context, &conf, context.String("source-file"), func(req *deploygate.UploadRequest) {
@@ -112,7 +113,7 @@ func distributeDeployGate(ctx context.Context, conf *config.DeployGateConfig, fi
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
 	} else if err := format.Format(*response, deploygate.TableBuilder); err != nil {
-		return fmt.Errorf("cannot format the response: %v", err)
+		return errors.Wrap(err, "cannot format the response")
 	}
 
 	return nil

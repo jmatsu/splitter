@@ -6,6 +6,7 @@ import (
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/pkg/errors"
 	"os"
 
 	"github.com/urfave/cli/v2"
@@ -31,7 +32,7 @@ func main() {
 					if _, err := os.Stat(s); err == nil {
 						return nil
 					} else {
-						return fmt.Errorf("%s is not found", s)
+						return errors.New(fmt.Sprintf("%s is not found", s))
 					}
 				},
 				EnvVars: []string{
@@ -51,19 +52,18 @@ func main() {
 				Required: false,
 				Value:    false,
 			},
-			&cli.BoolFlag{
-				Name:     "debug",
-				Usage:    "Show debug logs",
+			&cli.StringFlag{
+				Name:     "log-level",
+				Usage:    "Set log level",
 				Required: false,
-				Value:    false,
 				EnvVars: []string{
-					config.ToEnvName("DEBUG"),
+					config.ToEnvName("LOG_LEVEL"),
 				},
 			},
 		},
 		Before: func(context *cli.Context) error {
-			if context.Bool("debug") {
-				logger.SetDebugMode()
+			if logLevel := context.String("log-level"); context.IsSet("log-level") {
+				logger.SetLogLevel(logLevel)
 			}
 
 			var path *string
@@ -72,11 +72,11 @@ func main() {
 				path = &v
 			}
 
-			if err := config.LoadConfig(path); err != nil {
+			if err := config.LoadGlobalConfig(path); err != nil {
 				return err
 			}
 
-			conf := config.GetConfig()
+			conf := config.GetGlobalConfig()
 
 			if newStyle := context.String("format"); context.IsSet("format") || conf.FormatStyle() == "" {
 				conf.SetFormatStyle(newStyle)
@@ -105,6 +105,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
+		logger.Logger.Trace().Stack().Err(err).Msg("")
 		logger.Logger.Fatal().Err(err).Msg("command exited with non-zero code")
 	}
 }
