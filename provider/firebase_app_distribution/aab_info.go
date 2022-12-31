@@ -3,6 +3,7 @@ package firebase_app_distribution
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 )
 
 type aabInfoRequest struct {
@@ -50,12 +51,12 @@ func (p *Provider) getAabInfo(request *aabInfoRequest) (*aabInfoResponse, error)
 
 	if 200 <= code && code < 300 {
 		if err := json.Unmarshal(bytes, &response); err != nil {
-			return nil, fmt.Errorf(": %v", err)
+			return nil, errors.Wrap(err, "cannot unmarshal aabInfo api response")
 		} else {
 			return &response, nil
 		}
 	} else {
-		return nil, fmt.Errorf("got %d response: %s", code, string(bytes))
+		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
 	}
 }
 
@@ -65,17 +66,17 @@ func checkIntegrationState(s integrationState) error {
 		logger.Debug().Msgf("aab is available")
 		return nil
 	case aabIntegrationNonPublished:
-		return fmt.Errorf("you have to publish apps as for app bundle uploads though, you can use apk uploads: %s", s)
+		return errors.New(fmt.Sprintf("you have to publish apps as for app bundle uploads though, you can use apk uploads: %s", s))
 	case aabIntegrationNotLinked:
-		return fmt.Errorf("yuo have to link this firebase project with play store: %s", s)
+		return errors.New(fmt.Sprintf("yuo have to link this firebase project with play store: %s", s))
 	case aabIntegrationNoAppFound:
-		return fmt.Errorf("this package name is not found in play store: %s", s)
+		return errors.New(fmt.Sprintf("this package name is not found in play store: %s", s))
 	case aabIntegrationTermsUnaccepted:
-		return fmt.Errorf("you have to accept the terms of playstore: %s", s)
+		return errors.New(fmt.Sprintf("you have to accept the terms of playstore: %s", s))
 	case aabIntegrationUnavailable:
-		return fmt.Errorf("playstore currently seems down: %s", s)
+		return errors.New(fmt.Sprintf("playstore currently seems down: %s", s))
 	case aabIntegrationUnspecified:
-		return fmt.Errorf(": %s", s)
+		return errors.New(fmt.Sprintf(": %s", s))
 	default:
 		logger.Warn().Msgf("unsupported aab info but we allow to continue: %s", s)
 		return nil

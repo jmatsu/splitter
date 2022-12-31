@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/caarlos0/env/v6"
 	"github.com/spf13/viper"
@@ -42,14 +45,18 @@ type ServiceConfig interface {
 	testConfig | DeployGateConfig | LocalConfig | FirebaseAppDistributionConfig
 }
 
-type Config struct {
+type GlobalConfig struct {
 	rawConfig rawConfig
 	services  map[string]*Distribution
+
+	Async bool
 }
 
 type rawConfig struct {
-	Distributions map[string]interface{} `yaml:"distributions"`
-	FormatStyle   string                 `yaml:"format-style,omitempty"`
+	Distributions  map[string]interface{} `yaml:"distributions"`
+	FormatStyle    string                 `yaml:"format-style,omitempty"`
+	NetworkTimeout string                 `yaml:"network-timeout,omitempty"`
+	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
 }
 
 type serviceNameHolder struct {
@@ -61,17 +68,36 @@ type Distribution struct {
 	ServiceConfig any
 }
 
-var config Config
+type FormatStyle = string
 
-func NewConfig() Config {
-	return Config{}
+const (
+	PrettyFormat   FormatStyle = "pretty"
+	RawFormat      FormatStyle = "raw"
+	MarkdownFormat FormatStyle = "markdown"
+
+	DefaultFormat = PrettyFormat
+
+	DefaultNetworkTimeout = "10m"
+	DefaultWaitTimeout    = "5m"
+)
+
+var styles = []FormatStyle{
+	PrettyFormat,
+	RawFormat,
+	MarkdownFormat,
 }
 
-func GetConfig() Config {
+var config *GlobalConfig
+
+func NewConfig() *GlobalConfig {
+	return &GlobalConfig{}
+}
+
+func GetGlobalConfig() *GlobalConfig {
 	return config
 }
 
-func LoadConfig(path *string) error {
+func LoadGlobalConfig(path *string) error {
 	if path != nil {
 		viper.SetConfigFile(*path)
 		logger.Logger.Debug().Msgf("Loading a config file on %s", *path)
@@ -86,26 +112,40 @@ func LoadConfig(path *string) error {
 	}
 
 	if err := viper.ReadInConfig(); path != nil && err != nil {
-		return fmt.Errorf("failed to read a config file: %v", err)
+		return errors.Wrap(err, "failed to read a config file")
 	}
 
-	config = Config{
+	config = &GlobalConfig{
 		rawConfig: rawConfig{
-			Distributions: viper.GetStringMap(distributionsKey),
-			FormatStyle:   viper.GetString("format-style"),
+			Distributions:  viper.GetStringMap(distributionsKey),
+			FormatStyle:    viper.GetString("format-style"),
+			WaitTimeout:    viper.GetString("wait-timeout"),
+			NetworkTimeout: viper.GetString("network-timeout"),
 		},
 	}
 
 	if err := config.configure(); err != nil {
-		return fmt.Errorf("your config file may not contain some of required values or they are invalid: %v", err)
+		return errors.Wrap(err, "your config file may not contain some of required values or they are invalid")
 	}
 
 	return nil
 }
 
-func (c *Config) configure() error {
+func (c *GlobalConfig) configure() error {
 	if c.services == nil {
 		c.services = map[string]*Distribution{}
+	}
+
+	if c.rawConfig.FormatStyle == "" {
+		c.rawConfig.FormatStyle = DefaultFormat
+	}
+
+	if c.rawConfig.NetworkTimeout == "" {
+		c.rawConfig.NetworkTimeout = DefaultNetworkTimeout
+	}
+
+	if c.rawConfig.WaitTimeout == "" {
+		c.rawConfig.WaitTimeout = DefaultWaitTimeout
 	}
 
 	for name, values := range c.rawConfig.Distributions {
@@ -114,15 +154,15 @@ func (c *Config) configure() error {
 		values, correct := values.(map[string]interface{})
 
 		if !correct {
-			return fmt.Errorf("%s must be Mapping", name)
+			return errors.New(fmt.Sprintf("%s must be Mapping", name))
 		}
 
 		holder := serviceNameHolder{}
 
 		if bytes, err := json.Marshal(values); err != nil {
-			return fmt.Errorf("cannot load %s config: %v", name, err)
+			return errors.Wrapf(err, "cannot load %s config", name)
 		} else if err := json.Unmarshal(bytes, &holder); err != nil {
-			return fmt.Errorf("cannot load %s config: %v", name, err)
+			return errors.Wrapf(err, "cannot load %s config", name)
 		}
 
 		switch holder.ServiceName {
@@ -130,7 +170,7 @@ func (c *Config) configure() error {
 			deploygate := DeployGateConfig{}
 
 			if err := loadServiceConfig(&deploygate, values); err != nil {
-				return fmt.Errorf("cannot load %s config: %v", name, err)
+				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
 			c.services[name] = &Distribution{
@@ -141,7 +181,7 @@ func (c *Config) configure() error {
 			firebase := FirebaseAppDistributionConfig{}
 
 			if err := loadServiceConfig(&firebase, values); err != nil {
-				return fmt.Errorf("cannot load %s config: %v", name, err)
+				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
 			c.services[name] = &Distribution{
@@ -152,7 +192,7 @@ func (c *Config) configure() error {
 			local := LocalConfig{}
 
 			if err := loadServiceConfig(&local, values); err != nil {
-				return fmt.Errorf("cannot load %s config: %v", name, err)
+				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
 			c.services[name] = &Distribution{
@@ -160,32 +200,100 @@ func (c *Config) configure() error {
 				ServiceConfig: &local,
 			}
 		default:
-			return fmt.Errorf("%s of %s is an unknown service", holder.ServiceName, name)
+			return errors.New(fmt.Sprintf("%s of %s is an unknown service", holder.ServiceName, name))
 		}
 	}
 
-	return nil
+	return c.Validate()
 }
 
-func (c *Config) FormatStyle() string {
-	return c.rawConfig.FormatStyle
-}
+func (c *GlobalConfig) Validate() error {
+	if c.rawConfig.FormatStyle != "" {
+		if !slices.Contains(styles, c.rawConfig.FormatStyle) {
+			return errors.New(fmt.Sprintf("%s is unknown format style", c.rawConfig.FormatStyle))
+		}
+	} else {
+		return errors.New("empty format is invalid")
+	}
 
-func (c *Config) SetFormatStyle(style string) {
-	c.rawConfig.FormatStyle = style
-}
+	if c.rawConfig.NetworkTimeout != "" {
+		if v, err := time.ParseDuration(c.rawConfig.NetworkTimeout); err != nil {
+			return errors.Wrapf(err, "network timeout is not valid time format: %s", c.rawConfig.NetworkTimeout)
+		} else if v < 0 {
+			return errors.Wrapf(err, "network timeout must be positive")
+		} else if v.Minutes() > 30 {
+			return errors.Wrapf(err, "network timeout must be equal or less than 30 minutes")
+		}
+	} else {
+		return errors.New("empty network timeout is invalid")
+	}
 
-func (c *Config) Dump(path string) error {
-	if bytes, err := yaml.Marshal(c.rawConfig); err != nil {
-		return fmt.Errorf("failed to parse a config file to %s: %v", path, err)
-	} else if err := os.WriteFile(path, bytes, 0644); err != nil {
-		return fmt.Errorf("failed to dump a config file to %s: %v", path, err)
+	if c.rawConfig.WaitTimeout != "" {
+		if v, err := time.ParseDuration(c.rawConfig.WaitTimeout); err != nil {
+			return errors.Wrapf(err, "wait timeout is not valid time format: %s", c.rawConfig.WaitTimeout)
+		} else if v < 0 {
+			return errors.Wrapf(err, "wait timeout must be positive")
+		} else if v.Minutes() > 10 {
+			return errors.Wrapf(err, "wait timeout must be equal or less than 10 minutes")
+		}
+	} else {
+		return errors.New("empty wait timeout is invalid")
 	}
 
 	return nil
 }
 
-func (c *Config) GetDistribution(name string) (*Distribution, error) {
+func (c *GlobalConfig) FormatStyle() string {
+	return c.rawConfig.FormatStyle
+}
+
+func (c *GlobalConfig) SetFormatStyle(value string) {
+	c.rawConfig.FormatStyle = value
+}
+
+func (c *GlobalConfig) NetworkTimeout() time.Duration {
+	var value = DefaultNetworkTimeout
+
+	if c.rawConfig.NetworkTimeout != "" {
+		value = c.rawConfig.NetworkTimeout
+	}
+
+	timeout, _ := time.ParseDuration(value)
+
+	return timeout
+}
+
+func (c *GlobalConfig) SetNetworkTimeout(value string) {
+	c.rawConfig.NetworkTimeout = value
+}
+
+func (c *GlobalConfig) WaitTimeout() time.Duration {
+	var value = DefaultWaitTimeout
+
+	if c.rawConfig.WaitTimeout != "" {
+		value = c.rawConfig.WaitTimeout
+	}
+
+	timeout, _ := time.ParseDuration(value)
+
+	return timeout
+}
+
+func (c *GlobalConfig) SetWaitTimeout(value string) {
+	c.rawConfig.WaitTimeout = value
+}
+
+func (c *GlobalConfig) Dump(path string) error {
+	if bytes, err := yaml.Marshal(c.rawConfig); err != nil {
+		return errors.Wrapf(err, "failed to parse a config file to %s", path)
+	} else if err := os.WriteFile(path, bytes, 0644); err != nil {
+		return errors.Wrapf(err, "failed to dump a config file to %s", path)
+	}
+
+	return nil
+}
+
+func (c *GlobalConfig) GetDistribution(name string) (*Distribution, error) {
 	if d := c.services[name]; d != nil {
 		switch d.ServiceName {
 		case DeploygateService:
@@ -210,7 +318,7 @@ func (c *Config) GetDistribution(name string) (*Distribution, error) {
 
 		return d, nil
 	} else {
-		return nil, fmt.Errorf("%s distribution is not found", name)
+		return nil, errors.New(fmt.Sprintf("%s distribution is not found", name))
 	}
 }
 
@@ -244,7 +352,7 @@ func evaluateValues[T ServiceConfig](v *T) error {
 	vRef := reflect.ValueOf(v).Elem()
 
 	if vRef.Kind() != reflect.Struct {
-		return fmt.Errorf("%v is not a struct", v)
+		return errors.New(fmt.Sprintf("%v is not a struct", v))
 	}
 
 	for i := 0; i < vRef.NumField(); i++ {
@@ -277,7 +385,7 @@ func validateMissingValues[T ServiceConfig](v *T) error {
 	vRef := reflect.ValueOf(v).Elem()
 
 	if vRef.Kind() != reflect.Struct {
-		return fmt.Errorf("%v is not a struct", v)
+		return errors.New(fmt.Sprintf("%v is not a struct", v))
 	}
 
 	for i := 0; i < vRef.NumField(); i++ {
@@ -309,7 +417,7 @@ func validateMissingValues[T ServiceConfig](v *T) error {
 	}
 
 	if num := len(missingKeys); num > 0 {
-		return fmt.Errorf("%d keys lacked or their values are empty: %s", num, strings.Join(missingKeys, ","))
+		return errors.New(fmt.Sprintf("%d keys lacked or their values are empty: %s", num, strings.Join(missingKeys, ",")))
 	} else {
 		return nil
 	}

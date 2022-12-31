@@ -64,7 +64,7 @@ func (f *ValueField) Open() (string, io.Reader, error) {
 
 		return f.FieldName, strings.NewReader(f.Value), nil
 	default:
-		panic(fmt.Errorf("unsupported field kind: %v", f.Kind))
+		panic(fmt.Sprintf("unsupported field kind: %v", f.Kind))
 	}
 }
 
@@ -114,7 +114,7 @@ func (f *Form) Serialize() (string, *bytes.Buffer, error) {
 					return err
 				}
 			default:
-				panic(fmt.Errorf("dead case"))
+				panic("dead case")
 			}
 
 			return nil

@@ -5,7 +5,7 @@ import (
 )
 
 type DistributionResult struct {
-	v1UploadReleaseResponse
+	*v1UploadReleaseResponse
 	aabInfo *aabInfoResponse
 	RawJson string
 }
@@ -17,49 +17,51 @@ type uploadResponse struct {
 var TableBuilder = func(w table.Writer, v any) {
 	resp := v.(DistributionResult)
 
+	w.AppendHeader(table.Row{
+		"Key", "Value",
+	})
+
+	if resp.v1UploadReleaseResponse == nil {
+		w.SetCaption("In async mode, only a few information is available.")
+	}
+
 	w.AppendRows([]table.Row{
-		{"Firebase App Distribution Property", ""},
+		{"Firebase App Distribution", ""},
 	})
 	w.AppendSeparator()
-	w.AppendRows([]table.Row{
-		{"Release Response", resp.Result},
-		{"First Uploaded At", resp.Release.CreatedAt},
-	})
+
+	if resp.v1UploadReleaseResponse != nil {
+		w.AppendRows([]table.Row{
+			{"Processed State", resp.Result},
+			{"First Uploaded At", resp.Release.CreatedAt},
+		})
+	}
 
 	// it's okay to use aabInfo != nil as *if android*
 	if aabInfo := resp.aabInfo; aabInfo != nil {
-		w.AppendSeparator()
 		w.AppendRows([]table.Row{
-			{"App Bundles", ""},
-		})
-		w.AppendSeparator()
-		w.AppendRows([]table.Row{
+			{"App Bundle Available", aabInfo.IntegrationState == aabIntegrationIntegrated},
 			{"Play Store Integration", aabInfo.IntegrationState},
 		})
 
 		if certificate := aabInfo.TestCertificate; certificate != nil {
-			w.AppendSeparator()
 			w.AppendRows([]table.Row{
-				{"App Bundle Certificate", ""},
-			})
-			w.AppendSeparator()
-			w.AppendRows([]table.Row{
-				{"MD5", certificate.Md5},
-				{"SHA1", certificate.Sha1},
-				{"SHA256", certificate.Sha256},
+				{"App Bundle Certificate MD5", certificate.Md5},
+				{"App Bundle Certificate SHA1", certificate.Sha1},
+				{"App Bundle Certificate SHA256", certificate.Sha256},
 			})
 		}
 	}
 
-	w.AppendSeparator()
-	w.AppendRows([]table.Row{
-		{"App Property", ""},
-	})
-	w.AppendSeparator()
-	w.AppendRows([]table.Row{
-		{"Version Code", resp.Release.BuildVersion},
-		{"Version Name", resp.Release.DisplayVersion},
-	})
-
-	w.SetCaption("The official document is available at %s", "https://firebase.google.com/docs/app-distribution/android/distribute-fastlane")
+	if resp.v1UploadReleaseResponse != nil {
+		w.AppendSeparator()
+		w.AppendRows([]table.Row{
+			{"App Property", ""},
+		})
+		w.AppendSeparator()
+		w.AppendRows([]table.Row{
+			{"App Version Code", resp.Release.BuildVersion},
+			{"App Version Name", resp.Release.DisplayVersion},
+		})
+	}
 }

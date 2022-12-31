@@ -27,6 +27,10 @@ type moveResponse struct {
 var TableBuilder = func(w table.Writer, v any) {
 	resp := v.(DistributionResult)
 
+	w.AppendHeader(table.Row{
+		"Key", "Value",
+	})
+
 	w.AppendRows([]table.Row{
 		{"Source Path", resp.SourceFilePath},
 		{"Destination Path", resp.DestinationFilePath},

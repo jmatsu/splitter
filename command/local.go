@@ -6,6 +6,7 @@ import (
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/provider/local"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"os"
 )
@@ -59,7 +60,7 @@ func Local(name string, aliases []string) *cli.Command {
 			}
 
 			if err := conf.Validate(); err != nil {
-				return fmt.Errorf("given flags may be insufficient or invalid: %v", err)
+				return errors.Wrap(err, "given flags may be insufficient or invalid")
 			}
 
 			return distributeLocal(context.Context, &conf, context.String("source-file"))
@@ -75,7 +76,7 @@ func distributeLocal(ctx context.Context, conf *config.LocalConfig, filePath str
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
 	} else if err := format.Format(*response, local.TableBuilder); err != nil {
-		return fmt.Errorf("cannot format the response: %v", err)
+		return errors.Wrap(err, "cannot format the response")
 	}
 
 	return nil

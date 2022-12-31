@@ -3,8 +3,8 @@ package net
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 	"io"
 	"net/http"
@@ -13,15 +13,23 @@ import (
 	"time"
 )
 
-func init() {
-	client = http.Client{
-		Timeout: 10 * time.Minute, // TODO it's better to configure the timeout by users
+var client *http.Client
+
+func Configure(timeout time.Duration) {
+	if client != nil {
+		panic("client has already been initialized")
+	}
+
+	logger.Logger.Debug().
+		Str("timeout", timeout.String()).
+		Msg("Configuring http client")
+
+	client = &http.Client{
+		Timeout: timeout,
 	}
 }
 
-var client http.Client
-
-func GetHttpClient(baseUrl string) *HttpClient {
+func NewHttpClient(baseUrl string) *HttpClient {
 	baseURL, err := url.ParseRequestURI(baseUrl)
 
 	if err != nil {
@@ -44,7 +52,7 @@ func GetHttpClient(baseUrl string) *HttpClient {
 }
 
 type HttpClient struct {
-	client  http.Client
+	client  *http.Client
 	baseURL *url.URL
 	headers http.Header
 }
@@ -82,7 +90,7 @@ func (c *HttpClient) DoGet(ctx context.Context, paths []string, queries map[stri
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
 
 	if err != nil {
-		return 0, nil, fmt.Errorf("failed to build the request: %v", err)
+		return 0, nil, errors.Wrap(err, "failed to build the request")
 	}
 
 	for name, value := range c.headers {
@@ -108,9 +116,9 @@ func (c *HttpClient) DoGet(ctx context.Context, paths []string, queries map[stri
 
 func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, filePath string) (int, []byte, error) {
 	if f, err := os.Open(filePath); err != nil {
-		return 0, nil, fmt.Errorf("%s is not found: %v", filePath, err)
+		return 0, nil, errors.Wrapf(err, "%s is not found", filePath)
 	} else if b, err := io.ReadAll(f); err != nil {
-		return 0, nil, fmt.Errorf("%s cannot be read: %v", filePath, err)
+		return 0, nil, errors.Wrapf(err, "%s cannot be read", filePath)
 	} else {
 		buffer := bytes.NewBuffer(b)
 		return c.doPost(ctx, paths, "application/octet-stream", buffer)
@@ -121,7 +129,7 @@ func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, fo
 	contentType, buffer, err := form.Serialize()
 
 	if err != nil {
-		return 0, nil, fmt.Errorf("failed to serialize the request form: %v", err)
+		return 0, nil, errors.Wrap(err, "failed to serialize the request form")
 	}
 
 	return c.doPost(ctx, paths, contentType, buffer)
@@ -131,7 +139,7 @@ func (c *HttpClient) doPost(ctx context.Context, paths []string, contentType str
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL.JoinPath(paths...).String(), requestBody)
 
 	if err != nil {
-		return 0, nil, fmt.Errorf("failed to build the request: %v", err)
+		return 0, nil, errors.Wrap(err, "failed to build the request")
 	}
 
 	for name, value := range c.headers {

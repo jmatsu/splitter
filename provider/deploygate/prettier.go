@@ -38,6 +38,10 @@ type uploadResponse struct {
 var TableBuilder = func(w table.Writer, v any) {
 	resp := v.(DistributionResult).Results
 
+	w.AppendHeader(table.Row{
+		"Key", "Value",
+	})
+
 	w.AppendRows([]table.Row{
 		{"DeployGate Property", ""},
 	})

@@ -3,24 +3,33 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 )
 
-func (c *Config) assertEquals(other Config) error {
+func (c *GlobalConfig) assertEquals(other GlobalConfig) error {
 	if len(c.services) != len(other.services) {
-		return fmt.Errorf("%v does not equal to %v due to #services", c.services, other.services)
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #services", c.services, other.services))
 	}
 
 	if c.FormatStyle() != other.FormatStyle() {
-		return fmt.Errorf("%v does not equal to %v due to #FormatStyle", c.FormatStyle(), other.FormatStyle())
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #FormatStyle", c.FormatStyle(), other.FormatStyle()))
+	}
+
+	if c.NetworkTimeout() != other.NetworkTimeout() {
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #NetworkTimeout", c.NetworkTimeout(), other.NetworkTimeout()))
+	}
+
+	if c.WaitTimeout() != other.WaitTimeout() {
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #WaitTimeout", c.WaitTimeout(), other.WaitTimeout()))
 	}
 
 	for name, v := range c.services {
 		if !reflect.DeepEqual(v, other.services[name]) {
 			return nil
 		} else {
-			return fmt.Errorf("%v does not equal to %v", v, other.services[name])
+			return errors.New(fmt.Sprintf("%v does not equal to %v", v, other.services[name]))
 		}
 	}
 
@@ -33,7 +42,7 @@ func (c testConfig) assertEquals(other testConfig) error {
 	if reflect.DeepEqual(lbytes, rbytes) {
 		return nil
 	} else {
-		return fmt.Errorf("%v does not equal to %v", string(lbytes), string(rbytes))
+		return errors.New(fmt.Sprintf("%v does not equal to %v", string(lbytes), string(rbytes)))
 	}
 }
 
@@ -250,10 +259,9 @@ func Test_loadServiceConfig(t *testing.T) {
 }
 
 func Test_Config_configure(t *testing.T) {
-
 	cases := map[string]struct {
 		rawConfig rawConfig
-		expected  *Config
+		expected  *GlobalConfig
 	}{
 		"fully-written": {
 			rawConfig: rawConfig{
@@ -276,7 +284,12 @@ func Test_Config_configure(t *testing.T) {
 					},
 				},
 			},
-			expected: &Config{
+			expected: &GlobalConfig{
+				rawConfig: rawConfig{
+					FormatStyle:    DefaultFormat,
+					NetworkTimeout: DefaultNetworkTimeout,
+					WaitTimeout:    DefaultWaitTimeout,
+				},
 				services: map[string]*Distribution{
 					"def1": {
 						ServiceName: DeploygateService,
@@ -315,7 +328,12 @@ func Test_Config_configure(t *testing.T) {
 					},
 				},
 			},
-			expected: &Config{
+			expected: &GlobalConfig{
+				rawConfig: rawConfig{
+					FormatStyle:    DefaultFormat,
+					NetworkTimeout: DefaultNetworkTimeout,
+					WaitTimeout:    DefaultWaitTimeout,
+				},
 				services: map[string]*Distribution{
 					"def1": {
 						ServiceName:   DeploygateService,
@@ -334,13 +352,19 @@ func Test_Config_configure(t *testing.T) {
 		},
 		"zero": {
 			rawConfig: rawConfig{},
-			expected:  &Config{},
+			expected: &GlobalConfig{
+				rawConfig: rawConfig{
+					FormatStyle:    DefaultFormat,
+					NetworkTimeout: DefaultNetworkTimeout,
+					WaitTimeout:    DefaultWaitTimeout,
+				},
+			},
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			config := Config{
+			config := GlobalConfig{
 				rawConfig: c.rawConfig,
 			}
 

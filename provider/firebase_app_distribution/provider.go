@@ -7,6 +7,7 @@ import (
 	"github.com/jmatsu/splitter/internal/config"
 	logger2 "github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/internal/net"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"path/filepath"
 	"strings"
@@ -21,7 +22,7 @@ var logger zerolog.Logger
 
 func init() {
 	logger = logger2.Logger.With().Str("provider", "firebase app distribution").Logger()
-	baseClient = net.GetHttpClient(endpoint)
+	baseClient = net.NewHttpClient(endpoint)
 }
 
 type Provider struct {
@@ -64,6 +65,8 @@ func (r *UploadRequest) fileType() string {
 }
 
 func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
+	logger.Info().Msg("preparing to upload...")
+
 	request := &UploadRequest{
 		projectNumber: p.ProjectNumber(),
 		appId:         p.AppId,
@@ -94,17 +97,24 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 	if bytes, err := p.distribute(request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse the response of your app to Firebase App Distribution but succeeded to upload: %v", err)
-	} else if doneResp, err := p.waitForOperationDone(&getOperationStateRequest{
-		operationName: response.OperationName,
-	}); err != nil {
-		return nil, err
-	} else {
+		return nil, errors.Wrap(err, "failed to parse the response of your app to Firebase App Distribution but succeeded to upload")
+	} else if config.GetGlobalConfig().Async {
 		return &DistributionResult{
-			v1UploadReleaseResponse: *doneResp.Response,
-			aabInfo:                 aabInfo,
-			RawJson:                 string(bytes),
+			aabInfo: aabInfo,
+			RawJson: string(bytes),
 		}, nil
+	} else {
+		if doneResp, err := p.waitForOperationDone(&getOperationStateRequest{
+			operationName: response.OperationName,
+		}); err != nil {
+			return nil, err
+		} else {
+			return &DistributionResult{
+				v1UploadReleaseResponse: doneResp.Response,
+				aabInfo:                 aabInfo,
+				RawJson:                 string(bytes),
+			}, nil
+		}
 	}
 }
 
@@ -122,12 +132,12 @@ func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
 	code, bytes, err := client.DoPostFileBody(p.ctx, []string{path}, request.filePath)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to distribute to Firebase App Distribution: %v", err)
+		return nil, errors.Wrap(err, "failed to distribute to Firebase App Distribution")
 	}
 
 	if code <= 200 && code < 300 {
 		return bytes, nil
 	} else {
-		return nil, fmt.Errorf("failed to upload your app to Firebase App Distribution due to '%s'", string(bytes))
+		return nil, errors.New(fmt.Sprintf("failed to upload your app to Firebase App Distribution due to '%s'", string(bytes)))
 	}
 }
