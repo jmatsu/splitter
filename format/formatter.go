@@ -12,7 +12,7 @@ var currentStyle config.FormatStyle
 
 type TableBuilder = func(writer table.Writer, v any)
 
-func Configure(style config.FormatStyle) {
+func SetStyle(style config.FormatStyle) {
 	currentStyle = style
 
 	logger.Logger.Debug().

@@ -9,21 +9,35 @@ import (
 	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v2"
 )
 
 var (
-	version   = "undefined"
-	commit    = "undefined"
-	timestamp = "undefined" // Dummy
+	version    = "undefined"
+	commit     = "undefined"
+	timestamp  = "undefined"
+	compiledAt time.Time
 )
+
+func init() {
+	var err error
+
+	compiledAt, err = time.Parse("", timestamp)
+
+	if err != nil {
+		compiledAt = time.Now()
+	}
+}
 
 func main() {
 	app := &cli.App{
-		Name:    "splitter",
-		Usage:   "An isolated command to distribute your apps to elsewhere",
-		Version: fmt.Sprintf("%s (git revision %s) %s", version, commit, timestamp),
+		Name:      "splitter",
+		Usage:     "An isolated command to distribute your apps to elsewhere",
+		Version:   fmt.Sprintf("%s (git revision %s)", version, commit),
+		Copyright: "Jumpei Matsuda (@jmatsu)",
+		Compiled:  compiledAt,
 		Flags: []cli.Flag{
 			&cli.PathFlag{
 				Name:     "config",
@@ -124,8 +138,8 @@ func main() {
 				return errors.Wrap(err, "options contain invalid values or conflict with the current config file")
 			}
 
-			net.Configure(conf.NetworkTimeout())
-			format.Configure(conf.FormatStyle())
+			net.SetTimeout(conf.NetworkTimeout())
+			format.SetStyle(conf.FormatStyle())
 
 			logger.Logger.Debug().Msgf("format style: %s", conf.FormatStyle())
 			logger.Logger.Debug().Msgf("async mode: %t", conf.Async)
