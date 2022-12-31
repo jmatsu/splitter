@@ -1,6 +1,7 @@
 package net
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
@@ -8,12 +9,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 )
 
 func init() {
 	client = http.Client{
-		Timeout: 10 * time.Minute,
+		Timeout: 10 * time.Minute, // TODO it's better to configure the timeout by users
 	}
 }
 
@@ -47,7 +49,19 @@ type HttpClient struct {
 	headers http.Header
 }
 
-func (c *HttpClient) SetDefaultHeaders(headers http.Header) {
+func (c *HttpClient) WithHeaders(headers http.Header) *HttpClient {
+	newClient := c.clone(func(newClient *HttpClient) {
+		if headers == nil {
+			return
+		}
+
+		newClient.setDefaultHeaders(headers)
+	})
+
+	return &newClient
+}
+
+func (c *HttpClient) setDefaultHeaders(headers http.Header) {
 	if headers == nil {
 		return
 	}
@@ -55,16 +69,15 @@ func (c *HttpClient) SetDefaultHeaders(headers http.Header) {
 	maps.Copy(c.headers, headers)
 }
 
-func (c *HttpClient) WithHeaders(headers http.Header) *HttpClient {
-	newClient := c.clone(func(newClient *HttpClient) {
-		if headers == nil {
-			return
-		}
-
-		newClient.SetDefaultHeaders(headers)
-	})
-
-	return &newClient
+func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, filePath string) (int, []byte, error) {
+	if f, err := os.Open(filePath); err != nil {
+		return 0, nil, fmt.Errorf("%s is not found: %v", filePath, err)
+	} else if b, err := io.ReadAll(f); err != nil {
+		return 0, nil, fmt.Errorf("%s cannot be read: %v", filePath, err)
+	} else {
+		buffer := bytes.NewBuffer(b)
+		return c.doPost(ctx, paths, "application/octet-stream", buffer)
+	}
 }
 
 func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, form *Form) (int, []byte, error) {
@@ -74,7 +87,11 @@ func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, fo
 		return 0, nil, fmt.Errorf("failed to serialize the request form: %v", err)
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL.JoinPath(paths...).String(), buffer)
+	return c.doPost(ctx, paths, contentType, buffer)
+}
+
+func (c *HttpClient) doPost(ctx context.Context, paths []string, contentType string, requestBody *bytes.Buffer) (int, []byte, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL.JoinPath(paths...).String(), requestBody)
 
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to build the request: %v", err)
@@ -95,7 +112,8 @@ func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, fo
 	//goland:noinspection GoUnhandledErrorResult
 	defer resp.Body.Close()
 
-	if bytes, err := io.ReadAll(resp.Body); err != nil {
+	if //goland:noinspection GoImportUsedAsName
+	bytes, err := io.ReadAll(resp.Body); err != nil {
 		return 0, nil, err
 	} else {
 		return resp.StatusCode, bytes, nil

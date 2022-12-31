@@ -38,7 +38,7 @@ func ToEnvName(name string) string {
 }
 
 type ServiceConfig interface {
-	testConfig | DeployGateConfig | LocalConfig
+	testConfig | DeployGateConfig | LocalConfig | FirebaseAppDistributionConfig
 }
 
 type Config struct {

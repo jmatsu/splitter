@@ -99,7 +99,7 @@ func Test_HttpClient_SetDefaultHeaders(t *testing.T) {
 			t.Parallel()
 
 			client := GetHttpClient("https://example.com")
-			client.SetDefaultHeaders(c.defaultHeaders)
+			client.setDefaultHeaders(c.defaultHeaders)
 
 			if c.defaultHeaders != nil {
 				for key, value := range c.defaultHeaders {
