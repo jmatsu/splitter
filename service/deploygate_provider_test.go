@@ -1,23 +1,13 @@
 package service
 
 import (
-	"context"
-	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/net"
 	"reflect"
 	"testing"
 )
 
-func Test_DeployGateProvider_toForm(t *testing.T) {
+func Test_DeployGateUploadAppRequest_toForm(t *testing.T) {
 	t.Parallel()
-
-	provider := DeployGateProvider{
-		DeployGateConfig: config.DeployGateConfig{
-			ApiToken:     "ApiToken",
-			AppOwnerName: "AppOwnerName",
-		},
-		ctx: context.TODO(),
-	}
 
 	sampleMessage1 := "sample1"
 
@@ -110,7 +100,7 @@ func Test_DeployGateProvider_toForm(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			form := provider.toForm(&c.request)
+			form := c.request.toForm()
 
 			if len(form.Fields) != len(c.expected.Fields) {
 				t.Errorf("actual length is %d but expected %d", len(form.Fields), len(c.expected.Fields))

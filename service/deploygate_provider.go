@@ -129,7 +129,7 @@ func (p *DeployGateProvider) distribute(request *DeployGateUploadAppRequest) ([]
 		"Authorization": {fmt.Sprintf("Bearer %s", p.ApiToken)},
 	})
 
-	code, bytes, err := client.DoPostMultipartForm(p.ctx, []string{"api", "users", p.AppOwnerName, "apps"}, p.toForm(request))
+	code, bytes, err := client.DoPostMultipartForm(p.ctx, []string{"api", "users", p.AppOwnerName, "apps"}, request.toForm())
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upload your app to DeployGate")
@@ -150,42 +150,42 @@ func (p *DeployGateProvider) distribute(request *DeployGateUploadAppRequest) ([]
 	}
 }
 
-func (p *DeployGateProvider) toForm(request *DeployGateUploadAppRequest) *net.Form {
+func (r *DeployGateUploadAppRequest) toForm() *net.Form {
 	form := net.Form{}
 
-	form.Set(net.FileField("file", request.filePath))
+	form.Set(net.FileField("file", r.filePath))
 
-	if request.message != nil {
+	if r.message != nil {
 		deployGateLogger.Debug().Msgf("message option was found")
 
-		form.Set(net.StringField("message", *request.message))
+		form.Set(net.StringField("message", *r.message))
 	}
 
-	if request.distributionOptions != nil {
-		if request.distributionOptions.AccessKey != "" && request.distributionOptions.Name != "" {
+	if r.distributionOptions != nil {
+		if r.distributionOptions.AccessKey != "" && r.distributionOptions.Name != "" {
 			deployGateLogger.Warn().Msgf("the both of distribution's access key and name are specified so this provider prioritizes access key")
 		}
 
-		if request.distributionOptions.AccessKey != "" {
-			form.Set(net.StringField("distribution_key", request.distributionOptions.AccessKey))
-		} else if request.distributionOptions.Name != "" {
-			form.Set(net.StringField("distribution_name", request.distributionOptions.Name))
+		if r.distributionOptions.AccessKey != "" {
+			form.Set(net.StringField("distribution_key", r.distributionOptions.AccessKey))
+		} else if r.distributionOptions.Name != "" {
+			form.Set(net.StringField("distribution_name", r.distributionOptions.Name))
 		}
 
-		if request.distributionOptions.ReleaseNote != nil {
-			form.Set(net.StringField("release_note", *request.distributionOptions.ReleaseNote))
-		} else if request.message != nil {
+		if r.distributionOptions.ReleaseNote != nil {
+			form.Set(net.StringField("release_note", *r.distributionOptions.ReleaseNote))
+		} else if r.message != nil {
 			deployGateLogger.Debug().Msgf("set message as release note as a fallback")
-			form.Set(net.StringField("release_note", *request.message))
+			form.Set(net.StringField("release_note", *r.message))
 		}
 	} else {
 		deployGateLogger.Debug().Msgf("distribution options were empty")
 	}
 
-	var iosOptionFound = request.iOSOptions.DisableNotification
+	var iosOptionFound = r.iOSOptions.DisableNotification
 
 	if iosOptionFound {
-		form.Set(net.BooleanField("disable_notify", request.iOSOptions.DisableNotification))
+		form.Set(net.BooleanField("disable_notify", r.iOSOptions.DisableNotification))
 	}
 
 	return &form
