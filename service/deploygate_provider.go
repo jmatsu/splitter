@@ -1,4 +1,4 @@
-package deploygate
+package service
 
 import (
 	"context"
@@ -15,7 +15,7 @@ var deployGateLogger zerolog.Logger
 var deployGateBaseClient *net.HttpClient
 
 func init() {
-	deployGateLogger = logger2.Logger.With().Str("provider", "deploygate").Logger()
+	deployGateLogger = logger2.Logger.With().Str("service", "deploygate").Logger()
 	deployGateBaseClient = net.NewHttpClient("https://deploygate.com")
 }
 

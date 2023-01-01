@@ -1,4 +1,4 @@
-package firebase_app_distribution
+package service
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-package local
+package service
 
 import (
 	"github.com/jedib0t/go-pretty/v6/table"

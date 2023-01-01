@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
-	"github.com/jmatsu/splitter/provider/deploygate"
+	"github.com/jmatsu/splitter/service"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -84,7 +84,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				return errors.Wrap(err, "given flags may be insufficient or invalid")
 			}
 
-			return distributeDeployGate(context.Context, &conf, context.String("source-file"), func(req *deploygate.DeployGateUploadAppRequest) {
+			return distributeDeployGate(context.Context, &conf, context.String("source-file"), func(req *service.DeployGateUploadAppRequest) {
 				if v := context.String("message"); context.IsSet("message") {
 					req.SetMessage(v)
 				}
@@ -107,14 +107,14 @@ func DeployGate(name string, aliases []string) *cli.Command {
 	}
 }
 
-func distributeDeployGate(ctx context.Context, conf *config.DeployGateConfig, filePath string, builder func(req *deploygate.DeployGateUploadAppRequest)) error {
-	provider := deploygate.NewDeployGateProvider(ctx, conf)
+func distributeDeployGate(ctx context.Context, conf *config.DeployGateConfig, filePath string, builder func(req *service.DeployGateUploadAppRequest)) error {
+	provider := service.NewDeployGateProvider(ctx, conf)
 
 	if response, err := provider.Distribute(filePath, builder); err != nil {
 		return err
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
-	} else if err := format.Format(*response, deploygate.DeployGateTableBuilder); err != nil {
+	} else if err := format.Format(*response, service.DeployGateTableBuilder); err != nil {
 		return errors.Wrap(err, "cannot format the response")
 	}
 

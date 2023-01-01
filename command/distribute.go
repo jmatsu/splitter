@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
-	"github.com/jmatsu/splitter/provider/deploygate"
-	"github.com/jmatsu/splitter/provider/firebase_app_distribution"
-	"github.com/jmatsu/splitter/provider/lifecycle"
+	"github.com/jmatsu/splitter/service"
+	"github.com/jmatsu/splitter/service/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -63,7 +62,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				case config.DeploygateService:
 					dg := d.ServiceConfig.(*config.DeployGateConfig)
 
-					return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *deploygate.DeployGateUploadAppRequest) {
+					return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *service.DeployGateUploadAppRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetMessage(v)
 							req.SetDistributionReleaseNote(v)
@@ -76,7 +75,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				case config.FirebaseAppDistributionService:
 					fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
 
-					return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *firebase_app_distribution.FirebaseAppDistributionUploadAppRequest) {
+					return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *service.FirebaseAppDistributionUploadAppRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetReleaseNote(v)
 						}

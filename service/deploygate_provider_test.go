@@ -1,4 +1,4 @@
-package deploygate
+package service
 
 import (
 	"context"

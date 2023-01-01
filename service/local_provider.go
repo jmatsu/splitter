@@ -1,4 +1,4 @@
-package local
+package service
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 var localLogger zerolog.Logger
 
 func init() {
-	localLogger = logger.Logger.With().Str("provider", "local").Logger()
+	localLogger = logger.Logger.With().Str("service", "local").Logger()
 }
 
 type LocalProvider struct {

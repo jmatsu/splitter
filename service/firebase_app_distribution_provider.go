@@ -1,4 +1,4 @@
-package firebase_app_distribution
+package service
 
 import (
 	"context"
@@ -17,7 +17,7 @@ var firebaseAppDistributionBaseClient *net.HttpClient
 var firebaseAppDistributionLogger zerolog.Logger
 
 func init() {
-	firebaseAppDistributionLogger = logger2.Logger.With().Str("provider", "firebase app distribution").Logger()
+	firebaseAppDistributionLogger = logger2.Logger.With().Str("service", "firebase app distribution").Logger()
 	firebaseAppDistributionBaseClient = net.NewHttpClient("https://firebaseappdistribution.googleapis.com")
 }
 
