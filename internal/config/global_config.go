@@ -68,7 +68,7 @@ type serviceNameHolder struct {
 type Distribution struct {
 	ServiceName   string
 	ServiceConfig any // See ServiceConfig interface
-	Lifecycle     *LifecycleConfig
+	Lifecycle     *ExecutionConfig
 }
 
 type FormatStyle = string
@@ -194,7 +194,7 @@ func (c *GlobalConfig) configure() error {
 			c.services[name] = &Distribution{
 				ServiceName:   holder.ServiceName,
 				ServiceConfig: &deploygate,
-				Lifecycle:     &deploygate.LifecycleConfig,
+				Lifecycle:     &deploygate.ExecutionConfig,
 			}
 		case FirebaseAppDistributionService:
 			firebase := FirebaseAppDistributionConfig{}
@@ -206,7 +206,7 @@ func (c *GlobalConfig) configure() error {
 			c.services[name] = &Distribution{
 				ServiceName:   holder.ServiceName,
 				ServiceConfig: &firebase,
-				Lifecycle:     &firebase.LifecycleConfig,
+				Lifecycle:     &firebase.ExecutionConfig,
 			}
 		case LocalService:
 			local := LocalConfig{}
@@ -218,7 +218,7 @@ func (c *GlobalConfig) configure() error {
 			c.services[name] = &Distribution{
 				ServiceName:   holder.ServiceName,
 				ServiceConfig: &local,
-				Lifecycle:     &local.LifecycleConfig,
+				Lifecycle:     &local.ExecutionConfig,
 			}
 		default:
 			return errors.New(fmt.Sprintf("%s of %s is an unknown service", holder.ServiceName, name))

@@ -5,7 +5,6 @@ import (
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/service"
-	"github.com/jmatsu/splitter/service/lifecycle"
 	"github.com/jmatsu/splitter/task"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
@@ -54,9 +53,9 @@ func Distribute(name string, aliases []string) *cli.Command {
 				return err
 			}
 
-			lifecycleProvider := lifecycle.NewProvider(context.Context, d.Lifecycle)
+			executor := task.NewExecutor(context.Context, d.Lifecycle)
 
-			return lifecycleProvider.Execute(func() error {
+			return executor.Execute(func() error {
 				sourceFilePath := context.String("source-file")
 
 				switch d.ServiceName {

@@ -8,7 +8,7 @@ import (
 // FirebaseAppDistributionConfig contains the enough values to use Firebase App Distribution.
 // ref: https://firebase.google.com/docs/app-distribution
 type FirebaseAppDistributionConfig struct {
-	LifecycleConfig
+	ExecutionConfig
 
 	// Access token that has permission to use App Distribution
 	AccessToken string `json:"access-token,omitempty"`

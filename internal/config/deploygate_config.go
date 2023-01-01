@@ -2,7 +2,7 @@ package config
 
 // DeployGateConfig contains the enough values to use DeployGate.
 type DeployGateConfig struct {
-	LifecycleConfig
+	ExecutionConfig
 
 	// User#name or Group#name of DeployGate
 	AppOwnerName string `json:"app-owner-name,omitempty" env:"DEPLOYGATE_APP_OWNER_NAME" required:"true"`

@@ -3,7 +3,7 @@ package config
 import "os"
 
 type LocalConfig struct {
-	LifecycleConfig
+	ExecutionConfig
 
 	DestinationPath string      `json:"destination-path,omitempty" required:"true"`
 	AllowOverwrite  bool        `json:"allow-overwrite,omitempty"`

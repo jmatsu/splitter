@@ -1,4 +1,4 @@
-package lifecycle
+package task
 
 import (
 	"context"
@@ -11,52 +11,44 @@ import (
 
 var sh = exec.New()
 
-type Provider struct {
-	config *config.LifecycleConfig
+type Executor struct {
+	config *config.ExecutionConfig
 	ctx    context.Context
 }
 
-func NewProvider(ctx context.Context, conf *config.LifecycleConfig) *Provider {
-	return &Provider{
+func NewExecutor(ctx context.Context, conf *config.ExecutionConfig) *Executor {
+	return &Executor{
 		config: conf,
 		ctx:    ctx,
 	}
 }
 
-func (p *Provider) Execute(f func() error) error {
-	if err := p.RunPreSteps(); err != nil {
-		return errors.Wrap(err, "failed to execute pre-steps")
+func (p *Executor) Execute(f func() error) error {
+	if p.config != nil && len(p.config.PreSteps) > 0 {
+		logger.Logger.Info().Msgf("Execute pre-steps... 0/%d", len(p.config.PreSteps))
+
+		if err := runSteps(p.ctx, p.config.PreSteps); err != nil {
+			return errors.Wrap(err, "failed to execute pre-steps")
+		}
+	} else {
+		logger.Logger.Info().Msg("No pre-steps are found")
 	}
 
 	if err := f(); err != nil {
 		return errors.Wrap(err, "failed to execute the content so post-steps won't be executed.")
 	}
 
-	if err := p.RunPostSteps(); err != nil {
-		return errors.Wrap(err, "failed to execute post-steps")
+	if p.config != nil && len(p.config.PostSteps) > 0 {
+		logger.Logger.Info().Msgf("Execute post-steps... 0/%d", len(p.config.PostSteps))
+
+		if err := runSteps(p.ctx, p.config.PostSteps); err != nil {
+			return errors.Wrap(err, "failed to execute post-steps")
+		}
+	} else {
+		logger.Logger.Info().Msg("No post-steps are found")
 	}
 
 	return nil
-}
-
-func (p *Provider) RunPreSteps() error {
-	if p.config == nil && len(p.config.PreSteps) == 0 {
-		return nil
-	}
-
-	logger.Logger.Info().Msgf("Execute pre-steps... 0/%d", len(p.config.PreSteps))
-
-	return runSteps(p.ctx, p.config.PreSteps)
-}
-
-func (p *Provider) RunPostSteps() error {
-	if p.config == nil && len(p.config.PostSteps) == 0 {
-		return nil
-	}
-
-	logger.Logger.Info().Msgf("Execute post-steps... 0/%d", len(p.config.PostSteps))
-
-	return runSteps(p.ctx, p.config.PostSteps)
 }
 
 func runSteps(ctx context.Context, steps [][]string) error {
