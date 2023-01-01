@@ -159,7 +159,6 @@ func Test_Executor_Execute(t *testing.T) {
 			t.Parallel()
 
 			var stubCommandActions []testingexec.FakeCommandAction
-			var stubCommands []*testingexec.FakeCmd
 
 			if c.conf != nil {
 				if c.conf.PreSteps != nil {
@@ -177,8 +176,6 @@ func Test_Executor_Execute(t *testing.T) {
 								}
 							},
 						}
-						stubCommands = append(stubCommands, fakeCmd)
-
 						stubCommandActions = append(stubCommandActions, func(cmd string, args ...string) exec.Cmd {
 							return fakeCmd
 						})
@@ -200,8 +197,6 @@ func Test_Executor_Execute(t *testing.T) {
 								}
 							},
 						}
-						stubCommands = append(stubCommands, fakeCmd)
-
 						stubCommandActions = append(stubCommandActions, func(cmd string, args ...string) exec.Cmd {
 							return fakeCmd
 						})

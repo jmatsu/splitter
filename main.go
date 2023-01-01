@@ -137,9 +137,9 @@ func main() {
 			}
 
 			logger.Logger.Debug().
-				Str("network-timeout", fmt.Sprintf("%s", c.NetworkTimeout())).
-				Str("wait-timeout", fmt.Sprintf("%s", c.WaitTimeout())).
-				Str("format-style", fmt.Sprintf("%s", c.FormatStyle())).
+				Str("network-timeout", c.NetworkTimeout().String()).
+				Str("wait-timeout", c.WaitTimeout().String()).
+				Str("format-style", c.FormatStyle()).
 				Str("async", fmt.Sprintf("%t", c.Async)).
 				Msg("configuration has been initialized")
 
