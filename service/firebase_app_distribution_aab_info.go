@@ -13,7 +13,7 @@ type firebaseAppDistributionAabInfoRequest struct {
 
 type firebaseAppDistributionAabInfoResponse struct {
 	IntegrationState appBundleIntegrationState              `json:"integrationState"`
-	TestCertificate  *firebaseAppDistributionAppCertificate `json:"testCertificate,omitempty"`
+	TestCertificate  *firebaseAppDistributionAppCertificate `json:"testCertificate"`
 }
 
 type firebaseAppDistributionAppCertificate struct {

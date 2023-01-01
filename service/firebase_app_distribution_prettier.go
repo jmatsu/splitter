@@ -2,7 +2,7 @@ package service
 
 type FirebaseAppDistributionDistributionResult struct {
 	Result  string
-	Release *firebaseAppDistributionRelease
+	Release firebaseAppDistributionRelease
 	AabInfo *firebaseAppDistributionAabInfoResponse
 	RawJson string
 }

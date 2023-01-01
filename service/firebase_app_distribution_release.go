@@ -14,7 +14,7 @@ type firebaseAppDistributionRelease struct {
 	CreatedAt      string `json:"createTime"`
 	ReleaseNote    *struct {
 		Text string `json:"text"`
-	} `json:"releaseNotes,omitempty"`
+	} `json:"releaseNotes"`
 }
 
 type firebaseAppDistributionUpdateReleaseRequest struct {
@@ -28,6 +28,12 @@ type firebaseAppDistributionUpdateReleaseResponse struct {
 	firebaseAppDistributionRelease
 }
 
+type firebaseAppDistributionDistributeReleaseRequest struct {
+	ReleaseName  string   `json:"-"`
+	TesterEmails []string `json:"testerEmails"`
+	GroupAliases []string `json:"groupAliases"`
+}
+
 func (r firebaseAppDistributionRelease) NewUpdateRequest(releaseNote string) *firebaseAppDistributionUpdateReleaseRequest {
 	return &firebaseAppDistributionUpdateReleaseRequest{
 		ReleaseName: r.Name,
@@ -36,6 +42,14 @@ func (r firebaseAppDistributionRelease) NewUpdateRequest(releaseNote string) *fi
 		}{
 			Text: releaseNote,
 		},
+	}
+}
+
+func (r firebaseAppDistributionRelease) NewDistributeRequest(testerEmails []string, groupAliases []string) *firebaseAppDistributionDistributeReleaseRequest {
+	return &firebaseAppDistributionDistributeReleaseRequest{
+		ReleaseName:  r.Name,
+		TesterEmails: testerEmails,
+		GroupAliases: groupAliases,
 	}
 }
 
@@ -57,7 +71,7 @@ func (p *FirebaseAppDistributionProvider) updateReleaseNote(request *firebaseApp
 	}, "application/json", bytes2.NewBuffer(bytes))
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get a response from operation state api")
+		return nil, errors.Wrap(err, "failed to get a response from update release api")
 	}
 
 	var response firebaseAppDistributionUpdateReleaseResponse
@@ -70,5 +84,31 @@ func (p *FirebaseAppDistributionProvider) updateReleaseNote(request *firebaseApp
 		}
 	} else {
 		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
+	}
+}
+
+func (p *FirebaseAppDistributionProvider) distributeRelease(request *firebaseAppDistributionDistributeReleaseRequest) error {
+	path := fmt.Sprintf("/v1/%s:distribute", request.ReleaseName)
+
+	client := p.client.WithHeaders(map[string][]string{
+		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
+	})
+
+	bytes, err := json.Marshal(*request)
+
+	if err != nil {
+		return errors.Wrap(err, "cannot marshal the distribute release request")
+	}
+
+	code, bytes, err := client.DoPost(p.ctx, []string{path}, nil, "application/json", bytes2.NewBuffer(bytes))
+
+	if err != nil {
+		return errors.Wrap(err, "failed to get a response from distribute api")
+	}
+
+	if 200 <= code && code < 300 {
+		return nil
+	} else {
+		return errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
 	}
 }

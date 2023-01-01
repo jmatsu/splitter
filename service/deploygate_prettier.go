@@ -23,8 +23,8 @@ type deployGateUploadResponse struct {
 		VersionCode      string  `json:"version_code"`
 		VersionName      string  `json:"version_name"`
 		SdkVersion       uint16  `json:"sdk_version"`
-		RawSdkVersion    *string `json:"raw_sdk_version,omitempty"`
-		TargetSdkVersion *uint16 `json:"target_sdk_version,omitempty"`
+		RawSdkVersion    *string `json:"raw_sdk_version"`
+		TargetSdkVersion *uint16 `json:"target_sdk_version"`
 		DownloadUrl      string  `json:"file"`
 		User             struct {
 			Name string
@@ -34,6 +34,6 @@ type deployGateUploadResponse struct {
 			Title       string `json:"title"`
 			ReleaseNote string `json:"release_note"`
 			Url         string `json:"url"`
-		} `json:"distribution,omitempty"`
+		} `json:"distribution"`
 	} `json:"results"`
 }

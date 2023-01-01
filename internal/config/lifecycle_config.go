@@ -1,6 +1,6 @@
 package config
 
 type ExecutionConfig struct {
-	PreSteps  [][]string `json:"pre-steps,omitempty"`
-	PostSteps [][]string `json:"post-steps,omitempty"`
+	PreSteps  [][]string `json:"pre-steps"`
+	PostSteps [][]string `json:"post-steps"`
 }

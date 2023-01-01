@@ -49,8 +49,6 @@ type ServiceConfig interface {
 type GlobalConfig struct {
 	rawConfig rawConfig
 	services  map[string]*Distribution
-
-	Async bool
 }
 
 type rawConfig struct {
@@ -106,10 +104,6 @@ func SetGlobalNetworkTimeout(value string) {
 
 func SetGlobalWaitTimeout(value string) {
 	config.rawConfig.WaitTimeout = value
-}
-
-func SetGlobalAsync(async bool) {
-	config.Async = async
 }
 
 func CurrentConfig() *GlobalConfig {

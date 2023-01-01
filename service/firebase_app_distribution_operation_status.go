@@ -15,7 +15,7 @@ type firebaseAppDistributionGetOperationStateRequest struct {
 type firebaseAppDistributionGetOperationStateResponse struct {
 	OperationName string                                          `json:"name"`
 	Done          bool                                            `json:"done"`
-	Response      *firebaseAppDistributionV1UploadReleaseResponse `json:"response,omitempty"`
+	Response      *firebaseAppDistributionV1UploadReleaseResponse `json:"response"`
 }
 
 type firebaseAppDistributionV1UploadReleaseResponse struct {

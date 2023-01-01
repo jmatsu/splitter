@@ -83,6 +83,14 @@ func (c *HttpClient) DoPatch(ctx context.Context, paths []string, queries map[st
 	}
 }
 
+func (c *HttpClient) DoPost(ctx context.Context, paths []string, queries map[string]string, contentType string, requestBody *bytes.Buffer) (int, []byte, error) {
+	if requestBody != nil {
+		return c.do(ctx, paths, queries, http.MethodPost, contentType, requestBody)
+	} else {
+		return c.do(ctx, paths, queries, http.MethodPost, contentType, nil)
+	}
+}
+
 func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, filePath string) (int, []byte, error) {
 	if f, err := os.Open(filePath); err != nil {
 		return 0, nil, errors.Wrapf(err, "%s is not found", filePath)
@@ -90,7 +98,7 @@ func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, filePat
 		return 0, nil, errors.Wrapf(err, "%s cannot be read", filePath)
 	} else {
 		buffer := bytes.NewBuffer(b)
-		return c.do(ctx, paths, nil, http.MethodPost, "application/octet-stream", buffer)
+		return c.DoPost(ctx, paths, nil, "application/octet-stream", buffer)
 	}
 }
 
@@ -101,7 +109,7 @@ func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, fo
 		return 0, nil, errors.Wrap(err, "failed to serialize the request form")
 	}
 
-	return c.do(ctx, paths, nil, http.MethodPost, contentType, buffer)
+	return c.DoPost(ctx, paths, nil, contentType, buffer)
 }
 
 func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]string, method string, contentType string, requestBody io.Reader) (int, []byte, error) {
