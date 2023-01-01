@@ -16,7 +16,7 @@ func DistributeToFirebaseAppDistribution(ctx context.Context, conf config.Fireba
 	provider := service.NewFirebaseAppDistributionProvider(ctx, &conf)
 
 	formatter := NewFormatter()
-	formatter.TableBuilder = FirebaseAppDistributionTableBuilder
+	formatter.TableBuilder = firebaseAppDistributionTableBuilder
 
 	if response, err := provider.Distribute(filePath, builder); err != nil {
 		return errors.Wrap(err, "cannot distribute this app")
@@ -27,8 +27,13 @@ func DistributeToFirebaseAppDistribution(ctx context.Context, conf config.Fireba
 	return nil
 }
 
-var FirebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
+var firebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 	resp := v.(service.FirebaseAppDistributionDistributionResult)
+
+	if resp.Response == nil {
+		w.SetTitle("The results cannot be rendered for an unknown reason. Please create an issue at https://github.com/jmatsu/splitter/issues")
+		return
+	}
 
 	release := resp.Response.Release
 

@@ -8,14 +8,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-type firebaseAppDistributionRelease struct {
-	Name           string `json:"name"`
-	DisplayVersion string `json:"displayVersion"`
-	BuildVersion   string `json:"buildVersion"`
-	CreatedAt      string `json:"createTime"`
-	ReleaseNote    *struct {
-		Text string `json:"text"`
-	} `json:"releaseNotes"`
+type FirebaseAppDistributionReleaseFragment struct {
+	Name           string                                      `json:"name"`
+	DisplayVersion string                                      `json:"displayVersion"`
+	BuildVersion   string                                      `json:"buildVersion"`
+	CreatedAt      string                                      `json:"createTime"`
+	ReleaseNote    *FirebaseAppDistributionReleaseNoteFragment `json:"releaseNotes"`
+}
+
+type FirebaseAppDistributionReleaseNoteFragment struct {
+	Text string `json:"text"`
 }
 
 type firebaseAppDistributionUpdateReleaseRequest struct {
@@ -26,7 +28,7 @@ type firebaseAppDistributionUpdateReleaseRequest struct {
 }
 
 type firebaseAppDistributionUpdateReleaseResponse struct {
-	firebaseAppDistributionRelease
+	FirebaseAppDistributionReleaseFragment
 
 	RawResponse *net.HttpResponse `json:"-"`
 }
@@ -41,7 +43,7 @@ type firebaseAppDistributionDistributeReleaseRequest struct {
 	GroupAliases []string `json:"groupAliases"`
 }
 
-func (r firebaseAppDistributionRelease) NewUpdateRequest(releaseNote string) *firebaseAppDistributionUpdateReleaseRequest {
+func (r FirebaseAppDistributionReleaseFragment) NewUpdateRequest(releaseNote string) *firebaseAppDistributionUpdateReleaseRequest {
 	return &firebaseAppDistributionUpdateReleaseRequest{
 		ReleaseName: r.Name,
 		ReleaseNote: struct {
@@ -52,7 +54,7 @@ func (r firebaseAppDistributionRelease) NewUpdateRequest(releaseNote string) *fi
 	}
 }
 
-func (r firebaseAppDistributionRelease) NewDistributeRequest(testerEmails []string, groupAliases []string) *firebaseAppDistributionDistributeReleaseRequest {
+func (r FirebaseAppDistributionReleaseFragment) NewDistributeRequest(testerEmails []string, groupAliases []string) *firebaseAppDistributionDistributeReleaseRequest {
 	return &firebaseAppDistributionDistributeReleaseRequest{
 		ReleaseName:  r.Name,
 		TesterEmails: testerEmails,

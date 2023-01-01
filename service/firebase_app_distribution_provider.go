@@ -32,13 +32,13 @@ type FirebaseAppDistributionProvider struct {
 }
 
 type FirebaseAppDistributionDistributionResult struct {
-	firebaseAppDistributionGetOperationStateResponse
+	FirebaseAppDistributionGetOperationStateResponse
 
-	AabInfo *firebaseAppDistributionAabInfoResponse
+	AabInfo *FirebaseAppDistributionAabInfoResponse
 }
 
 func (r *FirebaseAppDistributionDistributionResult) RawJsonResponse() string {
-	return r.firebaseAppDistributionGetOperationStateResponse.RawResponse.RawJson()
+	return r.FirebaseAppDistributionGetOperationStateResponse.RawResponse.RawJson()
 }
 
 func (r *FirebaseAppDistributionDistributionResult) ValueResponse() any {
@@ -120,7 +120,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 
 	firebaseAppDistributionLogger.Debug().Msgf("the request has been built: %v", *request)
 
-	var aabInfo *firebaseAppDistributionAabInfoResponse
+	var aabInfo *FirebaseAppDistributionAabInfoResponse
 
 	if request.OsName() == "android" {
 		aabInfo, _ = p.getAabInfo(&firebaseAppDistributionAabInfoRequest{
@@ -143,7 +143,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		operation = r.OperationName
 	}
 
-	var response *firebaseAppDistributionGetOperationStateResponse
+	var response *FirebaseAppDistributionGetOperationStateResponse
 
 	firebaseAppDistributionLogger.Debug().Msgf("start waiting for %s", operation)
 
@@ -163,7 +163,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		if resp, err := p.updateReleaseNote(req); err != nil {
 			firebaseAppDistributionLogger.Warn().Err(err).Msg("failed to update the release note")
 		} else {
-			response.Response.Release = resp.firebaseAppDistributionRelease
+			response.Response.Release = resp.FirebaseAppDistributionReleaseFragment
 		}
 	}
 
@@ -189,7 +189,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 	}
 
 	return &FirebaseAppDistributionDistributionResult{
-		firebaseAppDistributionGetOperationStateResponse: *response,
+		FirebaseAppDistributionGetOperationStateResponse: *response,
 		AabInfo: aabInfo,
 	}, nil
 }

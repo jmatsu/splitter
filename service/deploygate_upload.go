@@ -20,34 +20,40 @@ type DeployGateUploadAppRequest struct {
 	iOSOptions          deployGateIOSOptions
 }
 
-type deployGateUploadResponse struct {
-	Results struct {
-		OsName string `json:"os_name"`
-
-		Name             string  `json:"name"`
-		PackageName      string  `json:"package_name"`
-		Revision         uint32  `json:"revision"`
-		VersionCode      string  `json:"version_code"`
-		VersionName      string  `json:"version_name"`
-		SdkVersion       uint16  `json:"sdk_version"`
-		RawSdkVersion    *string `json:"raw_sdk_version"`
-		TargetSdkVersion *uint16 `json:"target_sdk_version"`
-		DownloadUrl      string  `json:"file"`
-		User             struct {
-			Name string
-		} `json:"user"`
-		Distribution *struct {
-			AccessKey   string `json:"access_key"`
-			Title       string `json:"title"`
-			ReleaseNote string `json:"release_note"`
-			Url         string `json:"url"`
-		} `json:"distribution"`
-	} `json:"results"`
+type DeployGateUploadResponse struct {
+	Results DeployGateBinaryFragment `json:"results"`
 
 	RawResponse *net.HttpResponse `json:"-"`
 }
 
-func (r *deployGateUploadResponse) Set(v *net.HttpResponse) {
+type DeployGateBinaryFragment struct {
+	OsName string `json:"os_name"`
+
+	Name             string                          `json:"name"`
+	PackageName      string                          `json:"package_name"`
+	Revision         uint32                          `json:"revision"`
+	VersionCode      string                          `json:"version_code"`
+	VersionName      string                          `json:"version_name"`
+	SdkVersion       uint16                          `json:"sdk_version"`
+	RawSdkVersion    string                          `json:"raw_sdk_version"`
+	TargetSdkVersion uint16                          `json:"target_sdk_version"`
+	DownloadUrl      string                          `json:"file"`
+	User             DeployGateUserFragment          `json:"user"`
+	Distribution     *DeployGateDistributionFragment `json:"distribution"`
+}
+
+type DeployGateUserFragment struct {
+	Name string `json:"name"`
+}
+
+type DeployGateDistributionFragment struct {
+	AccessKey   string `json:"access_key"`
+	Title       string `json:"title"`
+	ReleaseNote string `json:"release_note"`
+	Url         string `json:"url"`
+}
+
+func (r *DeployGateUploadResponse) Set(v *net.HttpResponse) {
 	r.RawResponse = v
 }
 
@@ -126,7 +132,7 @@ func (r *DeployGateUploadAppRequest) toForm() *net.Form {
 	return &form
 }
 
-func (p *DeployGateProvider) upload(request *DeployGateUploadAppRequest) (*deployGateUploadResponse, error) {
+func (p *DeployGateProvider) upload(request *DeployGateUploadAppRequest) (*DeployGateUploadResponse, error) {
 	client := p.client.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.ApiToken)},
 	})
@@ -138,10 +144,10 @@ func (p *DeployGateProvider) upload(request *DeployGateUploadAppRequest) (*deplo
 	}
 
 	if resp.Successful() {
-		if v, err := resp.ParseJson(&deployGateUploadResponse{}); err != nil {
+		if v, err := resp.ParseJson(&DeployGateUploadResponse{}); err != nil {
 			return nil, errors.Wrap(err, "succeeded to upload but something went wrong")
 		} else {
-			return v.(*deployGateUploadResponse), nil
+			return v.(*DeployGateUploadResponse), nil
 		}
 	} else {
 		return nil, errors.Wrap(resp.Err(), "failed to upload your app to DeployGate")

@@ -11,14 +11,14 @@ type firebaseAppDistributionAabInfoRequest struct {
 	appId         string
 }
 
-type firebaseAppDistributionAabInfoResponse struct {
+type FirebaseAppDistributionAabInfoResponse struct {
 	IntegrationState appBundleIntegrationState              `json:"integrationState"`
 	TestCertificate  *firebaseAppDistributionAppCertificate `json:"testCertificate"`
 
 	RawResponse *net.HttpResponse `json:"-"`
 }
 
-func (r *firebaseAppDistributionAabInfoResponse) Set(v *net.HttpResponse) {
+func (r *FirebaseAppDistributionAabInfoResponse) Set(v *net.HttpResponse) {
 	r.RawResponse = v
 }
 
@@ -40,7 +40,7 @@ const (
 	aabIntegrationTermsUnaccepted appBundleIntegrationState = "PLAY_IAS_TERMS_NOT_ACCEPTED"                 // Users need to agree the terms first
 )
 
-func (p *FirebaseAppDistributionProvider) getAabInfo(request *firebaseAppDistributionAabInfoRequest) (*firebaseAppDistributionAabInfoResponse, error) {
+func (p *FirebaseAppDistributionProvider) getAabInfo(request *firebaseAppDistributionAabInfoRequest) (*FirebaseAppDistributionAabInfoResponse, error) {
 	path := fmt.Sprintf("/v1/projects/%s/apps/%s/aabInfo", request.projectNumber, request.appId)
 
 	client := p.client.WithHeaders(map[string][]string{
@@ -54,17 +54,17 @@ func (p *FirebaseAppDistributionProvider) getAabInfo(request *firebaseAppDistrib
 	}
 
 	if resp.Successful() {
-		if v, err := resp.ParseJson(&firebaseAppDistributionAabInfoResponse{}); err != nil {
+		if v, err := resp.ParseJson(&FirebaseAppDistributionAabInfoResponse{}); err != nil {
 			return nil, errors.Wrap(err, "succeeded to get aab info but something went wrong")
 		} else {
-			return v.(*firebaseAppDistributionAabInfoResponse), nil
+			return v.(*FirebaseAppDistributionAabInfoResponse), nil
 		}
 	} else {
 		return nil, errors.Wrap(resp.Err(), "failed to get aab info")
 	}
 }
 
-func (r *firebaseAppDistributionAabInfoResponse) Available() bool {
+func (r *FirebaseAppDistributionAabInfoResponse) Available() bool {
 	return r.IntegrationState == aabIntegrationIntegrated
 }
 

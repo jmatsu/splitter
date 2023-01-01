@@ -16,7 +16,7 @@ func DistributeToLocal(ctx context.Context, conf config.LocalConfig, filePath st
 	provider := service.NewLocalProvider(ctx, &conf)
 
 	formatter := NewFormatter()
-	formatter.TableBuilder = LocalTableBuilder
+	formatter.TableBuilder = localTableBuilder
 
 	if response, err := provider.Distribute(filePath); err != nil {
 		return errors.Wrap(err, "cannot distribute this app")
@@ -27,7 +27,7 @@ func DistributeToLocal(ctx context.Context, conf config.LocalConfig, filePath st
 	return nil
 }
 
-var LocalTableBuilder = func(w table.Writer, v any) {
+var localTableBuilder = func(w table.Writer, v any) {
 	resp := v.(service.LocalDistributionResult)
 
 	w.AppendHeader(table.Row{

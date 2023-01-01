@@ -29,11 +29,11 @@ type DeployGateProvider struct {
 }
 
 type DeployGateDistributionResult struct {
-	deployGateUploadResponse
+	DeployGateUploadResponse
 }
 
 func (r *DeployGateDistributionResult) RawJsonResponse() string {
-	return r.deployGateUploadResponse.RawResponse.RawJson()
+	return r.DeployGateUploadResponse.RawResponse.RawJson()
 }
 
 func (r *DeployGateDistributionResult) ValueResponse() any {
@@ -51,7 +51,7 @@ func (p *DeployGateProvider) Distribute(filePath string, builder func(req *Deplo
 		return nil, err
 	} else {
 		return &DeployGateDistributionResult{
-			deployGateUploadResponse: *r,
+			DeployGateUploadResponse: *r,
 		}, nil
 	}
 }

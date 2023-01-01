@@ -40,7 +40,7 @@ type LocalProvider struct {
 }
 
 type LocalDistributionResult struct {
-	localMoveResponse
+	LocalMoveResponse
 	RawJson string
 }
 
@@ -60,7 +60,7 @@ type LocalMoveRequest struct {
 	DeleteResource      bool
 }
 
-type localMoveResponse struct {
+type LocalMoveResponse struct {
 	SourceFilePath      string     `json:"source_file_path"`
 	DestinationFilePath string     `json:"destination_file_path"`
 	SideEffect          sideEffect `json:"side_effect"`
@@ -80,7 +80,7 @@ func (p *LocalProvider) Distribute(filePath string) (*LocalDistributionResult, e
 		request.FileMode = v.Mode()
 	}
 
-	var response localMoveResponse
+	var response LocalMoveResponse
 
 	if bytes, err := p.distribute(&request); err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (p *LocalProvider) Distribute(filePath string) (*LocalDistributionResult, e
 		return nil, errors.Wrap(err, "failed to unmarshal")
 	} else {
 		return &LocalDistributionResult{
-			localMoveResponse: response,
+			LocalMoveResponse: response,
 			RawJson:           string(bytes),
 		}, nil
 	}
@@ -167,7 +167,7 @@ func (p *LocalProvider) distribute(request *LocalMoveRequest) ([]byte, error) {
 		localLogger.Debug().Msgf("%s has been changed to permission %d", request.DestinationFilePath, request.FileMode)
 	}
 
-	resp := localMoveResponse{
+	resp := LocalMoveResponse{
 		SourceFilePath:      request.SourceFilePath,
 		DestinationFilePath: request.DestinationFilePath,
 		SideEffect:          sideEffect,

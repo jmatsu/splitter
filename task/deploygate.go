@@ -77,7 +77,7 @@ var deployGateTableBuilder = func(w table.Writer, v any) {
 			{"Version Code", resp.VersionCode},
 			{"Version Name", resp.VersionName},
 			{"Min SDK Version", resp.SdkVersion},
-			{"Target SDK Version", *resp.TargetSdkVersion},
+			{"Target SDK Version", resp.TargetSdkVersion},
 		})
 
 	case "ios":
@@ -86,7 +86,7 @@ var deployGateTableBuilder = func(w table.Writer, v any) {
 			{"Bundle Identifier", resp.PackageName},
 			{"Version Code", resp.VersionCode},
 			{"Version Name", resp.VersionName},
-			{"Build SDK Version", *resp.RawSdkVersion},
+			{"Build SDK Version", resp.RawSdkVersion},
 		})
 	}
 }

@@ -1,0 +1,44 @@
+name: Integration Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  default_config:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distribution_name:
+          -
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-go
+
+  deploygate:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-go
+      - run: go install
+
+
+  firebase-app-distribution:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-go
+      - run: go install
+
+  local:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-go
+      - run: go install
