@@ -35,7 +35,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				EnvVars:  []string{"DEPLOYGATE_API_TOKEN"},
 			},
 			&cli.PathFlag{
-				Name: "source-file",
+				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
@@ -77,7 +77,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				ApiToken:     context.String("api-token"),
 			}
 
-			return task.DeployToDeployGate(context.Context, conf, context.String("source-file"), func(req *service.DeployGateDeployRequest) {
+			return task.DeployToDeployGate(context.Context, conf, context.String("source-path"), func(req *service.DeployGateDeployRequest) {
 				if v := context.String("message"); context.IsSet("message") {
 					req.SetMessage(v)
 				}

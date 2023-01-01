@@ -28,7 +28,7 @@ func Deploy(name string, aliases []string) *cli.Command {
 				EnvVars:  []string{config.ToEnvName("DEPLOYMENT_NAME")},
 			},
 			&cli.PathFlag{
-				Name: "source-file",
+				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
@@ -56,7 +56,7 @@ func Deploy(name string, aliases []string) *cli.Command {
 			executor := task.NewExecutor(nil, context.Context, d.Lifecycle)
 
 			return executor.Execute(func() error {
-				sourceFilePath := context.String("source-file")
+				sourceFilePath := context.String("source-path")
 
 				switch d.ServiceName {
 				case config.DeploygateService:

@@ -24,7 +24,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				EnvVars:  []string{"FIREBASE_APP_ID"},
 			},
 			&cli.PathFlag{
-				Name: "source-file",
+				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
@@ -72,7 +72,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				conf.GroupAliases = v
 			}
 
-			return task.DeployToFirebaseAppDistribution(context.Context, conf, context.String("source-file"), func(req *service.FirebaseAppDistributionDeployRequest) {
+			return task.DeployToFirebaseAppDistribution(context.Context, conf, context.String("source-path"), func(req *service.FirebaseAppDistributionDeployRequest) {
 				if v := context.String("release-note"); context.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}

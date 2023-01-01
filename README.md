@@ -25,7 +25,7 @@ USAGE:
 
 OPTIONS:
    --name value, -n value         deployment name in your configuration file. [$SPLITTER_DEPLOYMENT_NAME]
-   --source-file value, -f value  A path to an app file.
+   --source-path value, -f value  A path to an app file.
    --release-note value           An release note of this revision. Some of services may not support this option. [$SPLITTER_DEPLOYMENT_RELEASE_NOTE]
 ```
 
@@ -83,7 +83,7 @@ USAGE:
 OPTIONS:
    --app-owner-name value, -n value   User name or Organization name. [$DEPLOYGATE_APP_OWNER_NAME]
    --api-token value, -t value        The api token of the app owner. [$DEPLOYGATE_API_TOKEN]
-   --source-file value, -f value      A path to an app file.
+   --source-path value, -f value      A path to an app file.
    --message value, -m value          A short message of this revision.
    --distribution-access-key value    An access key of a distribution that must exist. If the both of key and name are specified, key takes priority.
    --distribution-name value          An name (title) of a distribution that does not have to exist. If the both of key and name are specified, key takes priority.
@@ -101,7 +101,7 @@ USAGE:
 
 OPTIONS:
    --app-id value                  Firebase App ID. e.g. 1:123456578:android:xxxxxxx [$FIREBASE_APP_ID]
-   --source-file value, -f value   A path to an app file.
+   --source-path value, -f value   A path to an app file.
    --access-token value, -t value  The access token to use for this distribution. [$FIREBASE_CLI_TOKEN]
    --credentials value             A path to a credentials json file.
    --release-note value            An release note of this revision.
@@ -120,11 +120,11 @@ USAGE:
    splitter local [command options] [arguments...]
 
 OPTIONS:
-   --source-file value, -f value  A source path to an app file.
-   --destination value            A destination path to an app file.
-   --delete-source                Specify true if you would not like to keep the source file. (default: false)
-   --overwrite                    Specify true if you allow to overwrite the existing destination file. (default: false)
-   --mode value                   The final file permission of the destination path. (default: Same to the source)
+   --source-path value, -f value       A source path to an app file.
+   --destination-path value            A destination path to an app file.
+   --delete-source                     Specify true if you would not like to keep the source file. (default: false)
+   --overwrite                         Specify true if you allow to overwrite the existing destination file. (default: false)
+   --file-mode value                   The final file permission of the destination path. (default: Same to the source)
 ```
 
 ## About the supported services 
