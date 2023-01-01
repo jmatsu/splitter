@@ -36,11 +36,11 @@ func (f *Formatter) Format(r service.DistributionResult) error {
 	case config.RawFormat:
 		fmt.Println(r.RawJsonResponse())
 	case config.PrettyFormat:
-		f.TableBuilder(w, r.TypedResponse())
+		f.TableBuilder(w, r.ValueResponse())
 
 		w.Render()
 	case config.MarkdownFormat:
-		f.TableBuilder(w, r.TypedResponse())
+		f.TableBuilder(w, r.ValueResponse())
 		w.RenderMarkdown()
 	}
 

@@ -9,7 +9,7 @@ func (r *DeployGateDistributionResult) RawJsonResponse() string {
 	return r.RawJson
 }
 
-func (r *DeployGateDistributionResult) TypedResponse() any {
+func (r *DeployGateDistributionResult) ValueResponse() any {
 	return *r
 }
 

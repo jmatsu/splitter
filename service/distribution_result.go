@@ -1,6 +1,6 @@
 package service
 
 type DistributionResult interface {
-	TypedResponse() any
+	ValueResponse() any
 	RawJsonResponse() string
 }

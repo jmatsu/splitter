@@ -9,6 +9,6 @@ func (r *LocalDistributionResult) RawJsonResponse() string {
 	return r.RawJson
 }
 
-func (r *LocalDistributionResult) TypedResponse() any {
+func (r *LocalDistributionResult) ValueResponse() any {
 	return *r
 }

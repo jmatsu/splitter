@@ -15,6 +15,6 @@ func (r *FirebaseAppDistributionDistributionResult) RawJsonResponse() string {
 	return r.RawJson
 }
 
-func (r *FirebaseAppDistributionDistributionResult) TypedResponse() any {
+func (r *FirebaseAppDistributionDistributionResult) ValueResponse() any {
 	return *r
 }
