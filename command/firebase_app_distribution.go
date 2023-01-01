@@ -14,12 +14,12 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Deploy your apps to Firebase App Deployment",
-		Description: "You can distribute your apps to Firebase App Deployment. Please note that this command does not respect for static config files. All parameters have to be specified from command line options.",
+		Usage:       "Deploy your apps to Firebase App Deployment.",
+		Description: "You can distribute your apps to Firebase App Deployment.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "app-id",
-				Usage:    "Firebase App ID e.g. 1:123456578:android:xxxxxxx",
+				Usage:    "Firebase App ID. e.g. 1:123456578:android:xxxxxxx",
 				Required: true,
 				EnvVars:  []string{"FIREBASE_APP_ID"},
 			},
@@ -28,7 +28,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A path to an app file",
+				Usage:    "A path to an app file.",
 				Required: true,
 			},
 			&cli.StringFlag{
@@ -36,18 +36,18 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Aliases: []string{
 					"t",
 				},
-				Usage:    "The access token to use for this distribution",
+				Usage:    "The access token to use for this distribution.",
 				Required: false,
 				EnvVars:  []string{"FIREBASE_CLI_TOKEN"},
 			},
 			&cli.PathFlag{
 				Name:     "credentials",
-				Usage:    "A path to a credentials json file",
+				Usage:    "A path to a credentials json file.",
 				Required: false,
 			},
 			&cli.StringFlag{
 				Name:     "release-note",
-				Usage:    "An release note of this revision",
+				Usage:    "An release note of this revision.",
 				Required: false,
 			},
 			&cli.StringFlag{

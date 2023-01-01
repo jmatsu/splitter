@@ -12,8 +12,8 @@ func Local(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Move/Copy your apps to another location",
-		Description: "You can manage/copy your apps to another location. Please note that this command does not respect for static config files.",
+		Usage:       "Move/Copy your apps to another location.",
+		Description: "You can move/copy your apps to another location.",
 		Flags: []cli.Flag{
 			&cli.PathFlag{
 				Name: "source-file",
@@ -42,10 +42,10 @@ func Local(name string, aliases []string) *cli.Command {
 			},
 			&cli.UintFlag{
 				Name:        "mode",
-				Usage:       "The final file mode of the destination path.",
+				Usage:       "The final file permission of the destination path.",
 				Required:    false,
 				Value:       0,
-				DefaultText: "The same to the source",
+				DefaultText: "Same to the source",
 			},
 		},
 		Action: func(context *cli.Context) error {

@@ -1,18 +1,15 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 	"os"
-	"reflect"
 	"strings"
 	"time"
 
-	"github.com/caarlos0/env/v6"
 	"github.com/spf13/viper"
 )
 
@@ -41,10 +38,6 @@ func ToEnvName(name string) string {
 	return fmt.Sprintf("%s%s", envPrefix, strings.ToUpper(name))
 }
 
-type ServiceConfig interface {
-	testConfig | DeployGateConfig | LocalConfig | FirebaseAppDistributionConfig
-}
-
 // GlobalConfig is a shared configuration in one command execution.
 type GlobalConfig struct {
 	rawConfig   rawConfig
@@ -58,15 +51,10 @@ type rawConfig struct {
 	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
 }
 
-// to get a service name from each service-specific configuration formats
-type serviceNameHolder struct {
-	ServiceName string `json:"service"`
-}
-
 // Deployment holds a service name and its config struct
 type Deployment struct {
 	ServiceName   string
-	ServiceConfig any // See ServiceConfig interface
+	ServiceConfig any // See serviceConfig interface
 	Lifecycle     *ExecutionConfig
 }
 
@@ -170,15 +158,15 @@ func (c *GlobalConfig) configure() error {
 			return errors.New(fmt.Sprintf("%s must be Mapping", name))
 		}
 
-		holder := serviceNameHolder{}
+		var service serviceNameHolder
 
-		if bytes, err := json.Marshal(values); err != nil {
+		if bytes, err := yaml.Marshal(values); err != nil {
 			return errors.Wrapf(err, "cannot load %s config", name)
-		} else if err := json.Unmarshal(bytes, &holder); err != nil {
+		} else if err := yaml.Unmarshal(bytes, &service); err != nil {
 			return errors.Wrapf(err, "cannot load %s config", name)
 		}
 
-		switch holder.ServiceName {
+		switch service.Name {
 		case DeploygateService:
 			deploygate := DeployGateConfig{}
 
@@ -187,7 +175,7 @@ func (c *GlobalConfig) configure() error {
 			}
 
 			c.deployments[name] = &Deployment{
-				ServiceName:   holder.ServiceName,
+				ServiceName:   deploygate.Name,
 				ServiceConfig: &deploygate,
 				Lifecycle:     &deploygate.ExecutionConfig,
 			}
@@ -199,7 +187,7 @@ func (c *GlobalConfig) configure() error {
 			}
 
 			c.deployments[name] = &Deployment{
-				ServiceName:   holder.ServiceName,
+				ServiceName:   firebase.Name,
 				ServiceConfig: &firebase,
 				Lifecycle:     &firebase.ExecutionConfig,
 			}
@@ -211,12 +199,12 @@ func (c *GlobalConfig) configure() error {
 			}
 
 			c.deployments[name] = &Deployment{
-				ServiceName:   holder.ServiceName,
+				ServiceName:   local.Name,
 				ServiceConfig: &local,
 				Lifecycle:     &local.ExecutionConfig,
 			}
 		default:
-			return errors.New(fmt.Sprintf("%s of %s is an unknown service", holder.ServiceName, name))
+			return errors.New(fmt.Sprintf("%s of %s is an unknown service", service.Name, name))
 		}
 	}
 
@@ -299,7 +287,7 @@ func (c *GlobalConfig) Dump(path string) error {
 	return nil
 }
 
-func (c *GlobalConfig) Distribution(name string) (*Deployment, error) {
+func (c *GlobalConfig) Deployment(name string) (*Deployment, error) {
 	if d := c.deployments[name]; d != nil {
 		switch d.ServiceName {
 		case DeploygateService:
@@ -324,106 +312,54 @@ func (c *GlobalConfig) Distribution(name string) (*Deployment, error) {
 
 		return d, nil
 	} else {
-		return nil, errors.New(fmt.Sprintf("%s distribution is not found", name))
+		return nil, errors.New(fmt.Sprintf("%s deployment is not found", name))
 	}
 }
 
-func evaluateAndValidate[T ServiceConfig](v *T) error {
-	if err := evaluateValues(v); err != nil {
-		return err
-	} else if err := validateMissingValues(v); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Set values to the config. Priority: Environment Variables > Given values
-func loadServiceConfig[T ServiceConfig](v *T, values map[string]interface{}) error {
-	if bytes, err := json.Marshal(values); err != nil {
-		panic(err)
-	} else if err := json.Unmarshal(bytes, v); err != nil {
-		panic(err)
-	} else if err := env.Parse(v); err != nil {
-		panic(err)
-	}
-
-	return nil
-}
-
-// Evaluate the styled format for the embedded variables.
-func evaluateValues[T ServiceConfig](v *T) error {
-	vRef := reflect.ValueOf(v).Elem()
-
-	if vRef.Kind() != reflect.Struct {
-		return errors.New(fmt.Sprintf("%v is not a struct", v))
-	}
-
-	for i := 0; i < vRef.NumField(); i++ {
-		value := vRef.Field(i)
-		field := vRef.Type().Field(i)
-		tag := vRef.Type().Field(i).Tag
-
-		if _, found := tag.Lookup("json"); !found {
-			continue
-		}
-
-		if value.Kind() == reflect.String {
-			if prefix, format, ok := strings.Cut(value.String(), ":"); ok && prefix == "format" {
-				newValue := os.ExpandEnv(format)
-				value.SetString(newValue)
-
-				logger.Logger.Debug().Msgf("%s = %v: is evaluated", field.Name, newValue)
-			} else {
-				logger.Logger.Debug().Msgf("%s = %v: needn't be evaluated", field.Name, value)
-			}
-		}
-	}
-
-	return nil
-}
-
-// Collect errors via the reflection. Target fields must have json tag. Required fields must not be zero values.
-func validateMissingValues[T ServiceConfig](v *T) error {
-	var missingKeys []string
-
-	vRef := reflect.ValueOf(v).Elem()
-
-	if vRef.Kind() != reflect.Struct {
-		return errors.New(fmt.Sprintf("%v is not a struct", v))
-	}
-
-	for i := 0; i < vRef.NumField(); i++ {
-		value := vRef.Field(i)
-		field := vRef.Type().Field(i)
-		tag := vRef.Type().Field(i).Tag
-
-		t, found := tag.Lookup("json")
-
-		if !found {
-			logger.Logger.Debug().Msgf("%v is ignored", field.Name)
-			continue
-		}
-
-		logger.Logger.Debug().Msgf("%s = %v: json:\"%s\"", field.Name, value, t)
-
-		key, _, _ := strings.Cut(t, ",")
-
-		if b, found := tag.Lookup("required"); found && b == "true" {
-			if value.IsZero() {
-				logger.Logger.Error().Msgf("%s is required but not assigned", key)
-				missingKeys = append(missingKeys, key)
-			} else {
-				logger.Logger.Debug().Msgf("%s is set", key)
-			}
-		} else {
-			logger.Logger.Debug().Msgf("%s is optional", key)
-		}
-	}
-
-	if num := len(missingKeys); num > 0 {
-		return errors.New(fmt.Sprintf("%d keys lacked or their values are empty: %s", num, strings.Join(missingKeys, ",")))
+func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
+	if d := c.deployments[name]; d != nil {
+		return errors.New(fmt.Sprintf("%s (service = %s) already exists in the config.", name, d.ServiceName))
 	} else {
-		return nil
+		d = &Deployment{
+			ServiceName: serviceName,
+		}
+
+		switch serviceName {
+		case DeploygateService:
+			d.ServiceConfig = DeployGateConfig{
+				serviceNameHolder: serviceNameHolder{
+					Name: DeploygateService,
+				},
+				AppOwnerName: "DeployGate's user name or group name",
+				ApiToken:     fmt.Sprintf("format:${%s_DEPLOYGATE_API_TOKEN}", name),
+			}
+		case FirebaseAppDistributionService:
+			d.ServiceConfig = FirebaseAppDistributionConfig{
+				serviceNameHolder: serviceNameHolder{
+					Name: FirebaseAppDistributionService,
+				},
+				AppId:                 "App ID e.g. 1:123456789:android:xxxxx",
+				GoogleCredentialsPath: "path to Google Credentials JSON",
+			}
+		case LocalService:
+			d.ServiceConfig = LocalConfig{
+				serviceNameHolder: serviceNameHolder{
+					Name: LocalService,
+				},
+				DestinationPath: "path to the destination",
+			}
+		}
+
+		var values map[string]interface{}
+
+		if bytes, err := yaml.Marshal(d.ServiceConfig); err != nil {
+			panic(err)
+		} else if err := yaml.Unmarshal(bytes, &values); err != nil {
+			panic(err)
+		}
+
+		c.rawConfig.Deployments[name] = values
+
+		return c.configure()
 	}
 }

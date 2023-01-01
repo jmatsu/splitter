@@ -8,19 +8,20 @@ import (
 // FirebaseAppDistributionConfig contains the enough values to use Firebase App Distribution.
 // ref: https://firebase.google.com/docs/app-distribution
 type FirebaseAppDistributionConfig struct {
-	ExecutionConfig
-
-	// Access token that has permission to use App Distribution
-	AccessToken string `json:"access-token"`
-
-	// A path to credentials file. If the both of this and access token are given, access token takes priority.
-	GoogleCredentialsPath string `json:"credentials-path" env:"GOOGLE_APPLICATION_CREDENTIALS"`
+	serviceNameHolder `yaml:",inline"`
+	ExecutionConfig   `yaml:",inline"`
 
 	// An app ID. You can get this value from the firebase console's project setting.
-	AppId string `json:"app-id" required:"true"`
+	AppId string `yaml:"app-id" required:"true"`
+
+	// Access token that has permission to use App Distribution
+	AccessToken string `yaml:"access-token,omitempty"`
+
+	// A path to credentials file. If the both of this and access token are given, access token takes priority.
+	GoogleCredentialsPath string `yaml:"credentials-path" env:"GOOGLE_APPLICATION_CREDENTIALS"`
 
 	// A list of group aliases.
-	GroupAliases []string `json:"group-aliases"`
+	GroupAliases []string `yaml:"group-aliases,omitempty"`
 }
 
 func (c *FirebaseAppDistributionConfig) Validate() error {

@@ -13,15 +13,15 @@ func DeployGate(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Deploy your apps to DeployGate",
-		Description: "You can distribute your apps to DeployGate. Please note that this command does not respect for static config files. All parameters have to be specified from command line options. ref: https://docs.deploygate.com/docs/api/application/upload",
+		Usage:       "Deploy your apps to DeployGate.",
+		Description: "You can distribute your apps to DeployGate.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "app-owner-name",
 				Aliases: []string{
 					"n",
 				},
-				Usage:    "User name or Organization name",
+				Usage:    "User name or Organization name.",
 				Required: true,
 				EnvVars:  []string{"DEPLOYGATE_APP_OWNER_NAME"},
 			},
@@ -30,7 +30,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				Aliases: []string{
 					"t",
 				},
-				Usage:    "The api token of the app owner",
+				Usage:    "The api token of the app owner.",
 				Required: true,
 				EnvVars:  []string{"DEPLOYGATE_API_TOKEN"},
 			},
@@ -39,7 +39,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A path to an app file",
+				Usage:    "A path to an app file.",
 				Required: true,
 			},
 			&cli.StringFlag{
@@ -47,7 +47,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				Aliases: []string{
 					"m",
 				},
-				Usage:    "A short message of this revision",
+				Usage:    "A short message of this revision.",
 				Required: false,
 			},
 			&cli.StringFlag{

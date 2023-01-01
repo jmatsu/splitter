@@ -15,7 +15,7 @@ func Deploy(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Manage your apps' deployments with following the configuration",
+		Usage:       "Manage your apps' deployments with following the configuration.",
 		Description: "You can deploy your apps to supported services based on pre-defined service configuration.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -23,7 +23,7 @@ func Deploy(name string, aliases []string) *cli.Command {
 				Aliases: []string{
 					"n",
 				},
-				Usage:    "deployment name in your configuration file",
+				Usage:    "deployment name in your configuration file.",
 				Required: true,
 				EnvVars:  []string{config.ToEnvName("DEPLOYMENT_NAME")},
 			},
@@ -32,12 +32,12 @@ func Deploy(name string, aliases []string) *cli.Command {
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A path to an app file",
+				Usage:    "A path to an app file.",
 				Required: true,
 			},
 			&cli.StringFlag{
 				Name:     "release-note",
-				Usage:    "An release note of this revision. Some of services may not support this option",
+				Usage:    "An release note of this revision. Some of services may not support this option.",
 				Required: false,
 				EnvVars:  []string{config.ToEnvName("DEPLOYMENT_RELEASE_NOTE")},
 			},
@@ -47,7 +47,7 @@ func Deploy(name string, aliases []string) *cli.Command {
 
 			logger.Logger.Info().Msgf("Loading %s config...", name)
 
-			d, err := config.CurrentConfig().Distribution(name)
+			d, err := config.CurrentConfig().Deployment(name)
 
 			if err != nil {
 				return err

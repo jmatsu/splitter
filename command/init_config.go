@@ -14,9 +14,14 @@ func InitConfig(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Initialize your config file",
+		Usage:       "Initialize your config file.",
 		Description: "This command generates a boilerplate config file.",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:     "path",
+				Usage:    "A path to a new config file.",
+				Required: false,
+			},
 			&cli.BoolFlag{
 				Name:     "overwrite",
 				Usage:    "Allow overriding the existing file if true, otherwise false.",
@@ -42,5 +47,6 @@ func InitConfig(name string, aliases []string) *cli.Command {
 			conf := config.NewConfig()
 			return conf.Dump(path)
 		},
+		Subcommands: []*cli.Command{},
 	}
 }
