@@ -58,6 +58,7 @@ type rawConfig struct {
 	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
 }
 
+// to get a service name from each service-specific configuration formats
 type serviceNameHolder struct {
 	ServiceName string `json:"service"`
 }

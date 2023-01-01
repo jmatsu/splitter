@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// Executor is the environment to run commands.
 type Executor struct {
 	config *config.ExecutionConfig
 	ctx    context.Context

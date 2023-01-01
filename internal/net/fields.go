@@ -19,6 +19,7 @@ const (
 	NonFile
 )
 
+// ValueField represents a single form field.
 type ValueField struct {
 	FieldName string
 	Value     string
@@ -68,6 +69,7 @@ func (f *ValueField) Open() (string, io.Reader, error) {
 	}
 }
 
+// Form represents a set of form fields.
 type Form struct {
 	Fields []ValueField
 }
