@@ -3,8 +3,10 @@ package command
 import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
+	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/provider/deploygate"
 	"github.com/jmatsu/splitter/provider/firebase_app_distribution"
+	"github.com/jmatsu/splitter/provider/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -42,43 +44,47 @@ func Distribute(name string, aliases []string) *cli.Command {
 			},
 		},
 		Action: func(context *cli.Context) error {
-			conf := config.GetGlobalConfig()
-
 			name := context.String("name")
 
-			d, err := conf.Distribution(name)
+			logger.Logger.Info().Msgf("Loading %s config...", name)
+
+			d, err := config.GetGlobalConfig().Distribution(name)
 
 			if err != nil {
 				return err
 			}
 
-			sourceFilePath := context.String("source-file")
+			lifecycleProvider := lifecycle.NewProvider(context.Context, d.Lifecycle)
 
-			switch d.ServiceName {
-			case config.DeploygateService:
-				dg := d.ServiceConfig.(*config.DeployGateConfig)
+			return lifecycleProvider.Execute(func() error {
+				sourceFilePath := context.String("source-file")
 
-				return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *deploygate.UploadRequest) {
-					if v := context.String("release-note"); context.IsSet("release-note") {
-						req.SetMessage(v)
-						req.SetDistributionReleaseNote(v)
-					}
-				})
-			case config.LocalService:
-				lo := d.ServiceConfig.(*config.LocalConfig)
+				switch d.ServiceName {
+				case config.DeploygateService:
+					dg := d.ServiceConfig.(*config.DeployGateConfig)
 
-				return distributeLocal(context.Context, lo, sourceFilePath)
-			case config.FirebaseAppDistributionService:
-				fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
+					return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *deploygate.UploadRequest) {
+						if v := context.String("release-note"); context.IsSet("release-note") {
+							req.SetMessage(v)
+							req.SetDistributionReleaseNote(v)
+						}
+					})
+				case config.LocalService:
+					lo := d.ServiceConfig.(*config.LocalConfig)
 
-				return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *firebase_app_distribution.UploadRequest) {
-					if v := context.String("release-note"); context.IsSet("release-note") {
-						req.SetReleaseNote(v)
-					}
-				})
-			default:
-				return errors.New(fmt.Sprintf("%s is not implemented yet", d.ServiceName))
-			}
+					return distributeLocal(context.Context, lo, sourceFilePath)
+				case config.FirebaseAppDistributionService:
+					fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
+
+					return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *firebase_app_distribution.UploadRequest) {
+						if v := context.String("release-note"); context.IsSet("release-note") {
+							req.SetReleaseNote(v)
+						}
+					})
+				default:
+					return errors.New(fmt.Sprintf("%s is not implemented yet", d.ServiceName))
+				}
+			})
 		},
 	}
 }
