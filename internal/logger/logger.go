@@ -1,12 +1,10 @@
 package logger
 
 import (
-	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
 	"os"
 	"strings"
-	"time"
 )
 
 const (
@@ -18,12 +16,12 @@ var Logger zerolog.Logger
 func init() {
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 
-	writer := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
-	writer.FormatLevel = func(i interface{}) string {
-		return strings.ToUpper(fmt.Sprintf("| %-6s|", i))
+	writer := zerolog.ConsoleWriter{Out: os.Stderr}
+	writer.FormatTimestamp = func(i interface{}) string {
+		return ""
 	}
 
-	Logger = zerolog.New(writer).With().Timestamp().Logger()
+	Logger = zerolog.New(writer)
 	SetLogLevel(DefaultLogLevel)
 }
 
