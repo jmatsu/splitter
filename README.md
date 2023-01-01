@@ -15,6 +15,10 @@ splitter deploy -f path/to/aab -n design-review
 
 <img src="examples/execution-image.gif" width="500" >
 
+## Install
+
+Download the latest binary from GitHub Release.
+
 ## Configuration-based deployment
 
 splitter allows you to manage deployment configuration as Code. This feature makes you focus on *defining* deployments.
@@ -133,4 +137,6 @@ OPTIONS:
 - Firebase App Distribution - https://firebase.google.com/docs/app-distribution
 - Local - Your local file system.
 
-## 
+## LICENSE
+
+splitter is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full license text.
