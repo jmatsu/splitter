@@ -9,14 +9,14 @@ import (
 func NewDeployGateUploadAppRequest(filePath string) *DeployGateUploadAppRequest {
 	return &DeployGateUploadAppRequest{
 		filePath:            filePath,
-		distributionOptions: &deployGateDistributionOptions{},
+		distributionOptions: deployGateDistributionOptions{},
 	}
 }
 
 type DeployGateUploadAppRequest struct {
 	filePath            string
-	message             *string
-	distributionOptions *deployGateDistributionOptions
+	message             string
+	distributionOptions deployGateDistributionOptions
 	iOSOptions          deployGateIOSOptions
 }
 
@@ -54,7 +54,7 @@ func (r *deployGateUploadResponse) Set(v *net.HttpResponse) {
 type deployGateDistributionOptions struct {
 	Name        string
 	AccessKey   string
-	ReleaseNote *string
+	ReleaseNote string
 }
 
 type deployGateIOSOptions struct {
@@ -62,47 +62,23 @@ type deployGateIOSOptions struct {
 }
 
 func (r *DeployGateUploadAppRequest) SetMessage(value string) {
-	if value != "" {
-		r.message = &value
-	} else {
-		r.message = nil
-	}
+	r.message = value
 }
 
 func (r *DeployGateUploadAppRequest) SetDistributionAccessKey(value string) {
-	if value != "" {
-		r.getDistributionOptions().AccessKey = value
-	} else {
-		r.getDistributionOptions().AccessKey = ""
-	}
+	r.distributionOptions.AccessKey = value
 }
 
 func (r *DeployGateUploadAppRequest) SetDistributionName(value string) {
-	if value != "" {
-		r.getDistributionOptions().Name = value
-	} else {
-		r.getDistributionOptions().Name = ""
-	}
+	r.distributionOptions.Name = value
 }
 
 func (r *DeployGateUploadAppRequest) SetDistributionReleaseNote(value string) {
-	if value != "" {
-		r.getDistributionOptions().ReleaseNote = &value
-	} else {
-		r.getDistributionOptions().ReleaseNote = nil
-	}
+	r.distributionOptions.ReleaseNote = value
 }
 
 func (r *DeployGateUploadAppRequest) SetIOSDisableNotification(value bool) {
 	r.iOSOptions.DisableNotification = value
-}
-
-func (r *DeployGateUploadAppRequest) getDistributionOptions() *deployGateDistributionOptions {
-	if r.distributionOptions == nil {
-		r.distributionOptions = &deployGateDistributionOptions{}
-	}
-
-	return r.distributionOptions
 }
 
 func (r *DeployGateUploadAppRequest) toForm() *net.Form {
@@ -110,13 +86,15 @@ func (r *DeployGateUploadAppRequest) toForm() *net.Form {
 
 	form.Set(net.FileField("file", r.filePath))
 
-	if r.message != nil {
+	if r.message != "" {
 		deployGateLogger.Debug().Msgf("message option was found")
 
-		form.Set(net.StringField("message", *r.message))
+		form.Set(net.StringField("message", r.message))
 	}
 
-	if r.distributionOptions != nil {
+	distributionOptionFound := r.distributionOptions.AccessKey != "" || r.distributionOptions.Name != ""
+
+	if distributionOptionFound {
 		if r.distributionOptions.AccessKey != "" && r.distributionOptions.Name != "" {
 			deployGateLogger.Warn().Msgf("the both of distribution's access key and name are specified so this provider prioritizes access key")
 		}
@@ -125,19 +103,21 @@ func (r *DeployGateUploadAppRequest) toForm() *net.Form {
 			form.Set(net.StringField("distribution_key", r.distributionOptions.AccessKey))
 		} else if r.distributionOptions.Name != "" {
 			form.Set(net.StringField("distribution_name", r.distributionOptions.Name))
+		} else {
+			panic("unexpected distribution options")
 		}
 
-		if r.distributionOptions.ReleaseNote != nil {
-			form.Set(net.StringField("release_note", *r.distributionOptions.ReleaseNote))
-		} else if r.message != nil {
+		if r.distributionOptions.ReleaseNote != "" {
+			form.Set(net.StringField("release_note", r.distributionOptions.ReleaseNote))
+		} else if r.message != "" {
 			deployGateLogger.Debug().Msgf("set message as release note as a fallback")
-			form.Set(net.StringField("release_note", *r.message))
+			form.Set(net.StringField("release_note", r.message))
 		}
 	} else {
 		deployGateLogger.Debug().Msgf("distribution options were empty")
 	}
 
-	var iosOptionFound = r.iOSOptions.DisableNotification
+	iosOptionFound := r.iOSOptions.DisableNotification
 
 	if iosOptionFound {
 		form.Set(net.BooleanField("disable_notify", r.iOSOptions.DisableNotification))

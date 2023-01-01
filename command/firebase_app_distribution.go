@@ -72,7 +72,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				conf.GroupAliases = v
 			}
 
-			return task.DistributeToFirebaseAppDistribution(context.Context, conf, context.String("source-file"), func(req *service.FirebaseAppDistributionUploadAppRequest) {
+			return task.DistributeToFirebaseAppDistribution(context.Context, conf, context.String("source-file"), func(req *service.FirebaseAppDistributionDistributeRequest) {
 				if v := context.String("release-note"); context.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}

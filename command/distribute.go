@@ -75,7 +75,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				case config.FirebaseAppDistributionService:
 					fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
 
-					return task.DistributeToFirebaseAppDistribution(context.Context, *fad, sourceFilePath, func(req *service.FirebaseAppDistributionUploadAppRequest) {
+					return task.DistributeToFirebaseAppDistribution(context.Context, *fad, sourceFilePath, func(req *service.FirebaseAppDistributionDistributeRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetReleaseNote(v)
 						}
