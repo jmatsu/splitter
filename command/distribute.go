@@ -53,7 +53,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				return err
 			}
 
-			executor := task.NewExecutor(context.Context, d.Lifecycle)
+			executor := task.NewExecutor(nil, context.Context, d.Lifecycle)
 
 			return executor.Execute(func() error {
 				sourceFilePath := context.String("source-file")
