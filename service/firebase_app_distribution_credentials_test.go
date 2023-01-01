@@ -9,7 +9,7 @@ import (
 
 func Test_FirebaseToken(t *testing.T) {
 	wd, _ := os.Getwd()
-	path := filepath.Join(wd, ".fixtures", "service_account_key.json")
+	path := filepath.Join(wd, ".fixtures", "google_credentials.json")
 
 	if _, err := os.Stat(path); err != nil {
 		t.Skipf("%s is not found", path)
