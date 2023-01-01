@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DistributeToLocal(ctx context.Context, conf config.LocalConfig, filePath string) error {
+func DeployToLocal(ctx context.Context, conf config.LocalConfig, filePath string) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}
@@ -18,8 +18,8 @@ func DistributeToLocal(ctx context.Context, conf config.LocalConfig, filePath st
 	formatter := NewFormatter()
 	formatter.TableBuilder = localTableBuilder
 
-	if response, err := provider.Distribute(filePath); err != nil {
-		return errors.Wrap(err, "cannot distribute this app")
+	if response, err := provider.Deploy(filePath); err != nil {
+		return errors.Wrap(err, "cannot deploy this app")
 	} else if err := formatter.Format(response); err != nil {
 		return errors.Wrap(err, "cannot format the response")
 	}
@@ -28,7 +28,7 @@ func DistributeToLocal(ctx context.Context, conf config.LocalConfig, filePath st
 }
 
 var localTableBuilder = func(w table.Writer, v any) {
-	resp := v.(service.LocalDistributionResult)
+	resp := v.(service.LocalDeployResult)
 
 	w.AppendHeader(table.Row{
 		"Key", "Value",

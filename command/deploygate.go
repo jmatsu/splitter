@@ -13,7 +13,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Distribute your apps to DeployGate",
+		Usage:       "Deploy your apps to DeployGate",
 		Description: "You can distribute your apps to DeployGate. Please note that this command does not respect for static config files. All parameters have to be specified from command line options. ref: https://docs.deploygate.com/docs/api/application/upload",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -77,7 +77,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				ApiToken:     context.String("api-token"),
 			}
 
-			return task.DistributeToDeployGate(context.Context, conf, context.String("source-file"), func(req *service.DeployGateDistributionRequest) {
+			return task.DeployToDeployGate(context.Context, conf, context.String("source-file"), func(req *service.DeployGateDeployRequest) {
 				if v := context.String("message"); context.IsSet("message") {
 					req.SetMessage(v)
 				}

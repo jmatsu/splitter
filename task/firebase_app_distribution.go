@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DistributeToFirebaseAppDistribution(ctx context.Context, conf config.FirebaseAppDistributionConfig, filePath string, builder func(req *service.FirebaseAppDistributionDistributeRequest)) error {
+func DeployToFirebaseAppDistribution(ctx context.Context, conf config.FirebaseAppDistributionConfig, filePath string, builder func(req *service.FirebaseAppDistributionDeployRequest)) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}
@@ -18,8 +18,8 @@ func DistributeToFirebaseAppDistribution(ctx context.Context, conf config.Fireba
 	formatter := NewFormatter()
 	formatter.TableBuilder = firebaseAppDistributionTableBuilder
 
-	if response, err := provider.Distribute(filePath, builder); err != nil {
-		return errors.Wrap(err, "cannot distribute this app")
+	if response, err := provider.Deploy(filePath, builder); err != nil {
+		return errors.Wrap(err, "cannot deploy this app")
 	} else if err := formatter.Format(response); err != nil {
 		return errors.Wrap(err, "cannot format the response")
 	}
@@ -28,7 +28,7 @@ func DistributeToFirebaseAppDistribution(ctx context.Context, conf config.Fireba
 }
 
 var firebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
-	resp := v.(service.FirebaseAppDistributionDistributionResult)
+	resp := v.(service.FirebaseAppDistributionDeployResult)
 
 	if resp.Response == nil {
 		w.SetTitle("The results cannot be rendered for an unknown reason. Please create an issue at https://github.com/jmatsu/splitter/issues")
@@ -42,7 +42,7 @@ var firebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 	})
 
 	w.AppendRows([]table.Row{
-		{"Firebase App Distribution", ""},
+		{"Firebase App Deployment", ""},
 	})
 	w.AppendSeparator()
 

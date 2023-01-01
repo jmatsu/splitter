@@ -8,13 +8,13 @@ import (
 
 func Test_localTableBuilder(t *testing.T) {
 	cases := map[string]struct {
-		result service.LocalDistributionResult
+		result service.LocalDeployResult
 	}{
 		"zero 1": {
-			result: service.LocalDistributionResult{},
+			result: service.LocalDeployResult{},
 		},
 		"regular": {
-			result: service.LocalDistributionResult{
+			result: service.LocalDeployResult{
 				LocalMoveResponse: service.LocalMoveResponse{
 					SourceFilePath:      "path/to/src",
 					DestinationFilePath: "path/to/dest",

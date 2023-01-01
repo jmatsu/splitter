@@ -56,7 +56,7 @@ func Local(name string, aliases []string) *cli.Command {
 				FileMode:        os.FileMode(context.Uint("mode")),
 			}
 
-			return task.DistributeToLocal(context.Context, conf, context.String("source-file"))
+			return task.DeployToLocal(context.Context, conf, context.String("source-file"))
 		},
 	}
 }

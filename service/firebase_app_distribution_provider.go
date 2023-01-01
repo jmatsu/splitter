@@ -31,23 +31,23 @@ type FirebaseAppDistributionProvider struct {
 	client *net.HttpClient
 }
 
-type FirebaseAppDistributionDistributionResult struct {
+type FirebaseAppDistributionDeployResult struct {
 	FirebaseAppDistributionGetOperationStateResponse
 
 	AabInfo *FirebaseAppDistributionAabInfoResponse
 }
 
-var _ DistributionResult = &FirebaseAppDistributionDistributionResult{}
+var _ DeployResult = &FirebaseAppDistributionDeployResult{}
 
-func (r *FirebaseAppDistributionDistributionResult) RawJsonResponse() string {
+func (r *FirebaseAppDistributionDeployResult) RawJsonResponse() string {
 	return r.FirebaseAppDistributionGetOperationStateResponse.RawResponse.RawJson()
 }
 
-func (r *FirebaseAppDistributionDistributionResult) ValueResponse() any {
+func (r *FirebaseAppDistributionDeployResult) ValueResponse() any {
 	return *r
 }
 
-type FirebaseAppDistributionDistributeRequest struct {
+type FirebaseAppDistributionDeployRequest struct {
 	projectNumber string
 	appId         string
 	filePath      string
@@ -56,19 +56,19 @@ type FirebaseAppDistributionDistributeRequest struct {
 	testerEmails  []string
 }
 
-func (r *FirebaseAppDistributionDistributeRequest) SetReleaseNote(value string) {
+func (r *FirebaseAppDistributionDeployRequest) SetReleaseNote(value string) {
 	r.releaseNote = value
 }
 
-func (r *FirebaseAppDistributionDistributeRequest) SetTesterEmails(value []string) {
+func (r *FirebaseAppDistributionDeployRequest) SetTesterEmails(value []string) {
 	r.testerEmails = value
 }
 
-func (r *FirebaseAppDistributionDistributeRequest) OsName() string {
+func (r *FirebaseAppDistributionDeployRequest) OsName() string {
 	return strings.SplitN(r.appId, ":", 4)[2]
 }
 
-func (r *FirebaseAppDistributionDistributeRequest) fileType() string {
+func (r *FirebaseAppDistributionDeployRequest) fileType() string {
 	if s, ext, found := strings.Cut(filepath.Ext(r.filePath), "."); found {
 		return strings.ToLower(ext)
 	} else {
@@ -76,7 +76,7 @@ func (r *FirebaseAppDistributionDistributeRequest) fileType() string {
 	}
 }
 
-func (r *FirebaseAppDistributionDistributeRequest) NewUploadRequest() *FirebaseAppDistributionUploadAppRequest {
+func (r *FirebaseAppDistributionDeployRequest) NewUploadRequest() *FirebaseAppDistributionUploadAppRequest {
 	return &FirebaseAppDistributionUploadAppRequest{
 		projectNumber: r.projectNumber,
 		appId:         r.appId,
@@ -97,14 +97,14 @@ func (p *FirebaseAppDistributionProvider) fetchToken() error {
 	return nil
 }
 
-func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder func(req *FirebaseAppDistributionDistributeRequest)) (*FirebaseAppDistributionDistributionResult, error) {
+func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(req *FirebaseAppDistributionDeployRequest)) (*FirebaseAppDistributionDeployResult, error) {
 	firebaseAppDistributionLogger.Info().Msg("preparing to upload...")
 
 	if err := p.fetchToken(); err != nil {
 		return nil, errors.Wrap(err, "a valid token is required to make requests")
 	}
 
-	request := &FirebaseAppDistributionDistributeRequest{
+	request := &FirebaseAppDistributionDeployRequest{
 		projectNumber: p.ProjectNumber(),
 		appId:         p.AppId,
 		filePath:      filePath,
@@ -183,7 +183,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		}
 	}
 
-	return &FirebaseAppDistributionDistributionResult{
+	return &FirebaseAppDistributionDeployResult{
 		FirebaseAppDistributionGetOperationStateResponse: *response,
 		AabInfo: aabInfo,
 	}, nil

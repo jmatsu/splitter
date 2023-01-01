@@ -40,7 +40,7 @@ func Test_Formatter_Format(t *testing.T) {
 type testDistributionResult struct {
 }
 
-var _ service.DistributionResult = &testDistributionResult{}
+var _ service.DeployResult = &testDistributionResult{}
 
 func (r *testDistributionResult) ValueResponse() any {
 	return struct{}{}

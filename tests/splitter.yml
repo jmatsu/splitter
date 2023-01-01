@@ -1,4 +1,4 @@
-distributions:
+deployments:
   case1:
     service: "deploygate"
     app-owner-name: "format:${DEPLOYGATE_APP_OWNER_NAME}"

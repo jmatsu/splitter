@@ -136,7 +136,7 @@ func main() {
 			command.Local("local", []string{""}),
 			command.DeployGate("deploygate", []string{"dg"}),
 			command.FirebaseAppDistribution("firebase-app-distribution", []string{"firebase", "fad"}),
-			command.Distribute("distribute", []string{}),
+			command.Deploy("deploy", []string{}),
 		},
 	}
 

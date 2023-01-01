@@ -28,34 +28,34 @@ type DeployGateProvider struct {
 	client *net.HttpClient
 }
 
-type DeployGateDistributionRequest struct {
+type DeployGateDeployRequest struct {
 	filePath            string
 	message             string
 	distributionOptions deployGateDistributionOptions
 	iOSOptions          deployGateIOSOptions
 }
 
-func (r *DeployGateDistributionRequest) SetMessage(value string) {
+func (r *DeployGateDeployRequest) SetMessage(value string) {
 	r.message = value
 }
 
-func (r *DeployGateDistributionRequest) SetDistributionAccessKey(value string) {
+func (r *DeployGateDeployRequest) SetDistributionAccessKey(value string) {
 	r.distributionOptions.AccessKey = value
 }
 
-func (r *DeployGateDistributionRequest) SetDistributionName(value string) {
+func (r *DeployGateDeployRequest) SetDistributionName(value string) {
 	r.distributionOptions.Name = value
 }
 
-func (r *DeployGateDistributionRequest) SetDistributionReleaseNote(value string) {
+func (r *DeployGateDeployRequest) SetDistributionReleaseNote(value string) {
 	r.distributionOptions.ReleaseNote = value
 }
 
-func (r *DeployGateDistributionRequest) SetIOSDisableNotification(value bool) {
+func (r *DeployGateDeployRequest) SetIOSDisableNotification(value bool) {
 	r.iOSOptions.DisableNotification = value
 }
 
-func (r *DeployGateDistributionRequest) NewUploadRequest() *DeployGateUploadAppRequest {
+func (r *DeployGateDeployRequest) NewUploadRequest() *DeployGateUploadAppRequest {
 	request := DeployGateUploadAppRequest{
 		filePath:            r.filePath,
 		message:             r.message,
@@ -66,22 +66,24 @@ func (r *DeployGateDistributionRequest) NewUploadRequest() *DeployGateUploadAppR
 	return &request
 }
 
-type DeployGateDistributionResult struct {
+type DeployGateDeployResult struct {
 	DeployGateUploadResponse
 }
 
-var _ DistributionResult = &DeployGateDistributionResult{}
+var _ DeployResult = &DeployGateDeployResult{}
 
-func (r *DeployGateDistributionResult) RawJsonResponse() string {
+func (r *DeployGateDeployResult) RawJsonResponse() string {
 	return r.DeployGateUploadResponse.RawResponse.RawJson()
 }
 
-func (r *DeployGateDistributionResult) ValueResponse() any {
+func (r *DeployGateDeployResult) ValueResponse() any {
 	return *r
 }
 
-func (p *DeployGateProvider) Distribute(filePath string, builder func(req *DeployGateDistributionRequest)) (*DeployGateDistributionResult, error) {
-	request := NewDeployGateDistributionRequest(filePath)
+func (p *DeployGateProvider) Deploy(filePath string, builder func(req *DeployGateDeployRequest)) (*DeployGateDeployResult, error) {
+	request := &DeployGateDeployRequest{
+		filePath: filePath,
+	}
 
 	builder(request)
 
@@ -90,7 +92,7 @@ func (p *DeployGateProvider) Distribute(filePath string, builder func(req *Deplo
 	if r, err := p.upload(request.NewUploadRequest()); err != nil {
 		return nil, err
 	} else {
-		return &DeployGateDistributionResult{
+		return &DeployGateDeployResult{
 			DeployGateUploadResponse: *r,
 		}, nil
 	}

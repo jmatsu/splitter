@@ -6,13 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewDeployGateDistributionRequest(filePath string) *DeployGateDistributionRequest {
-	return &DeployGateDistributionRequest{
-		filePath:            filePath,
-		distributionOptions: deployGateDistributionOptions{},
-	}
-}
-
 type DeployGateUploadAppRequest struct {
 	filePath            string
 	message             string

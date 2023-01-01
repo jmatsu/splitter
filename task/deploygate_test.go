@@ -8,13 +8,13 @@ import (
 
 func Test_deployGateTableBuilder(t *testing.T) {
 	cases := map[string]struct {
-		result service.DeployGateDistributionResult
+		result service.DeployGateDeployResult
 	}{
 		"zero 1": {
-			result: service.DeployGateDistributionResult{},
+			result: service.DeployGateDeployResult{},
 		},
 		"zero 2": {
-			result: service.DeployGateDistributionResult{
+			result: service.DeployGateDeployResult{
 				DeployGateUploadResponse: service.DeployGateUploadResponse{
 					Results: service.DeployGateBinaryFragment{
 						Distribution: &service.DeployGateDistributionFragment{},
@@ -23,7 +23,7 @@ func Test_deployGateTableBuilder(t *testing.T) {
 			},
 		},
 		"regular with distribution": {
-			result: service.DeployGateDistributionResult{
+			result: service.DeployGateDeployResult{
 				DeployGateUploadResponse: service.DeployGateUploadResponse{
 					Results: service.DeployGateBinaryFragment{
 						OsName:           "Android",
@@ -50,7 +50,7 @@ func Test_deployGateTableBuilder(t *testing.T) {
 			},
 		},
 		"regular without distribution": {
-			result: service.DeployGateDistributionResult{
+			result: service.DeployGateDeployResult{
 				DeployGateUploadResponse: service.DeployGateUploadResponse{
 					Results: service.DeployGateBinaryFragment{
 						OsName:           "Android",

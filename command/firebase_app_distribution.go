@@ -14,8 +14,8 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 	return &cli.Command{
 		Name:        name,
 		Aliases:     aliases,
-		Usage:       "Distribute your apps to Firebase App Distribution",
-		Description: "You can distribute your apps to Firebase App Distribution. Please note that this command does not respect for static config files. All parameters have to be specified from command line options.",
+		Usage:       "Deploy your apps to Firebase App Deployment",
+		Description: "You can distribute your apps to Firebase App Deployment. Please note that this command does not respect for static config files. All parameters have to be specified from command line options.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "app-id",
@@ -72,7 +72,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				conf.GroupAliases = v
 			}
 
-			return task.DistributeToFirebaseAppDistribution(context.Context, conf, context.String("source-file"), func(req *service.FirebaseAppDistributionDistributeRequest) {
+			return task.DeployToFirebaseAppDistribution(context.Context, conf, context.String("source-file"), func(req *service.FirebaseAppDistributionDeployRequest) {
 				if v := context.String("release-note"); context.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}

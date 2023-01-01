@@ -8,20 +8,20 @@ import (
 
 func Test_firebaseAppDistributionTableBuilder(t *testing.T) {
 	cases := map[string]struct {
-		result service.FirebaseAppDistributionDistributionResult
+		result service.FirebaseAppDistributionDeployResult
 	}{
 		"zero 1": {
-			result: service.FirebaseAppDistributionDistributionResult{},
+			result: service.FirebaseAppDistributionDeployResult{},
 		},
 		"zero 2": {
-			result: service.FirebaseAppDistributionDistributionResult{
+			result: service.FirebaseAppDistributionDeployResult{
 				FirebaseAppDistributionGetOperationStateResponse: service.FirebaseAppDistributionGetOperationStateResponse{
 					Response: &service.FirebaseAppDistributionV1UploadReleaseResponse{},
 				},
 			},
 		},
 		"zero 3": {
-			result: service.FirebaseAppDistributionDistributionResult{
+			result: service.FirebaseAppDistributionDeployResult{
 				FirebaseAppDistributionGetOperationStateResponse: service.FirebaseAppDistributionGetOperationStateResponse{
 					Response: &service.FirebaseAppDistributionV1UploadReleaseResponse{
 						Release: service.FirebaseAppDistributionReleaseFragment{
@@ -32,7 +32,7 @@ func Test_firebaseAppDistributionTableBuilder(t *testing.T) {
 			},
 		},
 		"regular": {
-			result: service.FirebaseAppDistributionDistributionResult{
+			result: service.FirebaseAppDistributionDeployResult{
 				FirebaseAppDistributionGetOperationStateResponse: service.FirebaseAppDistributionGetOperationStateResponse{
 					OperationName: "op",
 					Done:          true,
@@ -52,7 +52,7 @@ func Test_firebaseAppDistributionTableBuilder(t *testing.T) {
 			},
 		},
 		"regular without release note": {
-			result: service.FirebaseAppDistributionDistributionResult{
+			result: service.FirebaseAppDistributionDeployResult{
 				FirebaseAppDistributionGetOperationStateResponse: service.FirebaseAppDistributionGetOperationStateResponse{
 					OperationName: "op",
 					Done:          true,

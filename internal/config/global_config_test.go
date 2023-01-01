@@ -9,8 +9,8 @@ import (
 )
 
 func (c *GlobalConfig) assertEquals(other GlobalConfig) error {
-	if len(c.services) != len(other.services) {
-		return errors.New(fmt.Sprintf("%v does not equal to %v due to #services", c.services, other.services))
+	if len(c.deployments) != len(other.deployments) {
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #deployments", c.deployments, other.deployments))
 	}
 
 	if c.FormatStyle() != other.FormatStyle() {
@@ -25,11 +25,11 @@ func (c *GlobalConfig) assertEquals(other GlobalConfig) error {
 		return errors.New(fmt.Sprintf("%v does not equal to %v due to #WaitTimeout", c.WaitTimeout(), other.WaitTimeout()))
 	}
 
-	for name, v := range c.services {
-		if !reflect.DeepEqual(v, other.services[name]) {
+	for name, v := range c.deployments {
+		if !reflect.DeepEqual(v, other.deployments[name]) {
 			return nil
 		} else {
-			return errors.New(fmt.Sprintf("%v does not equal to %v", v, other.services[name]))
+			return errors.New(fmt.Sprintf("%v does not equal to %v", v, other.deployments[name]))
 		}
 	}
 
@@ -265,7 +265,7 @@ func Test_Config_configure(t *testing.T) {
 	}{
 		"fully-written": {
 			rawConfig: rawConfig{
-				Distributions: map[string]interface{}{
+				Deployments: map[string]interface{}{
 					"def1": map[string]interface{}{
 						"service":        DeploygateService,
 						"app-owner-name": "def1-owner",
@@ -290,7 +290,7 @@ func Test_Config_configure(t *testing.T) {
 					NetworkTimeout: DefaultNetworkTimeout,
 					WaitTimeout:    DefaultWaitTimeout,
 				},
-				services: map[string]*Distribution{
+				deployments: map[string]*Deployment{
 					"def1": {
 						ServiceName: DeploygateService,
 						ServiceConfig: DeployGateConfig{
@@ -316,7 +316,7 @@ func Test_Config_configure(t *testing.T) {
 		},
 		"lacked": {
 			rawConfig: rawConfig{
-				Distributions: map[string]interface{}{
+				Deployments: map[string]interface{}{
 					"def1": map[string]interface{}{
 						"service": DeploygateService,
 					},
@@ -334,7 +334,7 @@ func Test_Config_configure(t *testing.T) {
 					NetworkTimeout: DefaultNetworkTimeout,
 					WaitTimeout:    DefaultWaitTimeout,
 				},
-				services: map[string]*Distribution{
+				deployments: map[string]*Deployment{
 					"def1": {
 						ServiceName:   DeploygateService,
 						ServiceConfig: DeployGateConfig{},

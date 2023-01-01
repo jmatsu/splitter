@@ -30,7 +30,7 @@ const (
 
 	DefaultConfigName = "splitter.yml"
 
-	distributionsKey = "distributions" // distribution definitions' key in the config file.
+	deploymentsKey = "deployments" // deployment definitions' key in the config file.
 
 	DeploygateService              = "deploygate"                // represents DeployGateConfig
 	LocalService                   = "local"                     // represents LocalConfig
@@ -47,12 +47,12 @@ type ServiceConfig interface {
 
 // GlobalConfig is a shared configuration in one command execution.
 type GlobalConfig struct {
-	rawConfig rawConfig
-	services  map[string]*Distribution
+	rawConfig   rawConfig
+	deployments map[string]*Deployment
 }
 
 type rawConfig struct {
-	Distributions  map[string]interface{} `yaml:"distributions"`
+	Deployments    map[string]interface{} `yaml:"deployments"`
 	FormatStyle    string                 `yaml:"format-style,omitempty"`
 	NetworkTimeout string                 `yaml:"network-timeout,omitempty"`
 	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
@@ -63,8 +63,8 @@ type serviceNameHolder struct {
 	ServiceName string `json:"service"`
 }
 
-// Distribution holds a service name and its config struct
-type Distribution struct {
+// Deployment holds a service name and its config struct
+type Deployment struct {
 	ServiceName   string
 	ServiceConfig any // See ServiceConfig interface
 	Lifecycle     *ExecutionConfig
@@ -131,7 +131,7 @@ func LoadGlobalConfig(path *string) error {
 	}
 
 	config.rawConfig = rawConfig{
-		Distributions:  viper.GetStringMap(distributionsKey),
+		Deployments:    viper.GetStringMap(deploymentsKey),
 		FormatStyle:    viper.GetString("format-style"),
 		WaitTimeout:    viper.GetString("wait-timeout"),
 		NetworkTimeout: viper.GetString("network-timeout"),
@@ -145,8 +145,8 @@ func LoadGlobalConfig(path *string) error {
 }
 
 func (c *GlobalConfig) configure() error {
-	if c.services == nil {
-		c.services = map[string]*Distribution{}
+	if c.deployments == nil {
+		c.deployments = map[string]*Deployment{}
 	}
 
 	if c.rawConfig.FormatStyle == "" {
@@ -161,7 +161,7 @@ func (c *GlobalConfig) configure() error {
 		c.rawConfig.WaitTimeout = DefaultWaitTimeout
 	}
 
-	for name, values := range c.rawConfig.Distributions {
+	for name, values := range c.rawConfig.Deployments {
 		logger.Logger.Debug().Msgf("Configuring %s", name)
 
 		values, correct := values.(map[string]interface{})
@@ -186,7 +186,7 @@ func (c *GlobalConfig) configure() error {
 				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
-			c.services[name] = &Distribution{
+			c.deployments[name] = &Deployment{
 				ServiceName:   holder.ServiceName,
 				ServiceConfig: &deploygate,
 				Lifecycle:     &deploygate.ExecutionConfig,
@@ -198,7 +198,7 @@ func (c *GlobalConfig) configure() error {
 				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
-			c.services[name] = &Distribution{
+			c.deployments[name] = &Deployment{
 				ServiceName:   holder.ServiceName,
 				ServiceConfig: &firebase,
 				Lifecycle:     &firebase.ExecutionConfig,
@@ -210,7 +210,7 @@ func (c *GlobalConfig) configure() error {
 				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
-			c.services[name] = &Distribution{
+			c.deployments[name] = &Deployment{
 				ServiceName:   holder.ServiceName,
 				ServiceConfig: &local,
 				Lifecycle:     &local.ExecutionConfig,
@@ -299,8 +299,8 @@ func (c *GlobalConfig) Dump(path string) error {
 	return nil
 }
 
-func (c *GlobalConfig) Distribution(name string) (*Distribution, error) {
-	if d := c.services[name]; d != nil {
+func (c *GlobalConfig) Distribution(name string) (*Deployment, error) {
+	if d := c.deployments[name]; d != nil {
 		switch d.ServiceName {
 		case DeploygateService:
 			config := d.ServiceConfig.(*DeployGateConfig)

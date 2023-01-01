@@ -5,24 +5,24 @@ set -euo pipefail
 export SPLITTER_LOG_LEVEL=info
 
 splitter \
-  distribute \
+  deploy \
   -n case1 \
   -f .fixtures/app.apk
 
 splitter \
   --format raw \
-  distribute \
+  deploy \
   -n case2 \
   -f .fixtures/app.apk
 
 splitter \
   --format markdown \
-  distribute \
+  deploy \
   -n case3 \
   -f .fixtures/app.apk
 
 splitter \
   --config ./splitter.another.yml \
-  distribute \
+  deploy \
   -n case4 \
   -f .fixtures/app.apk
