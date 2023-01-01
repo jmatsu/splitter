@@ -13,6 +13,8 @@ type firebaseAppDistributionUploadResponse struct {
 	RawResponse *net.HttpResponse `json:"-"`
 }
 
+var _ net.TypedHttpResponse = &firebaseAppDistributionUploadResponse{}
+
 func (r *firebaseAppDistributionUploadResponse) Set(v *net.HttpResponse) {
 	r.RawResponse = v
 }

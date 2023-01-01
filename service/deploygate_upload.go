@@ -57,6 +57,8 @@ func (r *DeployGateUploadResponse) Set(v *net.HttpResponse) {
 	r.RawResponse = v
 }
 
+var _ net.TypedHttpResponse = &DeployGateUploadResponse{}
+
 type deployGateDistributionOptions struct {
 	Name        string
 	AccessKey   string

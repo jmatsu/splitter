@@ -23,6 +23,8 @@ func (r *FirebaseAppDistributionGetOperationStateResponse) Set(v *net.HttpRespon
 	r.RawResponse = v
 }
 
+var _ net.TypedHttpResponse = &FirebaseAppDistributionGetOperationStateResponse{}
+
 type FirebaseAppDistributionV1UploadReleaseResponse struct {
 	Result      string `json:"result"`
 	Release     FirebaseAppDistributionReleaseFragment
@@ -32,6 +34,8 @@ type FirebaseAppDistributionV1UploadReleaseResponse struct {
 func (r *FirebaseAppDistributionV1UploadReleaseResponse) Set(v *net.HttpResponse) {
 	r.RawResponse = v
 }
+
+var _ net.TypedHttpResponse = &FirebaseAppDistributionV1UploadReleaseResponse{}
 
 // Wait until the processing in app distribution has done
 func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebaseAppDistributionGetOperationStateRequest) (*FirebaseAppDistributionGetOperationStateResponse, error) {

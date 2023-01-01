@@ -321,6 +321,8 @@ type testTypedHttpResponse struct {
 	RawResponse *HttpResponse `json:"-"`
 }
 
+var _ TypedHttpResponse = &testTypedHttpResponse{}
+
 func (r *testTypedHttpResponse) Set(v *HttpResponse) {
 	r.RawResponse = v
 }

@@ -22,6 +22,8 @@ func (r *FirebaseAppDistributionAabInfoResponse) Set(v *net.HttpResponse) {
 	r.RawResponse = v
 }
 
+var _ net.TypedHttpResponse = &FirebaseAppDistributionAabInfoResponse{}
+
 type firebaseAppDistributionAppCertificate struct {
 	Sha1   string `json:"hashSha1"`
 	Sha256 string `json:"hashSha256"`
