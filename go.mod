@@ -12,6 +12,7 @@ require (
 	golang.org/x/exp v0.0.0-20221229233502-02c3fc3b3eb4
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
 	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 )
 
 require (

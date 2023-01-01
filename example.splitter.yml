@@ -7,3 +7,13 @@ distributions:
     service: "deploygate"
     app-owner-name: ...
     distribution-access-key: ...
+  test:
+    service: "firebase-app-distribution"
+    credentials-path: "./provider/firebase_app_distribution/.fixtures/service_account_key.json"
+    app-id: 'format:${TEST_FIREBASE_APP_ID}'
+    pre-steps:
+      - ['echo', 'pre step 1']
+      - ['echo', 'pre step 2']
+    post-steps:
+      - ['echo', 'post step 1']
+      - ['echo', 'post step 2']
