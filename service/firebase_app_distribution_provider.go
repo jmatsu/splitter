@@ -50,6 +50,14 @@ func (r *FirebaseAppDistributionUploadAppRequest) SetReleaseNote(value string) {
 	}
 }
 
+func (r *FirebaseAppDistributionUploadAppRequest) SetTesterEmails(value []string) {
+	if len(value) > 0 {
+		r.testerEmails = &value
+	} else {
+		r.testerEmails = nil
+	}
+}
+
 func (r *FirebaseAppDistributionUploadAppRequest) OsName() string {
 	return strings.SplitN(r.appId, ":", 4)[2]
 }
@@ -86,6 +94,10 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		projectNumber: p.ProjectNumber(),
 		appId:         p.AppId,
 		filePath:      filePath,
+	}
+
+	if len(p.FirebaseAppDistributionConfig.GroupAliases) > 0 {
+		request.groupAliases = &p.FirebaseAppDistributionConfig.GroupAliases
 	}
 
 	builder(request)
