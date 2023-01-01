@@ -1,4 +1,4 @@
-package firebase_app_distribution
+package service
 
 import (
 	"encoding/json"
@@ -8,28 +8,28 @@ import (
 	"time"
 )
 
-type getOperationStateRequest struct {
+type firebaseAppDistributionGetOperationStateRequest struct {
 	operationName string
 }
 
-type getOperationStateResponse struct {
-	OperationName string                   `json:"name"`
-	Done          bool                     `json:"done"`
-	Response      *v1UploadReleaseResponse `json:"response,omitempty"`
+type firebaseAppDistributionGetOperationStateResponse struct {
+	OperationName string                                          `json:"name"`
+	Done          bool                                            `json:"done"`
+	Response      *firebaseAppDistributionV1UploadReleaseResponse `json:"response,omitempty"`
 }
 
-type v1UploadReleaseResponse struct {
+type firebaseAppDistributionV1UploadReleaseResponse struct {
 	Result  string `json:"result"`
-	Release release
+	Release firebaseAppDistributionRelease
 }
 
 // Wait until the processing in app distribution has done
-func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*getOperationStateResponse, error) {
-	waitTimeout := config.GetGlobalConfig().WaitTimeout()
+func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebaseAppDistributionGetOperationStateRequest) (*firebaseAppDistributionGetOperationStateResponse, error) {
+	waitTimeout := config.CurrentConfig().WaitTimeout()
 
 	var retryCount int
 
-	pipeline := make(chan *getOperationStateResponse, 1)
+	pipeline := make(chan *firebaseAppDistributionGetOperationStateResponse, 1)
 	stopper := make(chan error, 1)
 
 	defer func() {
@@ -46,16 +46,16 @@ func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*get
 					return
 				}
 
-				logger.Warn().Msg("The processing of Firebase seems to be unstable. We are retrying to watch the status.")
+				firebaseAppDistributionLogger.Warn().Msg("The processing of Firebase seems to be unstable. We are retrying to watch the status.")
 
 				retryCount++
 			} else if resp.Done {
-				logger.Info().Msg("The processing of Firebase has done.")
+				firebaseAppDistributionLogger.Info().Msg("The processing of Firebase has done.")
 				pipeline <- resp
 				return
 			}
 
-			logger.Info().Msg("Waiting for the processing of Firebase...")
+			firebaseAppDistributionLogger.Info().Msg("Waiting for the processing of Firebase...")
 
 			time.Sleep(5 * time.Second) // experimental
 		}
@@ -71,10 +71,10 @@ func (p *Provider) waitForOperationDone(request *getOperationStateRequest) (*get
 	}
 }
 
-func (p *Provider) getOperationState(request *getOperationStateRequest) (*getOperationStateResponse, error) {
+func (p *FirebaseAppDistributionProvider) getOperationState(request *firebaseAppDistributionGetOperationStateRequest) (*firebaseAppDistributionGetOperationStateResponse, error) {
 	path := fmt.Sprintf("/v1/%s", request.operationName)
 
-	client := baseClient.WithHeaders(map[string][]string{
+	client := p.client.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 
@@ -84,7 +84,7 @@ func (p *Provider) getOperationState(request *getOperationStateRequest) (*getOpe
 		return nil, errors.Wrap(err, "failed to get a response from operation state api")
 	}
 
-	var response getOperationStateResponse
+	var response firebaseAppDistributionGetOperationStateResponse
 
 	if 200 <= code && code < 300 {
 		if err := json.Unmarshal(bytes, &response); err != nil {

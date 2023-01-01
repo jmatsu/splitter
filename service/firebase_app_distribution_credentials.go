@@ -1,4 +1,4 @@
-package firebase_app_distribution
+package service
 
 import (
 	"context"
@@ -13,8 +13,8 @@ const (
 	scope = "https://www.googleapis.com/auth/cloud-platform"
 )
 
-// Token fetches a new token from a credentials file. Currently, only non-interactive way is supported.
-func Token(ctx context.Context, credentialsPath string) (*oauth2.Token, error) {
+// FirebaseToken fetches a new token from a credentials file. Currently, only non-interactive way is supported.
+func FirebaseToken(ctx context.Context, credentialsPath string) (*oauth2.Token, error) {
 	var jsonContent string
 
 	if credentialsPath != "" {
@@ -35,7 +35,7 @@ func Token(ctx context.Context, credentialsPath string) (*oauth2.Token, error) {
 		jsonContent = string(bytes)
 	}
 
-	if c, err := findCredentials(ctx, jsonContent); err != nil {
+	if c, err := findGoogleCredentials(ctx, jsonContent); err != nil {
 		return nil, errors.Wrap(err, "failed to create credentials")
 	} else if t, err := c.TokenSource.Token(); err != nil {
 		return nil, errors.Wrap(err, "failed to fetch a token")
@@ -44,7 +44,7 @@ func Token(ctx context.Context, credentialsPath string) (*oauth2.Token, error) {
 	}
 }
 
-func findCredentials(ctx context.Context, jsonContent string) (*google.Credentials, error) {
+func findGoogleCredentials(ctx context.Context, jsonContent string) (*google.Credentials, error) {
 	params := google.CredentialsParams{
 		Scopes: []string{scope},
 		State:  "state",

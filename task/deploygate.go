@@ -1,42 +1,35 @@
-package deploygate
+package task
 
 import (
+	"context"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jmatsu/splitter/internal/config"
+	"github.com/jmatsu/splitter/service"
+	"github.com/pkg/errors"
 	"strings"
 )
 
-type DistributionResult struct {
-	uploadResponse
-	RawJson string
+func DistributeToDeployGate(ctx context.Context, conf config.DeployGateConfig, filePath string, builder func(req *service.DeployGateUploadAppRequest)) error {
+	if err := conf.Validate(); err != nil {
+		return errors.Wrap(err, "the built config is invalid")
+	}
+
+	provider := service.NewDeployGateProvider(ctx, &conf)
+
+	formatter := NewFormatter()
+	formatter.TableBuilder = deployGateTableBuilder
+
+	if response, err := provider.Distribute(filePath, builder); err != nil {
+		return errors.Wrap(err, "cannot distribute this app")
+	} else if err := formatter.Format(response); err != nil {
+		return errors.Wrap(err, "cannot format the response")
+	}
+
+	return nil
 }
 
-type uploadResponse struct {
-	Results struct {
-		OsName string `json:"os_name"`
-
-		Name             string  `json:"name"`
-		PackageName      string  `json:"package_name"`
-		Revision         uint32  `json:"revision"`
-		VersionCode      string  `json:"version_code"`
-		VersionName      string  `json:"version_name"`
-		SdkVersion       uint16  `json:"sdk_version"`
-		RawSdkVersion    *string `json:"raw_sdk_version,omitempty"`
-		TargetSdkVersion *uint16 `json:"target_sdk_version,omitempty"`
-		DownloadUrl      string  `json:"file"`
-		User             struct {
-			Name string
-		} `json:"user"`
-		Distribution *struct {
-			AccessKey   string `json:"access_key"`
-			Title       string `json:"title"`
-			ReleaseNote string `json:"release_note"`
-			Url         string `json:"url"`
-		} `json:"distribution,omitempty"`
-	} `json:"results"`
-}
-
-var TableBuilder = func(w table.Writer, v any) {
-	resp := v.(DistributionResult).Results
+var deployGateTableBuilder = func(w table.Writer, v any) {
+	resp := v.(service.DeployGateDistributionResult).Results
 
 	w.AppendHeader(table.Row{
 		"Key", "Value",

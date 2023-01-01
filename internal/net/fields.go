@@ -88,6 +88,8 @@ func (f *Form) Serialize() (string, *bytes.Buffer, error) {
 	defer w.Close()
 
 	for _, field := range f.Fields {
+		field := field
+
 		err := func() error {
 			name, reader, err := field.Open()
 

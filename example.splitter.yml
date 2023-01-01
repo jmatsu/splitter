@@ -9,7 +9,7 @@ distributions:
     distribution-access-key: ...
   test:
     service: "firebase-app-distribution"
-    credentials-path: "./provider/firebase_app_distribution/.fixtures/service_account_key.json"
+    credentials-path: "./service/.fixtures/google_credentials.json"
     app-id: 'format:${TEST_FIREBASE_APP_ID}'
     pre-steps:
       - ['echo', 'pre step 1']

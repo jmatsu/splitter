@@ -1,12 +1,9 @@
 package command
 
 import (
-	"context"
-	"fmt"
-	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
-	"github.com/jmatsu/splitter/provider/firebase_app_distribution"
-	"github.com/pkg/errors"
+	"github.com/jmatsu/splitter/service"
+	"github.com/jmatsu/splitter/task"
 	"github.com/urfave/cli/v2"
 )
 
@@ -63,29 +60,11 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				AppId:                 context.String("app-id"),
 			}
 
-			if err := conf.Validate(); err != nil {
-				return errors.Wrap(err, "given flags may be insufficient or invalid")
-			}
-
-			return distributeFirebaseAppDistribution(context.Context, &conf, context.String("source-file"), func(req *firebase_app_distribution.UploadRequest) {
+			return task.DistributeToFirebaseAppDistribution(context.Context, conf, context.String("source-file"), func(req *service.FirebaseAppDistributionUploadAppRequest) {
 				if v := context.String("release-note"); context.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}
 			})
 		},
 	}
-}
-
-func distributeFirebaseAppDistribution(ctx context.Context, conf *config.FirebaseAppDistributionConfig, filePath string, builder func(req *firebase_app_distribution.UploadRequest)) error {
-	provider := firebase_app_distribution.NewProvider(ctx, conf)
-
-	if response, err := provider.Distribute(filePath, builder); err != nil {
-		return err
-	} else if format.IsRaw() {
-		fmt.Println(response.RawJson)
-	} else if err := format.Format(*response, firebase_app_distribution.TableBuilder); err != nil {
-		return errors.Wrap(err, "cannot format the response")
-	}
-
-	return nil
 }

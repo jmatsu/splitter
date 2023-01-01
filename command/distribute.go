@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
-	"github.com/jmatsu/splitter/provider/deploygate"
-	"github.com/jmatsu/splitter/provider/firebase_app_distribution"
-	"github.com/jmatsu/splitter/provider/lifecycle"
+	"github.com/jmatsu/splitter/service"
+	"github.com/jmatsu/splitter/task"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -48,22 +47,22 @@ func Distribute(name string, aliases []string) *cli.Command {
 
 			logger.Logger.Info().Msgf("Loading %s config...", name)
 
-			d, err := config.GetGlobalConfig().Distribution(name)
+			d, err := config.CurrentConfig().Distribution(name)
 
 			if err != nil {
 				return err
 			}
 
-			lifecycleProvider := lifecycle.NewProvider(context.Context, d.Lifecycle)
+			executor := task.NewExecutor(nil, context.Context, d.Lifecycle)
 
-			return lifecycleProvider.Execute(func() error {
+			return executor.Execute(func() error {
 				sourceFilePath := context.String("source-file")
 
 				switch d.ServiceName {
 				case config.DeploygateService:
 					dg := d.ServiceConfig.(*config.DeployGateConfig)
 
-					return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *deploygate.UploadRequest) {
+					return task.DistributeToDeployGate(context.Context, *dg, sourceFilePath, func(req *service.DeployGateUploadAppRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetMessage(v)
 							req.SetDistributionReleaseNote(v)
@@ -72,11 +71,11 @@ func Distribute(name string, aliases []string) *cli.Command {
 				case config.LocalService:
 					lo := d.ServiceConfig.(*config.LocalConfig)
 
-					return distributeLocal(context.Context, lo, sourceFilePath)
+					return task.DistributeToLocal(context.Context, *lo, sourceFilePath)
 				case config.FirebaseAppDistributionService:
 					fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
 
-					return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *firebase_app_distribution.UploadRequest) {
+					return task.DistributeToFirebaseAppDistribution(context.Context, *fad, sourceFilePath, func(req *service.FirebaseAppDistributionUploadAppRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetReleaseNote(v)
 						}

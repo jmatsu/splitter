@@ -1,36 +1,45 @@
-package local
+package service
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
-	logger2 "github.com/jmatsu/splitter/internal/logger"
+	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"io"
 	"os"
 )
 
-var logger zerolog.Logger
+var localLogger zerolog.Logger
+
+type sideEffect = string
+
+const (
+	localCopyOnly         sideEffect = "copied without overwriting"
+	localMoveOnly         sideEffect = "moved without overwriting"
+	localCopyAndOverwrite sideEffect = "copied and overwrote"
+	localMoveAndOverwrite sideEffect = "moved and overwrote"
+)
 
 func init() {
-	logger = logger2.Logger.With().Str("provider", "local").Logger()
+	localLogger = logger.Logger.With().Str("service", "local").Logger()
 }
 
-type Provider struct {
-	config.LocalConfig
-	ctx context.Context
-}
-
-func NewProvider(ctx context.Context, config *config.LocalConfig) *Provider {
-	return &Provider{
+func NewLocalProvider(ctx context.Context, config *config.LocalConfig) *LocalProvider {
+	return &LocalProvider{
 		LocalConfig: *config,
 		ctx:         ctx,
 	}
 }
 
-type MoveRequest struct {
+type LocalProvider struct {
+	config.LocalConfig
+	ctx context.Context
+}
+
+type LocalMoveRequest struct {
 	SourceFilePath      string
 	DestinationFilePath string
 	AllowOverwrite      bool
@@ -38,8 +47,14 @@ type MoveRequest struct {
 	DeleteResource      bool
 }
 
-func (p *Provider) Distribute(filePath string) (*DistributionResult, error) {
-	request := MoveRequest{
+type localMoveResponse struct {
+	SourceFilePath      string     `json:"source_file_path"`
+	DestinationFilePath string     `json:"destination_file_path"`
+	SideEffect          sideEffect `json:"side_effect"`
+}
+
+func (p *LocalProvider) Distribute(filePath string) (*LocalDistributionResult, error) {
+	request := LocalMoveRequest{
 		SourceFilePath:      filePath,
 		DestinationFilePath: p.DestinationPath,
 		AllowOverwrite:      p.AllowOverwrite,
@@ -52,21 +67,21 @@ func (p *Provider) Distribute(filePath string) (*DistributionResult, error) {
 		request.FileMode = v.Mode()
 	}
 
-	var response moveResponse
+	var response localMoveResponse
 
 	if bytes, err := p.distribute(&request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal")
 	} else {
-		return &DistributionResult{
-			moveResponse: response,
-			RawJson:      string(bytes),
+		return &LocalDistributionResult{
+			localMoveResponse: response,
+			RawJson:           string(bytes),
 		}, nil
 	}
 }
 
-func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
+func (p *LocalProvider) distribute(request *LocalMoveRequest) ([]byte, error) {
 	sideEffect, err := func() (sideEffect, error) {
 		var sideEffect sideEffect
 
@@ -80,15 +95,15 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 			}
 
 			if request.DeleteResource {
-				sideEffect = moveAndOverwrite
+				sideEffect = localMoveAndOverwrite
 			} else {
-				sideEffect = copyAndOverwrite
+				sideEffect = localCopyAndOverwrite
 			}
 		} else {
 			if request.DeleteResource {
-				sideEffect = moveOnly
+				sideEffect = localMoveOnly
 			} else {
-				sideEffect = copyOnly
+				sideEffect = localCopyOnly
 			}
 		}
 
@@ -132,14 +147,14 @@ func (p *Provider) distribute(request *MoveRequest) ([]byte, error) {
 	if v, err := os.Stat(request.DestinationFilePath); err != nil {
 		panic(err)
 	} else if v.Mode() == request.FileMode {
-		logger.Debug().Msgf("%s already has permission %d", request.DestinationFilePath, request.FileMode)
+		localLogger.Debug().Msgf("%s already has permission %d", request.DestinationFilePath, request.FileMode)
 	} else if err := os.Chmod(request.DestinationFilePath, request.FileMode); err != nil {
 		return nil, errors.Wrapf(err, "failed to change file mode of %s to %s", request.DestinationFilePath, v.Mode().String())
 	} else {
-		logger.Debug().Msgf("%s has been changed to permission %d", request.DestinationFilePath, request.FileMode)
+		localLogger.Debug().Msgf("%s has been changed to permission %d", request.DestinationFilePath, request.FileMode)
 	}
 
-	resp := moveResponse{
+	resp := localMoveResponse{
 		SourceFilePath:      request.SourceFilePath,
 		DestinationFilePath: request.DestinationFilePath,
 		SideEffect:          sideEffect,

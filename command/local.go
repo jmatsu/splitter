@@ -1,12 +1,8 @@
 package command
 
 import (
-	"context"
-	"fmt"
-	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
-	"github.com/jmatsu/splitter/provider/local"
-	"github.com/pkg/errors"
+	"github.com/jmatsu/splitter/task"
 	"github.com/urfave/cli/v2"
 	"os"
 )
@@ -60,25 +56,7 @@ func Local(name string, aliases []string) *cli.Command {
 				FileMode:        os.FileMode(context.Uint("mode")),
 			}
 
-			if err := conf.Validate(); err != nil {
-				return errors.Wrap(err, "given flags may be insufficient or invalid")
-			}
-
-			return distributeLocal(context.Context, &conf, context.String("source-file"))
+			return task.DistributeToLocal(context.Context, conf, context.String("source-file"))
 		},
 	}
-}
-
-func distributeLocal(ctx context.Context, conf *config.LocalConfig, filePath string) error {
-	provider := local.NewProvider(ctx, conf)
-
-	if response, err := provider.Distribute(filePath); err != nil {
-		return err
-	} else if format.IsRaw() {
-		fmt.Println(response.RawJson)
-	} else if err := format.Format(*response, local.TableBuilder); err != nil {
-		return errors.Wrap(err, "cannot format the response")
-	}
-
-	return nil
 }
