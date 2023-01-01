@@ -49,8 +49,6 @@ type ServiceConfig interface {
 type GlobalConfig struct {
 	rawConfig rawConfig
 	services  map[string]*Distribution
-
-	Async bool
 }
 
 type rawConfig struct {
@@ -60,6 +58,7 @@ type rawConfig struct {
 	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
 }
 
+// to get a service name from each service-specific configuration formats
 type serviceNameHolder struct {
 	ServiceName string `json:"service"`
 }
@@ -106,10 +105,6 @@ func SetGlobalNetworkTimeout(value string) {
 
 func SetGlobalWaitTimeout(value string) {
 	config.rawConfig.WaitTimeout = value
-}
-
-func SetGlobalAsync(async bool) {
-	config.Async = async
 }
 
 func CurrentConfig() *GlobalConfig {

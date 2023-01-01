@@ -34,27 +34,21 @@ var FirebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 		"Key", "Value",
 	})
 
-	if resp.Release == nil {
-		w.SetCaption("In async mode, only a few information is available.")
-	}
-
 	w.AppendRows([]table.Row{
 		{"Firebase App Distribution", ""},
 	})
 	w.AppendSeparator()
 
-	if resp.Release != nil {
-		w.AppendRows([]table.Row{
-			{"Processed State", resp.Result},
-			{"First Uploaded At", resp.Release.CreatedAt},
-			{"First Uploaded At", resp.Release.CreatedAt},
-		})
+	w.AppendRows([]table.Row{
+		{"Processed State", resp.Result},
+		{"First Uploaded At", resp.Release.CreatedAt},
+		{"First Uploaded At", resp.Release.CreatedAt},
+	})
 
-		if resp.Release.ReleaseNote != nil {
-			w.AppendRows([]table.Row{
-				{"Release Note", resp.Release.ReleaseNote.Text},
-			})
-		}
+	if resp.Release.ReleaseNote != nil {
+		w.AppendRows([]table.Row{
+			{"Release Note", resp.Release.ReleaseNote.Text},
+		})
 	}
 
 	// it's okay to use aabInfo != nil as *if android*
@@ -73,15 +67,13 @@ var FirebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 		}
 	}
 
-	if resp.Release != nil {
-		w.AppendSeparator()
-		w.AppendRows([]table.Row{
-			{"App Property", ""},
-		})
-		w.AppendSeparator()
-		w.AppendRows([]table.Row{
-			{"App Version Code", resp.Release.BuildVersion},
-			{"App Version Name", resp.Release.DisplayVersion},
-		})
-	}
+	w.AppendSeparator()
+	w.AppendRows([]table.Row{
+		{"App Property", ""},
+	})
+	w.AppendSeparator()
+	w.AppendRows([]table.Row{
+		{"App Version Code", resp.Release.BuildVersion},
+		{"App Version Name", resp.Release.DisplayVersion},
+	})
 }

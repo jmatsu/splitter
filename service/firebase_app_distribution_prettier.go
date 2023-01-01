@@ -2,7 +2,7 @@ package service
 
 type FirebaseAppDistributionDistributionResult struct {
 	Result  string
-	Release *firebaseAppDistributionRelease
+	Release firebaseAppDistributionRelease
 	AabInfo *firebaseAppDistributionAabInfoResponse
 	RawJson string
 }
@@ -15,6 +15,6 @@ func (r *FirebaseAppDistributionDistributionResult) RawJsonResponse() string {
 	return r.RawJson
 }
 
-func (r *FirebaseAppDistributionDistributionResult) TypedResponse() any {
+func (r *FirebaseAppDistributionDistributionResult) ValueResponse() any {
 	return *r
 }

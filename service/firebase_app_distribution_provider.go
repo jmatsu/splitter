@@ -38,6 +38,8 @@ type FirebaseAppDistributionUploadAppRequest struct {
 	appId         string
 	filePath      string
 	releaseNote   *string
+	groupAliases  *[]string
+	testerEmails  *[]string
 }
 
 func (r *FirebaseAppDistributionUploadAppRequest) SetReleaseNote(value string) {
@@ -45,6 +47,14 @@ func (r *FirebaseAppDistributionUploadAppRequest) SetReleaseNote(value string) {
 		r.releaseNote = &value
 	} else {
 		r.releaseNote = nil
+	}
+}
+
+func (r *FirebaseAppDistributionUploadAppRequest) SetTesterEmails(value []string) {
+	if len(value) > 0 {
+		r.testerEmails = &value
+	} else {
+		r.testerEmails = nil
 	}
 }
 
@@ -86,6 +96,10 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		filePath:      filePath,
 	}
 
+	if len(p.FirebaseAppDistributionConfig.GroupAliases) > 0 {
+		request.groupAliases = &p.FirebaseAppDistributionConfig.GroupAliases
+	}
+
 	builder(request)
 
 	firebaseAppDistributionLogger.Debug().Msgf("the request has been built: %v", *request)
@@ -112,15 +126,8 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, errors.Wrap(err, "failed to parse the response of your app to Firebase App Distribution but succeeded to upload")
-	} else if rawJson = string(bytes); config.CurrentConfig().Async {
-		if request.releaseNote != nil {
-			firebaseAppDistributionLogger.Warn().Msg("release note cannot be updated in async mode")
-		}
-
-		return &FirebaseAppDistributionDistributionResult{
-			AabInfo: aabInfo,
-			RawJson: rawJson,
-		}, nil
+	} else {
+		rawJson = string(bytes)
 	}
 
 	var release firebaseAppDistributionRelease
@@ -149,8 +156,29 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		}
 	}
 
+	if request.groupAliases != nil || request.testerEmails != nil {
+		firebaseAppDistributionLogger.Debug().Msg("start distribution the release")
+
+		var groupAliases []string
+		var testerEmails []string
+
+		if request.groupAliases != nil {
+			groupAliases = *request.groupAliases
+		}
+
+		if request.testerEmails != nil {
+			testerEmails = *request.testerEmails
+		}
+
+		req := release.NewDistributeRequest(testerEmails, groupAliases)
+
+		if err := p.distributeRelease(req); err != nil {
+			firebaseAppDistributionLogger.Warn().Err(err).Msg("failed to distribute the release")
+		}
+	}
+
 	return &FirebaseAppDistributionDistributionResult{
-		Release: &release,
+		Release: release,
 		Result:  result,
 		AabInfo: aabInfo,
 		RawJson: rawJson,

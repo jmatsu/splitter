@@ -62,15 +62,6 @@ func main() {
 					config.ToEnvName("FORMAT"),
 				},
 			},
-			&cli.BoolFlag{
-				Name:     "async",
-				Usage:    "Do not wait for the processing on the provider if awaiting is supported.",
-				Required: false,
-				Value:    false,
-				EnvVars: []string{
-					config.ToEnvName("ASYNC"),
-				},
-			},
 			&cli.StringFlag{
 				Name:     "log-level",
 				Usage:    "Set log level",
@@ -126,10 +117,6 @@ func main() {
 				config.SetGlobalWaitTimeout(v)
 			}
 
-			if v := context.Bool("async"); context.IsSet("async") {
-				config.SetGlobalAsync(v)
-			}
-
 			c := config.CurrentConfig()
 
 			if err := c.Validate(); err != nil {
@@ -140,7 +127,6 @@ func main() {
 				Str("network-timeout", c.NetworkTimeout().String()).
 				Str("wait-timeout", c.WaitTimeout().String()).
 				Str("format-style", c.FormatStyle()).
-				Str("async", fmt.Sprintf("%t", c.Async)).
 				Msg("configuration has been initialized")
 
 			return nil
