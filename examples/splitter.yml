@@ -1,0 +1,24 @@
+deployments:
+  # Create distributions on every PR
+  pull-request:
+    service: "deploygate"
+    distribution-name: "format:pulls/${GITHUB_PULL_NUMBER}"
+
+  # Distribute apps to the specific groups for Dogfooding
+  dogfooding:
+    service: "firebase-app-distribution"
+    credentials-path: "./google_credentials.json"
+    app-id: 'format:${FIREBASE_APP_ID}'
+    group-aliases:
+      - 'directors'
+      - 'designers'
+    pre-steps:
+      - ['decode-base64', '--overwrite', './google_credentials.json']
+
+  # Put apps to the shared drive if you can't use distribution services
+  shared-drive:
+    service: "local"
+    destination-path: "format:${SHARED_DRIVE_PATH}/head.apk"
+    delete-source: false
+    post-steps:
+      - ['./notify-to-slack', '--text', 'We put a new apk to the shared drive.', '--channel', 'Cxyz123']

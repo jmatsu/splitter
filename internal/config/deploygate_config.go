@@ -5,7 +5,7 @@ type DeployGateConfig struct {
 	serviceNameHolder `yaml:",inline"`
 	ExecutionConfig   `yaml:",inline"`
 
-	// User#name or Group#name of DeployGate
+	// User#name or Organization#name of DeployGate
 	AppOwnerName string `yaml:"app-owner-name" env:"DEPLOYGATE_APP_OWNER_NAME" required:"true"`
 
 	// API token of the app owner or who has permission to use their namespace.

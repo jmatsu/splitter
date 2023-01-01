@@ -23,7 +23,7 @@ jobs:
         run: >
           splitter
           deploygate
-          --source-file ./examples/io.github.jmatsu.splitter.example.aab
+          --source-path ./examples/io.github.jmatsu.splitter.example.aab
           --app-owner-name "${{ secrets.DEPLOYGATE_APP_OWNER_NAME }}"
           --api-token "${{ secrets.DEPLOYGATE_API_TOKEN }}"
 
@@ -46,7 +46,7 @@ jobs:
         run: >
           splitter
           firebase-app-distribution
-          --source-file ./examples/io.github.jmatsu.splitter.example.apk
+          --source-path ./examples/io.github.jmatsu.splitter.example.apk
           --app-id "${{ secrets.FIREBASE_APP_ID }}"
           --credentials .fixtures/google_credentials.json
 
@@ -54,7 +54,7 @@ jobs:
         run: >
           splitter
           firebase-app-distribution
-          --source-file ./examples/io.github.jmatsu.splitter.example.apk
+          --source-path ./examples/io.github.jmatsu.splitter.example.apk
           --app-id "${{ secrets.FIREBASE_APP_ID }}"
           --credentials .fixtures/google_credentials.json
           --group-aliases "integration-test-1"
@@ -71,5 +71,5 @@ jobs:
         run: >
           splitter
           local
-          --source-file ./examples/io.github.jmatsu.splitter.example.apk
-          --destination ./dist/example.apk
+          --source-path ./examples/io.github.jmatsu.splitter.example.apk
+          --destination-path ./dist/example.apk

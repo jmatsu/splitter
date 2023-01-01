@@ -16,7 +16,7 @@ func Local(name string, aliases []string) *cli.Command {
 		Description: "You can move/copy your apps to another location.",
 		Flags: []cli.Flag{
 			&cli.PathFlag{
-				Name: "source-file",
+				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
@@ -24,7 +24,7 @@ func Local(name string, aliases []string) *cli.Command {
 				Required: true,
 			},
 			&cli.PathFlag{
-				Name:     "destination",
+				Name:     "destination-path",
 				Usage:    "A destination path to an app file.",
 				Required: true,
 			},
@@ -41,7 +41,7 @@ func Local(name string, aliases []string) *cli.Command {
 				Value:    false,
 			},
 			&cli.UintFlag{
-				Name:        "mode",
+				Name:        "file-mode",
 				Usage:       "The final file permission of the destination path.",
 				Required:    false,
 				Value:       0,
@@ -50,13 +50,13 @@ func Local(name string, aliases []string) *cli.Command {
 		},
 		Action: func(context *cli.Context) error {
 			conf := config.LocalConfig{
-				DestinationPath: context.String("destination"),
+				DestinationPath: context.String("destination-path"),
 				DeleteSource:    context.Bool("delete-source"),
 				AllowOverwrite:  context.Bool("overwrite"),
-				FileMode:        os.FileMode(context.Uint("mode")),
+				FileMode:        os.FileMode(context.Uint("file-mode")),
 			}
 
-			return task.DeployToLocal(context.Context, conf, context.String("source-file"))
+			return task.DeployToLocal(context.Context, conf, context.String("source-path"))
 		},
 	}
 }

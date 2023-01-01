@@ -1,0 +1,70 @@
+deployments: # Array<Map>
+    # each Mapping must have service key
+
+    firebase-app-distribution:
+        # firebase app distribution's service name
+        service: firebase-app-distribution
+
+        # An app ID. You can get this value from the firebase console's project setting. e.g. 1:123456789:android:xxxxx
+        # Required
+        app-id: string
+
+        # Access token that has permission to use App Distribution
+        # Required: (either access-token or credentials-path)
+        access-token: string
+
+        # A path to credentials file. If the both of this and access token are given, access token takes priority.
+        # Required: (either access-token or credentials-path)
+        credentials-path: string
+
+        # A list of group aliases. Each group must exist.
+        # Optional
+        group-aliases:
+            - string
+    deploygate:
+        # DeployGate's service name
+        service: deploygate
+
+        # User#name or Organization#name of DeployGate
+        # Required
+        app-owner-name: string
+
+        # API token of the app owner or who has permission to use their namespace.
+        # Required
+        api-token: string
+
+        # The existing access key of the distribution
+        # Optional
+        distribution-access-key: string
+
+        # A name of a distribution
+        # Optional
+        distribution-name: string
+    local:
+        # local's service name
+        service: local
+
+        # A destination file path. Absolute and/or relative paths are supported.
+        # Required
+        destination-path: string
+
+        # Specify true if you are okay to overwrite the destination file. Otherwise, this command fails.
+        # Optional
+        allow-overwrite: bool
+
+        # 0644 for example. zero value means keeping the perm mode of the source file
+        # Optional
+        file-mode: int
+
+        # Specify true if you would like to delete the source file later and the behavior looks *move* then.
+        # Optional
+        delete-source: bool
+
+# The output format (Values: pretty, raw, markdown)
+format-style: enum string
+
+# read/connection timeout (infinite) e.g. 10m
+network-timeout: time.Duration
+
+# wait timeout for services' async-processing state (infinite)
+wait-timeout: time.Duration e.g. 5m
