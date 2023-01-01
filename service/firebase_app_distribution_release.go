@@ -42,7 +42,7 @@ func (r firebaseAppDistributionRelease) NewUpdateRequest(releaseNote string) *fi
 func (p *FirebaseAppDistributionProvider) updateReleaseNote(request *firebaseAppDistributionUpdateReleaseRequest) (*firebaseAppDistributionUpdateReleaseResponse, error) {
 	path := fmt.Sprintf("/v1/%s", request.ReleaseName)
 
-	client := firebaseAppDistributionBaseClient.WithHeaders(map[string][]string{
+	client := p.client.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 

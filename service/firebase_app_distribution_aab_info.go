@@ -37,7 +37,7 @@ const (
 func (p *FirebaseAppDistributionProvider) getAabInfo(request *firebaseAppDistributionAabInfoRequest) (*firebaseAppDistributionAabInfoResponse, error) {
 	path := fmt.Sprintf("/v1/projects/%s/apps/%s/aabInfo", request.projectNumber, request.appId)
 
-	client := firebaseAppDistributionBaseClient.WithHeaders(map[string][]string{
+	client := p.client.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 
@@ -58,6 +58,10 @@ func (p *FirebaseAppDistributionProvider) getAabInfo(request *firebaseAppDistrib
 	} else {
 		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
 	}
+}
+
+func (r *firebaseAppDistributionAabInfoResponse) Available() bool {
+	return r.IntegrationState == aabIntegrationIntegrated
 }
 
 func checkAppBundleIntegrationState(s appBundleIntegrationState) error {

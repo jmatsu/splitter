@@ -90,13 +90,30 @@ var styles = []FormatStyle{
 	MarkdownFormat,
 }
 
-var config *GlobalConfig
+var config = &GlobalConfig{}
 
 func NewConfig() *GlobalConfig {
 	return &GlobalConfig{}
 }
 
-func GetGlobalConfig() *GlobalConfig {
+func SetGlobalFormatStyle(value string) {
+	config.rawConfig.FormatStyle = value
+}
+
+func SetGlobalNetworkTimeout(value string) {
+	config.rawConfig.NetworkTimeout = value
+}
+
+func SetGlobalWaitTimeout(value string) {
+	config.rawConfig.WaitTimeout = value
+}
+
+func SetGlobalAsync(async bool) {
+	config.Async = async
+}
+
+func CurrentConfig() *GlobalConfig {
+	config := config // create a shallow copy
 	return config
 }
 
@@ -118,13 +135,11 @@ func LoadGlobalConfig(path *string) error {
 		return errors.Wrap(err, "failed to read a config file")
 	}
 
-	config = &GlobalConfig{
-		rawConfig: rawConfig{
-			Distributions:  viper.GetStringMap(distributionsKey),
-			FormatStyle:    viper.GetString("format-style"),
-			WaitTimeout:    viper.GetString("wait-timeout"),
-			NetworkTimeout: viper.GetString("network-timeout"),
-		},
+	config.rawConfig = rawConfig{
+		Distributions:  viper.GetStringMap(distributionsKey),
+		FormatStyle:    viper.GetString("format-style"),
+		WaitTimeout:    viper.GetString("wait-timeout"),
+		NetworkTimeout: viper.GetString("network-timeout"),
 	}
 
 	if err := config.configure(); err != nil {
@@ -213,6 +228,36 @@ func (c *GlobalConfig) configure() error {
 	return c.Validate()
 }
 
+func (c *GlobalConfig) FormatStyle() string {
+	return c.rawConfig.FormatStyle
+}
+
+// NetworkTimeout is a read/connection timeout for requests
+func (c *GlobalConfig) NetworkTimeout() time.Duration {
+	var value = DefaultNetworkTimeout
+
+	if c.rawConfig.NetworkTimeout != "" {
+		value = c.rawConfig.NetworkTimeout
+	}
+
+	timeout, _ := time.ParseDuration(value)
+
+	return timeout
+}
+
+// WaitTimeout is a timeout for polling service's processing
+func (c *GlobalConfig) WaitTimeout() time.Duration {
+	var value = DefaultWaitTimeout
+
+	if c.rawConfig.WaitTimeout != "" {
+		value = c.rawConfig.WaitTimeout
+	}
+
+	timeout, _ := time.ParseDuration(value)
+
+	return timeout
+}
+
 func (c *GlobalConfig) Validate() error {
 	if c.rawConfig.FormatStyle != "" {
 		if !slices.Contains(styles, c.rawConfig.FormatStyle) {
@@ -247,48 +292,6 @@ func (c *GlobalConfig) Validate() error {
 	}
 
 	return nil
-}
-
-func (c *GlobalConfig) FormatStyle() string {
-	return c.rawConfig.FormatStyle
-}
-
-func (c *GlobalConfig) SetFormatStyle(value string) {
-	c.rawConfig.FormatStyle = value
-}
-
-// NetworkTimeout is a read/connection timeout for requests
-func (c *GlobalConfig) NetworkTimeout() time.Duration {
-	var value = DefaultNetworkTimeout
-
-	if c.rawConfig.NetworkTimeout != "" {
-		value = c.rawConfig.NetworkTimeout
-	}
-
-	timeout, _ := time.ParseDuration(value)
-
-	return timeout
-}
-
-func (c *GlobalConfig) SetNetworkTimeout(value string) {
-	c.rawConfig.NetworkTimeout = value
-}
-
-// WaitTimeout is a timeout for polling service's processing
-func (c *GlobalConfig) WaitTimeout() time.Duration {
-	var value = DefaultWaitTimeout
-
-	if c.rawConfig.WaitTimeout != "" {
-		value = c.rawConfig.WaitTimeout
-	}
-
-	timeout, _ := time.ParseDuration(value)
-
-	return timeout
-}
-
-func (c *GlobalConfig) SetWaitTimeout(value string) {
-	c.rawConfig.WaitTimeout = value
 }
 
 func (c *GlobalConfig) Dump(path string) error {

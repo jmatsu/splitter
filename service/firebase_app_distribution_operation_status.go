@@ -25,7 +25,7 @@ type firebaseAppDistributionV1UploadReleaseResponse struct {
 
 // Wait until the processing in app distribution has done
 func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebaseAppDistributionGetOperationStateRequest) (*firebaseAppDistributionGetOperationStateResponse, error) {
-	waitTimeout := config.GetGlobalConfig().WaitTimeout()
+	waitTimeout := config.CurrentConfig().WaitTimeout()
 
 	var retryCount int
 
@@ -74,7 +74,7 @@ func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebase
 func (p *FirebaseAppDistributionProvider) getOperationState(request *firebaseAppDistributionGetOperationStateRequest) (*firebaseAppDistributionGetOperationStateResponse, error) {
 	path := fmt.Sprintf("/v1/%s", request.operationName)
 
-	client := firebaseAppDistributionBaseClient.WithHeaders(map[string][]string{
+	client := p.client.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 

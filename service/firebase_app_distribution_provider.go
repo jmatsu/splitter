@@ -13,24 +13,24 @@ import (
 	"strings"
 )
 
-var firebaseAppDistributionBaseClient *net.HttpClient
 var firebaseAppDistributionLogger zerolog.Logger
 
 func init() {
 	firebaseAppDistributionLogger = logger2.Logger.With().Str("service", "firebase app distribution").Logger()
-	firebaseAppDistributionBaseClient = net.NewHttpClient("https://firebaseappdistribution.googleapis.com")
-}
-
-type FirebaseAppDistributionProvider struct {
-	config.FirebaseAppDistributionConfig
-	ctx context.Context
 }
 
 func NewFirebaseAppDistributionProvider(ctx context.Context, config *config.FirebaseAppDistributionConfig) *FirebaseAppDistributionProvider {
 	return &FirebaseAppDistributionProvider{
 		FirebaseAppDistributionConfig: *config,
 		ctx:                           ctx,
+		client:                        net.NewHttpClient("https://firebaseappdistribution.googleapis.com"),
 	}
+}
+
+type FirebaseAppDistributionProvider struct {
+	config.FirebaseAppDistributionConfig
+	ctx    context.Context
+	client *net.HttpClient
 }
 
 type FirebaseAppDistributionUploadAppRequest struct {
@@ -112,13 +112,13 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, errors.Wrap(err, "failed to parse the response of your app to Firebase App Distribution but succeeded to upload")
-	} else if rawJson = string(bytes); config.GetGlobalConfig().Async {
+	} else if rawJson = string(bytes); config.CurrentConfig().Async {
 		if request.releaseNote != nil {
 			firebaseAppDistributionLogger.Warn().Msg("release note cannot be updated in async mode")
 		}
 
 		return &FirebaseAppDistributionDistributionResult{
-			aabInfo: aabInfo,
+			AabInfo: aabInfo,
 			RawJson: rawJson,
 		}, nil
 	}
@@ -150,9 +150,9 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 	}
 
 	return &FirebaseAppDistributionDistributionResult{
-		release: &release,
+		Release: &release,
 		Result:  result,
-		aabInfo: aabInfo,
+		AabInfo: aabInfo,
 		RawJson: rawJson,
 	}, nil
 }
@@ -162,7 +162,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 func (p *FirebaseAppDistributionProvider) distribute(request *FirebaseAppDistributionUploadAppRequest) ([]byte, error) {
 	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s/releases:upload", request.projectNumber, request.appId)
 
-	client := firebaseAppDistributionBaseClient.WithHeaders(map[string][]string{
+	client := p.client.WithHeaders(map[string][]string{
 		"Authorization":           {fmt.Sprintf("Bearer %s", p.AccessToken)},
 		"X-Goog-Upload-File-Name": {filepath.Base(request.filePath)},
 		"X-Goog-Upload-Protocol":  {"raw"},

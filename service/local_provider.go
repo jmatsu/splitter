@@ -14,13 +14,17 @@ import (
 
 var localLogger zerolog.Logger
 
+type sideEffect = string
+
+const (
+	localCopyOnly         sideEffect = "copied without overwriting"
+	localMoveOnly         sideEffect = "moved without overwriting"
+	localCopyAndOverwrite sideEffect = "copied and overwrote"
+	localMoveAndOverwrite sideEffect = "moved and overwrote"
+)
+
 func init() {
 	localLogger = logger.Logger.With().Str("service", "local").Logger()
-}
-
-type LocalProvider struct {
-	config.LocalConfig
-	ctx context.Context
 }
 
 func NewLocalProvider(ctx context.Context, config *config.LocalConfig) *LocalProvider {
@@ -30,12 +34,23 @@ func NewLocalProvider(ctx context.Context, config *config.LocalConfig) *LocalPro
 	}
 }
 
+type LocalProvider struct {
+	config.LocalConfig
+	ctx context.Context
+}
+
 type LocalMoveRequest struct {
 	SourceFilePath      string
 	DestinationFilePath string
 	AllowOverwrite      bool
 	FileMode            os.FileMode
 	DeleteResource      bool
+}
+
+type localMoveResponse struct {
+	SourceFilePath      string     `json:"source_file_path"`
+	DestinationFilePath string     `json:"destination_file_path"`
+	SideEffect          sideEffect `json:"side_effect"`
 }
 
 func (p *LocalProvider) Distribute(filePath string) (*LocalDistributionResult, error) {

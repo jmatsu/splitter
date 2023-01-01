@@ -12,23 +12,30 @@ import (
 )
 
 var deployGateLogger zerolog.Logger
-var deployGateBaseClient *net.HttpClient
 
 func init() {
 	deployGateLogger = logger2.Logger.With().Str("service", "deploygate").Logger()
-	deployGateBaseClient = net.NewHttpClient("https://deploygate.com")
-}
-
-type DeployGateProvider struct {
-	config.DeployGateConfig
-	ctx context.Context
 }
 
 func NewDeployGateProvider(ctx context.Context, config *config.DeployGateConfig) *DeployGateProvider {
 	return &DeployGateProvider{
 		DeployGateConfig: *config,
 		ctx:              ctx,
+		client:           net.NewHttpClient("https://deploygate.com"),
 	}
+}
+
+func NewDeployGateUploadAppRequest(filePath string) *DeployGateUploadAppRequest {
+	return &DeployGateUploadAppRequest{
+		filePath:            filePath,
+		distributionOptions: &deployGateDistributionOptions{},
+	}
+}
+
+type DeployGateProvider struct {
+	config.DeployGateConfig
+	ctx    context.Context
+	client *net.HttpClient
 }
 
 type DeployGateUploadAppRequest struct {
@@ -48,11 +55,8 @@ type deployGateIOSOptions struct {
 	DisableNotification bool
 }
 
-func NewDeployGateUploadAppRequest(filePath string) *DeployGateUploadAppRequest {
-	return &DeployGateUploadAppRequest{
-		filePath:            filePath,
-		distributionOptions: &deployGateDistributionOptions{},
-	}
+type errorResponse struct {
+	Message string `json:"message"`
 }
 
 func (r *DeployGateUploadAppRequest) SetMessage(value string) {
@@ -99,10 +103,6 @@ func (r *DeployGateUploadAppRequest) getDistributionOptions() *deployGateDistrib
 	return r.distributionOptions
 }
 
-type errorResponse struct {
-	Message string `json:"message"`
-}
-
 func (p *DeployGateProvider) Distribute(filePath string, builder func(req *DeployGateUploadAppRequest)) (*DeployGateDistributionResult, error) {
 	request := NewDeployGateUploadAppRequest(filePath)
 
@@ -125,7 +125,7 @@ func (p *DeployGateProvider) Distribute(filePath string, builder func(req *Deplo
 }
 
 func (p *DeployGateProvider) distribute(request *DeployGateUploadAppRequest) ([]byte, error) {
-	client := deployGateBaseClient.WithHeaders(map[string][]string{
+	client := p.client.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.ApiToken)},
 	})
 

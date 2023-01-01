@@ -1,13 +1,16 @@
 package service
 
-import (
-	"github.com/jedib0t/go-pretty/v6/table"
-	"strings"
-)
-
 type DeployGateDistributionResult struct {
 	deployGateUploadResponse
 	RawJson string
+}
+
+func (r *DeployGateDistributionResult) RawJsonResponse() string {
+	return r.RawJson
+}
+
+func (r *DeployGateDistributionResult) TypedResponse() any {
+	return *r
 }
 
 type deployGateUploadResponse struct {
@@ -33,67 +36,4 @@ type deployGateUploadResponse struct {
 			Url         string `json:"url"`
 		} `json:"distribution,omitempty"`
 	} `json:"results"`
-}
-
-var DeployGateTableBuilder = func(w table.Writer, v any) {
-	resp := v.(DeployGateDistributionResult).Results
-
-	w.AppendHeader(table.Row{
-		"Key", "Value",
-	})
-
-	w.AppendRows([]table.Row{
-		{"DeployGate Property", ""},
-	})
-	w.AppendSeparator()
-	w.AppendRows([]table.Row{
-		{"Owner Name", resp.User.Name},
-		{"Revision", resp.Revision},
-	})
-
-	switch strings.ToLower(resp.OsName) {
-	case "android":
-		w.AppendRows([]table.Row{
-			{"APK Download URL", resp.DownloadUrl},
-		})
-	case "ios":
-		w.AppendRows([]table.Row{
-			{"IPA Download URL", resp.DownloadUrl},
-		})
-	}
-
-	if resp.Distribution != nil {
-		w.AppendRows([]table.Row{
-			{"Distribution Name", resp.Distribution.Title},
-			{"Distribution AccessKey", resp.Distribution.AccessKey},
-			{"Distribution URL", resp.Distribution.Url},
-		})
-	}
-
-	w.AppendSeparator()
-	w.AppendRows([]table.Row{
-		{"App Property", ""},
-	})
-	w.AppendSeparator()
-
-	switch strings.ToLower(resp.OsName) {
-	case "android":
-		w.AppendRows([]table.Row{
-			{"Display Name", resp.Name},
-			{"Package Name", resp.PackageName},
-			{"Version Code", resp.VersionCode},
-			{"Version Name", resp.VersionName},
-			{"Min SDK Version", resp.SdkVersion},
-			{"Target SDK Version", *resp.TargetSdkVersion},
-		})
-
-	case "ios":
-		w.AppendRows([]table.Row{
-			{"Display Name", resp.Name},
-			{"Bundle Identifier", resp.PackageName},
-			{"Version Code", resp.VersionCode},
-			{"Version Name", resp.VersionName},
-			{"Build SDK Version", *resp.RawSdkVersion},
-		})
-	}
 }

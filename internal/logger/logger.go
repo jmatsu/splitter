@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultLogLevel = "info"
+	DefaultLogLevel = "warn"
 )
 
 var Logger zerolog.Logger

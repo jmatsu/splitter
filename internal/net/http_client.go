@@ -3,6 +3,7 @@ package net
 import (
 	"bytes"
 	"context"
+	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
@@ -10,24 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"time"
 )
-
-var client *http.Client
-
-func init() {
-	client = &http.Client{
-		Timeout: 1 * time.Minute, // this value will be used only for testing
-	}
-}
-
-func SetTimeout(timeout time.Duration) {
-	logger.Logger.Debug().
-		Str("timeout", timeout.String()).
-		Msg("Configuring http client")
-
-	client.Timeout = timeout
-}
 
 func NewHttpClient(baseUrl string) *HttpClient {
 	baseURL, err := url.ParseRequestURI(baseUrl)
@@ -38,7 +22,9 @@ func NewHttpClient(baseUrl string) *HttpClient {
 	}
 
 	return &HttpClient{
-		client:  client,
+		client: &http.Client{
+			Timeout: config.CurrentConfig().NetworkTimeout(),
+		},
 		baseURL: *baseURL,
 		headers: http.Header{
 			"User-Agent": {

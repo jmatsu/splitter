@@ -3,10 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/jmatsu/splitter/command"
-	"github.com/jmatsu/splitter/format"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
-	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 	"os"
 	"time"
@@ -116,33 +114,34 @@ func main() {
 				return err
 			}
 
-			conf := config.GetGlobalConfig()
-
 			if v := context.String("format"); context.IsSet("format") {
-				conf.SetFormatStyle(v)
+				config.SetGlobalFormatStyle(v)
 			}
 
 			if v := context.String("network-timeout"); context.IsSet("network-timeout") {
-				conf.SetNetworkTimeout(v)
+				config.SetGlobalNetworkTimeout(v)
 			}
 
 			if v := context.String("wait-timeout"); context.IsSet("wait-timeout") {
-				conf.SetWaitTimeout(v)
+				config.SetGlobalWaitTimeout(v)
 			}
 
 			if v := context.Bool("async"); context.IsSet("async") {
-				conf.Async = v
+				config.SetGlobalAsync(v)
 			}
 
-			if err := conf.Validate(); err != nil {
+			c := config.CurrentConfig()
+
+			if err := c.Validate(); err != nil {
 				return errors.Wrap(err, "options contain invalid values or conflict with the current config file")
 			}
 
-			net.SetTimeout(conf.NetworkTimeout())
-			format.SetStyle(conf.FormatStyle())
-
-			logger.Logger.Debug().Msgf("format style: %s", conf.FormatStyle())
-			logger.Logger.Debug().Msgf("async mode: %t", conf.Async)
+			logger.Logger.Debug().
+				Str("network-timeout", fmt.Sprintf("%s", c.NetworkTimeout())).
+				Str("wait-timeout", fmt.Sprintf("%s", c.WaitTimeout())).
+				Str("format-style", fmt.Sprintf("%s", c.FormatStyle())).
+				Str("async", fmt.Sprintf("%t", c.Async)).
+				Msg("configuration has been initialized")
 
 			return nil
 		},
