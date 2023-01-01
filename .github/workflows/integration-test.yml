@@ -69,5 +69,5 @@ jobs:
           splitter
           local
           --source-file ./examples/io.github.jmatsu.splitter.example.apk
-          --destination-path ./dist/example.apk
+          --destination ./dist/example.apk
           --credentials .fixtures/google_credentials.json
