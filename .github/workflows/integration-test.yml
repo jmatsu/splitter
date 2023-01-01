@@ -37,7 +37,7 @@ jobs:
           mkdir -p .fixtures
           
           cat<<EOF | base64 -d > .fixtures/google_credentials.json
-          ${{ BASE64_ENCODED_GOOGLE_CREDENTIALS }}
+          ${{ secrets.BASE64_ENCODED_GOOGLE_CREDENTIALS }}
           EOF
       - name: simple
         run: >
@@ -56,7 +56,7 @@ jobs:
           --credentials .fixtures/google_credentials.json
           --group-aliases "integration-test-1"
 
-local:
+  local:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -69,5 +69,5 @@ local:
           splitter
           local
           --source-file ./examples/io.github.jmatsu.splitter.example.apk
-          --destination-path ./dist/example.apk
+          --destination ./dist/example.apk
           --credentials .fixtures/google_credentials.json
