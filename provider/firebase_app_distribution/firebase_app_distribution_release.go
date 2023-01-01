@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type release struct {
+type firebaseAppDistributionRelease struct {
 	Name           string `json:"name"`
 	DisplayVersion string `json:"displayVersion"`
 	BuildVersion   string `json:"buildVersion"`
@@ -17,20 +17,20 @@ type release struct {
 	} `json:"releaseNotes,omitempty"`
 }
 
-type updateReleaseRequest struct {
+type firebaseAppDistributionUpdateReleaseRequest struct {
 	ReleaseName string `json:"name"`
 	ReleaseNote struct {
 		Text string `json:"text"`
 	} `json:"releaseNotes"`
 }
 
-type updateReleaseResponse struct {
-	release
+type firebaseAppDistributionUpdateReleaseResponse struct {
+	firebaseAppDistributionRelease
 }
 
-func newUpdateReleaseRequest(release release, releaseNote string) *updateReleaseRequest {
-	return &updateReleaseRequest{
-		ReleaseName: release.Name,
+func (r firebaseAppDistributionRelease) NewUpdateRequest(releaseNote string) *firebaseAppDistributionUpdateReleaseRequest {
+	return &firebaseAppDistributionUpdateReleaseRequest{
+		ReleaseName: r.Name,
 		ReleaseNote: struct {
 			Text string `json:"text"`
 		}{
@@ -39,10 +39,10 @@ func newUpdateReleaseRequest(release release, releaseNote string) *updateRelease
 	}
 }
 
-func (p *Provider) updateReleaseNote(request *updateReleaseRequest) (*updateReleaseResponse, error) {
+func (p *FirebaseAppDistributionProvider) updateReleaseNote(request *firebaseAppDistributionUpdateReleaseRequest) (*firebaseAppDistributionUpdateReleaseResponse, error) {
 	path := fmt.Sprintf("/v1/%s", request.ReleaseName)
 
-	client := baseClient.WithHeaders(map[string][]string{
+	client := firebaseAppDistributionBaseClient.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 
@@ -60,7 +60,7 @@ func (p *Provider) updateReleaseNote(request *updateReleaseRequest) (*updateRele
 		return nil, errors.Wrap(err, "failed to get a response from operation state api")
 	}
 
-	var response updateReleaseResponse
+	var response firebaseAppDistributionUpdateReleaseResponse
 
 	if 200 <= code && code < 300 {
 		if err := json.Unmarshal(bytes, &response); err != nil {

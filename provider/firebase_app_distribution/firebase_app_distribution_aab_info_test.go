@@ -4,11 +4,11 @@ import (
 	"testing"
 )
 
-func Test_checkIntegrationState(t *testing.T) {
+func Test_checkAppBundleIntegrationState(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		state integrationState
+		state appBundleIntegrationState
 
 		expected bool
 	}{
@@ -52,7 +52,7 @@ func Test_checkIntegrationState(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			err := checkIntegrationState(c.state)
+			err := checkAppBundleIntegrationState(c.state)
 
 			if c.expected && err == nil || !c.expected && err != nil {
 				return

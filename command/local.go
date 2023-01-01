@@ -70,13 +70,13 @@ func Local(name string, aliases []string) *cli.Command {
 }
 
 func distributeLocal(ctx context.Context, conf *config.LocalConfig, filePath string) error {
-	provider := local.NewProvider(ctx, conf)
+	provider := local.NewLocalProvider(ctx, conf)
 
 	if response, err := provider.Distribute(filePath); err != nil {
 		return err
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
-	} else if err := format.Format(*response, local.TableBuilder); err != nil {
+	} else if err := format.Format(*response, local.LocalTableBuilder); err != nil {
 		return errors.Wrap(err, "cannot format the response")
 	}
 

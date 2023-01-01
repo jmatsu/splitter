@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-func Test_Provider_toForm(t *testing.T) {
+func Test_DeployGateProvider_toForm(t *testing.T) {
 	t.Parallel()
 
-	provider := Provider{
+	provider := DeployGateProvider{
 		DeployGateConfig: config.DeployGateConfig{
 			ApiToken:     "ApiToken",
 			AppOwnerName: "AppOwnerName",
@@ -22,11 +22,11 @@ func Test_Provider_toForm(t *testing.T) {
 	sampleMessage1 := "sample1"
 
 	cases := map[string]struct {
-		request  UploadRequest
+		request  DeployGateUploadAppRequest
 		expected net.Form
 	}{
 		"with fully ios options": {
-			request: UploadRequest{
+			request: DeployGateUploadAppRequest{
 				filePath:   "path/to/file",
 				iOSOptions: struct{ DisableNotification bool }{DisableNotification: true},
 			},
@@ -38,9 +38,9 @@ func Test_Provider_toForm(t *testing.T) {
 			},
 		},
 		"with too much distribution options": {
-			request: UploadRequest{
+			request: DeployGateUploadAppRequest{
 				filePath: "path/to/file",
-				distributionOptions: &distributionOptions{
+				distributionOptions: &deployGateDistributionOptions{
 					AccessKey: "dist_key",
 					Name:      "dist_name",
 				},
@@ -53,9 +53,9 @@ func Test_Provider_toForm(t *testing.T) {
 			},
 		},
 		"with fully distribution options": {
-			request: UploadRequest{
+			request: DeployGateUploadAppRequest{
 				filePath: "path/to/file",
-				distributionOptions: &distributionOptions{
+				distributionOptions: &deployGateDistributionOptions{
 					AccessKey:   "dist_key",
 					ReleaseNote: &sampleMessage1,
 				},
@@ -69,10 +69,10 @@ func Test_Provider_toForm(t *testing.T) {
 			},
 		},
 		"with partial distribution options": {
-			request: UploadRequest{
+			request: DeployGateUploadAppRequest{
 				filePath: "path/to/file",
 				message:  &sampleMessage1,
-				distributionOptions: &distributionOptions{
+				distributionOptions: &deployGateDistributionOptions{
 					Name: "dist_name1",
 				},
 			},
@@ -86,7 +86,7 @@ func Test_Provider_toForm(t *testing.T) {
 			},
 		},
 		"minimum": {
-			request: UploadRequest{
+			request: DeployGateUploadAppRequest{
 				filePath: "path/to/file",
 			},
 			expected: net.Form{
@@ -96,7 +96,7 @@ func Test_Provider_toForm(t *testing.T) {
 			},
 		},
 		"zero": {
-			request: UploadRequest{},
+			request: DeployGateUploadAppRequest{},
 			expected: net.Form{
 				Fields: []net.ValueField{
 					net.FileField("file", ""),

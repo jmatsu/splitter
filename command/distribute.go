@@ -63,7 +63,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				case config.DeploygateService:
 					dg := d.ServiceConfig.(*config.DeployGateConfig)
 
-					return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *deploygate.UploadRequest) {
+					return distributeDeployGate(context.Context, dg, sourceFilePath, func(req *deploygate.DeployGateUploadAppRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetMessage(v)
 							req.SetDistributionReleaseNote(v)
@@ -76,7 +76,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				case config.FirebaseAppDistributionService:
 					fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
 
-					return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *firebase_app_distribution.UploadRequest) {
+					return distributeFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *firebase_app_distribution.FirebaseAppDistributionUploadAppRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetReleaseNote(v)
 						}

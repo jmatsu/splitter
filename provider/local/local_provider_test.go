@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func Test_Provider_Distribute(t *testing.T) {
+func Test_LocalProvider_Distribute(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
@@ -31,7 +31,7 @@ func Test_Provider_Distribute(t *testing.T) {
 
 			expected: struct {
 				SideEffect sideEffect
-			}{SideEffect: copyAndOverwrite},
+			}{SideEffect: localCopyAndOverwrite},
 		},
 		"copy but do not overwrite": {
 			DestinationExists: false,
@@ -41,7 +41,7 @@ func Test_Provider_Distribute(t *testing.T) {
 
 			expected: struct {
 				SideEffect sideEffect
-			}{SideEffect: copyOnly},
+			}{SideEffect: localCopyOnly},
 		},
 		"copy but can not overwrite": {
 			DestinationExists: true,
@@ -63,7 +63,7 @@ func Test_Provider_Distribute(t *testing.T) {
 
 			expected: struct {
 				SideEffect sideEffect
-			}{SideEffect: moveAndOverwrite},
+			}{SideEffect: localMoveAndOverwrite},
 		},
 		"move but do not overwrite": {
 			DestinationExists: false,
@@ -73,7 +73,7 @@ func Test_Provider_Distribute(t *testing.T) {
 
 			expected: struct {
 				SideEffect sideEffect
-			}{SideEffect: moveOnly},
+			}{SideEffect: localMoveOnly},
 		},
 		"move but can not overwrite": {
 			DestinationExists: true,
@@ -126,7 +126,7 @@ func Test_Provider_Distribute(t *testing.T) {
 				_ = os.Remove(dest.Name())
 			}
 
-			provider := NewProvider(context.TODO(), &config.LocalConfig{
+			provider := NewLocalProvider(context.TODO(), &config.LocalConfig{
 				AllowOverwrite:  c.Overwrite,
 				DeleteSource:    c.DeleteSource,
 				FileMode:        c.FileMode,

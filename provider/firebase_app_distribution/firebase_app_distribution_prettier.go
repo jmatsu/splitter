@@ -4,19 +4,19 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
-type DistributionResult struct {
-	Result string
-	*release
-	aabInfo *aabInfoResponse
+type FirebaseAppDistributionDistributionResult struct {
+	Result  string
+	release *firebaseAppDistributionRelease
+	aabInfo *firebaseAppDistributionAabInfoResponse
 	RawJson string
 }
 
-type uploadResponse struct {
+type firebaseAppDistributionUploadResponse struct {
 	OperationName string `json:"name"`
 }
 
-var TableBuilder = func(w table.Writer, v any) {
-	resp := v.(DistributionResult)
+var FirebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
+	resp := v.(FirebaseAppDistributionDistributionResult)
 
 	w.AppendHeader(table.Row{
 		"Key", "Value",

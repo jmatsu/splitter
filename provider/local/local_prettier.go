@@ -7,25 +7,25 @@ import (
 type sideEffect = string
 
 const (
-	copyOnly         sideEffect = "copied without overwriting"
-	moveOnly         sideEffect = "moved without overwriting"
-	copyAndOverwrite sideEffect = "copied and overwrote"
-	moveAndOverwrite sideEffect = "moved and overwrote"
+	localCopyOnly         sideEffect = "copied without overwriting"
+	localMoveOnly         sideEffect = "moved without overwriting"
+	localCopyAndOverwrite sideEffect = "copied and overwrote"
+	localMoveAndOverwrite sideEffect = "moved and overwrote"
 )
 
-type DistributionResult struct {
-	moveResponse
+type LocalDistributionResult struct {
+	localMoveResponse
 	RawJson string
 }
 
-type moveResponse struct {
+type localMoveResponse struct {
 	SourceFilePath      string     `json:"source_file_path"`
 	DestinationFilePath string     `json:"destination_file_path"`
 	SideEffect          sideEffect `json:"side_effect"`
 }
 
-var TableBuilder = func(w table.Writer, v any) {
-	resp := v.(DistributionResult)
+var LocalTableBuilder = func(w table.Writer, v any) {
+	resp := v.(LocalDistributionResult)
 
 	w.AppendHeader(table.Row{
 		"Key", "Value",

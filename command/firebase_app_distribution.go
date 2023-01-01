@@ -67,7 +67,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				return errors.Wrap(err, "given flags may be insufficient or invalid")
 			}
 
-			return distributeFirebaseAppDistribution(context.Context, &conf, context.String("source-file"), func(req *firebase_app_distribution.UploadRequest) {
+			return distributeFirebaseAppDistribution(context.Context, &conf, context.String("source-file"), func(req *firebase_app_distribution.FirebaseAppDistributionUploadAppRequest) {
 				if v := context.String("release-note"); context.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}
@@ -76,14 +76,14 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 	}
 }
 
-func distributeFirebaseAppDistribution(ctx context.Context, conf *config.FirebaseAppDistributionConfig, filePath string, builder func(req *firebase_app_distribution.UploadRequest)) error {
-	provider := firebase_app_distribution.NewProvider(ctx, conf)
+func distributeFirebaseAppDistribution(ctx context.Context, conf *config.FirebaseAppDistributionConfig, filePath string, builder func(req *firebase_app_distribution.FirebaseAppDistributionUploadAppRequest)) error {
+	provider := firebase_app_distribution.NewFirebaseAppDistributionProvider(ctx, conf)
 
 	if response, err := provider.Distribute(filePath, builder); err != nil {
 		return err
 	} else if format.IsRaw() {
 		fmt.Println(response.RawJson)
-	} else if err := format.Format(*response, firebase_app_distribution.TableBuilder); err != nil {
+	} else if err := format.Format(*response, firebase_app_distribution.FirebaseAppDistributionTableBuilder); err != nil {
 		return errors.Wrap(err, "cannot format the response")
 	}
 

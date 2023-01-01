@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func Test_Token(t *testing.T) {
+func Test_FirebaseToken(t *testing.T) {
 	wd, _ := os.Getwd()
 	path := filepath.Join(wd, ".fixtures", "service_account_key.json")
 
@@ -16,7 +16,7 @@ func Test_Token(t *testing.T) {
 		return
 	}
 
-	if v, err := Token(context.TODO(), path); err != nil {
+	if v, err := FirebaseToken(context.TODO(), path); err != nil {
 		t.Errorf("failed to get a token: %v", err)
 	} else if !v.Valid() {
 		t.Error("the token is invalid")

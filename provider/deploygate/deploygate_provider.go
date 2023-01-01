@@ -11,51 +11,51 @@ import (
 	"github.com/rs/zerolog"
 )
 
-var logger zerolog.Logger
-var baseClient *net.HttpClient
+var deployGateLogger zerolog.Logger
+var deployGateBaseClient *net.HttpClient
 
 func init() {
-	logger = logger2.Logger.With().Str("provider", "deploygate").Logger()
-	baseClient = net.NewHttpClient("https://deploygate.com")
+	deployGateLogger = logger2.Logger.With().Str("provider", "deploygate").Logger()
+	deployGateBaseClient = net.NewHttpClient("https://deploygate.com")
 }
 
-type Provider struct {
+type DeployGateProvider struct {
 	config.DeployGateConfig
 	ctx context.Context
 }
 
-func NewProvider(ctx context.Context, config *config.DeployGateConfig) *Provider {
-	return &Provider{
+func NewDeployGateProvider(ctx context.Context, config *config.DeployGateConfig) *DeployGateProvider {
+	return &DeployGateProvider{
 		DeployGateConfig: *config,
 		ctx:              ctx,
 	}
 }
 
-type UploadRequest struct {
+type DeployGateUploadAppRequest struct {
 	filePath            string
 	message             *string
-	distributionOptions *distributionOptions
-	iOSOptions          iOSOptions
+	distributionOptions *deployGateDistributionOptions
+	iOSOptions          deployGateIOSOptions
 }
 
-type distributionOptions struct {
+type deployGateDistributionOptions struct {
 	Name        string
 	AccessKey   string
 	ReleaseNote *string
 }
 
-type iOSOptions struct {
+type deployGateIOSOptions struct {
 	DisableNotification bool
 }
 
-func NewUploadRequest(filePath string) *UploadRequest {
-	return &UploadRequest{
+func NewDeployGateUploadAppRequest(filePath string) *DeployGateUploadAppRequest {
+	return &DeployGateUploadAppRequest{
 		filePath:            filePath,
-		distributionOptions: &distributionOptions{},
+		distributionOptions: &deployGateDistributionOptions{},
 	}
 }
 
-func (r *UploadRequest) SetMessage(value string) {
+func (r *DeployGateUploadAppRequest) SetMessage(value string) {
 	if value != "" {
 		r.message = &value
 	} else {
@@ -63,7 +63,7 @@ func (r *UploadRequest) SetMessage(value string) {
 	}
 }
 
-func (r *UploadRequest) SetDistributionAccessKey(value string) {
+func (r *DeployGateUploadAppRequest) SetDistributionAccessKey(value string) {
 	if value != "" {
 		r.getDistributionOptions().AccessKey = value
 	} else {
@@ -71,7 +71,7 @@ func (r *UploadRequest) SetDistributionAccessKey(value string) {
 	}
 }
 
-func (r *UploadRequest) SetDistributionName(value string) {
+func (r *DeployGateUploadAppRequest) SetDistributionName(value string) {
 	if value != "" {
 		r.getDistributionOptions().Name = value
 	} else {
@@ -79,7 +79,7 @@ func (r *UploadRequest) SetDistributionName(value string) {
 	}
 }
 
-func (r *UploadRequest) SetDistributionReleaseNote(value string) {
+func (r *DeployGateUploadAppRequest) SetDistributionReleaseNote(value string) {
 	if value != "" {
 		r.getDistributionOptions().ReleaseNote = &value
 	} else {
@@ -87,13 +87,13 @@ func (r *UploadRequest) SetDistributionReleaseNote(value string) {
 	}
 }
 
-func (r *UploadRequest) SetIOSDisableNotification(value bool) {
+func (r *DeployGateUploadAppRequest) SetIOSDisableNotification(value bool) {
 	r.iOSOptions.DisableNotification = value
 }
 
-func (r *UploadRequest) getDistributionOptions() *distributionOptions {
+func (r *DeployGateUploadAppRequest) getDistributionOptions() *deployGateDistributionOptions {
 	if r.distributionOptions == nil {
-		r.distributionOptions = &distributionOptions{}
+		r.distributionOptions = &deployGateDistributionOptions{}
 	}
 
 	return r.distributionOptions
@@ -103,29 +103,29 @@ type errorResponse struct {
 	Message string `json:"message"`
 }
 
-func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
-	request := NewUploadRequest(filePath)
+func (p *DeployGateProvider) Distribute(filePath string, builder func(req *DeployGateUploadAppRequest)) (*DeployGateDistributionResult, error) {
+	request := NewDeployGateUploadAppRequest(filePath)
 
 	builder(request)
 
-	logger.Debug().Msgf("the request has been built: %v", *request)
+	deployGateLogger.Debug().Msgf("the request has been built: %v", *request)
 
-	var response uploadResponse
+	var response deployGateUploadResponse
 
 	if bytes, err := p.distribute(request); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(bytes, &response); err != nil {
 		return nil, errors.Wrap(err, "failed to parse the response of your app to DeployGate but succeeded to upload")
 	} else {
-		return &DistributionResult{
-			uploadResponse: response,
-			RawJson:        string(bytes),
+		return &DeployGateDistributionResult{
+			deployGateUploadResponse: response,
+			RawJson:                  string(bytes),
 		}, nil
 	}
 }
 
-func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
-	client := baseClient.WithHeaders(map[string][]string{
+func (p *DeployGateProvider) distribute(request *DeployGateUploadAppRequest) ([]byte, error) {
+	client := deployGateBaseClient.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.ApiToken)},
 	})
 
@@ -150,20 +150,20 @@ func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
 	}
 }
 
-func (p *Provider) toForm(request *UploadRequest) *net.Form {
+func (p *DeployGateProvider) toForm(request *DeployGateUploadAppRequest) *net.Form {
 	form := net.Form{}
 
 	form.Set(net.FileField("file", request.filePath))
 
 	if request.message != nil {
-		logger.Debug().Msgf("message option was found")
+		deployGateLogger.Debug().Msgf("message option was found")
 
 		form.Set(net.StringField("message", *request.message))
 	}
 
 	if request.distributionOptions != nil {
 		if request.distributionOptions.AccessKey != "" && request.distributionOptions.Name != "" {
-			logger.Warn().Msgf("the both of distribution's access key and name are specified so this provider prioritizes access key")
+			deployGateLogger.Warn().Msgf("the both of distribution's access key and name are specified so this provider prioritizes access key")
 		}
 
 		if request.distributionOptions.AccessKey != "" {
@@ -175,11 +175,11 @@ func (p *Provider) toForm(request *UploadRequest) *net.Form {
 		if request.distributionOptions.ReleaseNote != nil {
 			form.Set(net.StringField("release_note", *request.distributionOptions.ReleaseNote))
 		} else if request.message != nil {
-			logger.Debug().Msgf("set message as release note as a fallback")
+			deployGateLogger.Debug().Msgf("set message as release note as a fallback")
 			form.Set(net.StringField("release_note", *request.message))
 		}
 	} else {
-		logger.Debug().Msgf("distribution options were empty")
+		deployGateLogger.Debug().Msgf("distribution options were empty")
 	}
 
 	var iosOptionFound = request.iOSOptions.DisableNotification

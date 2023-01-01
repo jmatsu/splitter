@@ -13,38 +13,34 @@ import (
 	"strings"
 )
 
-const (
-	endpoint = "https://firebaseappdistribution.googleapis.com"
-)
-
-var baseClient *net.HttpClient
-var logger zerolog.Logger
+var firebaseAppDistributionBaseClient *net.HttpClient
+var firebaseAppDistributionLogger zerolog.Logger
 
 func init() {
-	logger = logger2.Logger.With().Str("provider", "firebase app distribution").Logger()
-	baseClient = net.NewHttpClient(endpoint)
+	firebaseAppDistributionLogger = logger2.Logger.With().Str("provider", "firebase app distribution").Logger()
+	firebaseAppDistributionBaseClient = net.NewHttpClient("https://firebaseappdistribution.googleapis.com")
 }
 
-type Provider struct {
+type FirebaseAppDistributionProvider struct {
 	config.FirebaseAppDistributionConfig
 	ctx context.Context
 }
 
-func NewProvider(ctx context.Context, config *config.FirebaseAppDistributionConfig) *Provider {
-	return &Provider{
+func NewFirebaseAppDistributionProvider(ctx context.Context, config *config.FirebaseAppDistributionConfig) *FirebaseAppDistributionProvider {
+	return &FirebaseAppDistributionProvider{
 		FirebaseAppDistributionConfig: *config,
 		ctx:                           ctx,
 	}
 }
 
-type UploadRequest struct {
+type FirebaseAppDistributionUploadAppRequest struct {
 	projectNumber string
 	appId         string
 	filePath      string
 	releaseNote   *string
 }
 
-func (r *UploadRequest) SetReleaseNote(value string) {
+func (r *FirebaseAppDistributionUploadAppRequest) SetReleaseNote(value string) {
 	if value != "" {
 		r.releaseNote = &value
 	} else {
@@ -52,11 +48,11 @@ func (r *UploadRequest) SetReleaseNote(value string) {
 	}
 }
 
-func (r *UploadRequest) OsName() string {
+func (r *FirebaseAppDistributionUploadAppRequest) OsName() string {
 	return strings.SplitN(r.appId, ":", 4)[2]
 }
 
-func (r *UploadRequest) fileType() string {
+func (r *FirebaseAppDistributionUploadAppRequest) fileType() string {
 	if s, ext, found := strings.Cut(filepath.Ext(r.filePath), "."); found {
 		return strings.ToLower(ext)
 	} else {
@@ -64,9 +60,9 @@ func (r *UploadRequest) fileType() string {
 	}
 }
 
-func (p *Provider) fetchToken() error {
+func (p *FirebaseAppDistributionProvider) fetchToken() error {
 	if p.AccessToken == "" && p.GoogleCredentialsPath != "" {
-		if t, err := Token(p.ctx, p.GoogleCredentialsPath); err != nil {
+		if t, err := FirebaseToken(p.ctx, p.GoogleCredentialsPath); err != nil {
 			return errors.Wrap(err, "cannot fetch a token")
 		} else {
 			p.AccessToken = t.AccessToken
@@ -77,14 +73,14 @@ func (p *Provider) fetchToken() error {
 	return nil
 }
 
-func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest)) (*DistributionResult, error) {
-	logger.Info().Msg("preparing to upload...")
+func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder func(req *FirebaseAppDistributionUploadAppRequest)) (*FirebaseAppDistributionDistributionResult, error) {
+	firebaseAppDistributionLogger.Info().Msg("preparing to upload...")
 
 	if err := p.fetchToken(); err != nil {
 		return nil, errors.Wrap(err, "a valid token is required to make requests")
 	}
 
-	request := &UploadRequest{
+	request := &FirebaseAppDistributionUploadAppRequest{
 		projectNumber: p.ProjectNumber(),
 		appId:         p.AppId,
 		filePath:      filePath,
@@ -92,24 +88,24 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 
 	builder(request)
 
-	logger.Debug().Msgf("the request has been built: %v", *request)
+	firebaseAppDistributionLogger.Debug().Msgf("the request has been built: %v", *request)
 
-	var aabInfo *aabInfoResponse
+	var aabInfo *firebaseAppDistributionAabInfoResponse
 
 	if request.OsName() == "android" {
-		aabInfo, _ = p.getAabInfo(&aabInfoRequest{
+		aabInfo, _ = p.getAabInfo(&firebaseAppDistributionAabInfoRequest{
 			appId:         request.appId,
 			projectNumber: request.projectNumber,
 		})
 
 		if request.fileType() == "aab" {
-			if err := checkIntegrationState(aabInfo.IntegrationState); err != nil {
+			if err := checkAppBundleIntegrationState(aabInfo.IntegrationState); err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	var response uploadResponse
+	var response firebaseAppDistributionUploadResponse
 	var rawJson string
 
 	if bytes, err := p.distribute(request); err != nil {
@@ -118,21 +114,21 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 		return nil, errors.Wrap(err, "failed to parse the response of your app to Firebase App Distribution but succeeded to upload")
 	} else if rawJson = string(bytes); config.GetGlobalConfig().Async {
 		if request.releaseNote != nil {
-			logger.Warn().Msg("release note cannot be updated in async mode")
+			firebaseAppDistributionLogger.Warn().Msg("release note cannot be updated in async mode")
 		}
 
-		return &DistributionResult{
+		return &FirebaseAppDistributionDistributionResult{
 			aabInfo: aabInfo,
 			RawJson: rawJson,
 		}, nil
 	}
 
-	var release release
+	var release firebaseAppDistributionRelease
 	var result string
 
-	logger.Debug().Msgf("start waiting for %s", response.OperationName)
+	firebaseAppDistributionLogger.Debug().Msgf("start waiting for %s", response.OperationName)
 
-	if resp, err := p.waitForOperationDone(&getOperationStateRequest{
+	if resp, err := p.waitForOperationDone(&firebaseAppDistributionGetOperationStateRequest{
 		operationName: response.OperationName,
 	}); err != nil {
 		return nil, err
@@ -142,18 +138,18 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 	}
 
 	if request.releaseNote != nil {
-		logger.Debug().Msg("start updating the release note")
+		firebaseAppDistributionLogger.Debug().Msg("start updating the release note")
 
-		req := newUpdateReleaseRequest(release, *request.releaseNote)
+		req := release.NewUpdateRequest(*request.releaseNote)
 
 		if resp, err := p.updateReleaseNote(req); err != nil {
-			logger.Warn().Err(err).Msg("failed to update the release note")
+			firebaseAppDistributionLogger.Warn().Err(err).Msg("failed to update the release note")
 		} else {
-			release = resp.release
+			release = resp.firebaseAppDistributionRelease
 		}
 	}
 
-	return &DistributionResult{
+	return &FirebaseAppDistributionDistributionResult{
 		release: &release,
 		Result:  result,
 		aabInfo: aabInfo,
@@ -163,10 +159,10 @@ func (p *Provider) Distribute(filePath string, builder func(req *UploadRequest))
 
 // https://firebase.google.com/docs/reference/app-distribution/rest/v1/upload.v1.projects.apps.releases/upload
 // required: firebaseappdistro.releases.update
-func (p *Provider) distribute(request *UploadRequest) ([]byte, error) {
+func (p *FirebaseAppDistributionProvider) distribute(request *FirebaseAppDistributionUploadAppRequest) ([]byte, error) {
 	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s/releases:upload", request.projectNumber, request.appId)
 
-	client := baseClient.WithHeaders(map[string][]string{
+	client := firebaseAppDistributionBaseClient.WithHeaders(map[string][]string{
 		"Authorization":           {fmt.Sprintf("Bearer %s", p.AccessToken)},
 		"X-Goog-Upload-File-Name": {filepath.Base(request.filePath)},
 		"X-Goog-Upload-Protocol":  {"raw"},
