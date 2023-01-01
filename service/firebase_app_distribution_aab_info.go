@@ -1,8 +1,8 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 )
 
@@ -14,6 +14,12 @@ type firebaseAppDistributionAabInfoRequest struct {
 type firebaseAppDistributionAabInfoResponse struct {
 	IntegrationState appBundleIntegrationState              `json:"integrationState"`
 	TestCertificate  *firebaseAppDistributionAppCertificate `json:"testCertificate"`
+
+	RawResponse *net.HttpResponse `json:"-"`
+}
+
+func (r *firebaseAppDistributionAabInfoResponse) Set(v *net.HttpResponse) {
+	r.RawResponse = v
 }
 
 type firebaseAppDistributionAppCertificate struct {
@@ -41,22 +47,20 @@ func (p *FirebaseAppDistributionProvider) getAabInfo(request *firebaseAppDistrib
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 
-	code, bytes, err := client.DoGet(p.ctx, []string{path}, nil)
+	resp, err := client.DoGet(p.ctx, []string{path}, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	var response firebaseAppDistributionAabInfoResponse
-
-	if 200 <= code && code < 300 {
-		if err := json.Unmarshal(bytes, &response); err != nil {
-			return nil, errors.Wrap(err, "cannot unmarshal aabInfo api response")
+	if resp.Successful() {
+		if v, err := resp.ParseJson(&firebaseAppDistributionAabInfoResponse{}); err != nil {
+			return nil, errors.Wrap(err, "succeeded to get aab info but something went wrong")
 		} else {
-			return &response, nil
+			return v.(*firebaseAppDistributionAabInfoResponse), nil
 		}
 	} else {
-		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
+		return nil, errors.Wrap(resp.Err(), "failed to get aab info")
 	}
 }
 

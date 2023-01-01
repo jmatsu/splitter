@@ -4,6 +4,7 @@ import (
 	bytes2 "bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 )
 
@@ -26,6 +27,12 @@ type firebaseAppDistributionUpdateReleaseRequest struct {
 
 type firebaseAppDistributionUpdateReleaseResponse struct {
 	firebaseAppDistributionRelease
+
+	RawResponse *net.HttpResponse `json:"-"`
+}
+
+func (r *firebaseAppDistributionUpdateReleaseResponse) Set(v *net.HttpResponse) {
+	r.RawResponse = v
 }
 
 type firebaseAppDistributionDistributeReleaseRequest struct {
@@ -66,7 +73,7 @@ func (p *FirebaseAppDistributionProvider) updateReleaseNote(request *firebaseApp
 		return nil, errors.Wrap(err, "cannot marshal the update release request")
 	}
 
-	code, bytes, err := client.DoPatch(p.ctx, []string{path}, map[string]string{
+	resp, err := client.DoPatch(p.ctx, []string{path}, map[string]string{
 		"updateMask": "release_notes.text",
 	}, "application/json", bytes2.NewBuffer(bytes))
 
@@ -74,16 +81,14 @@ func (p *FirebaseAppDistributionProvider) updateReleaseNote(request *firebaseApp
 		return nil, errors.Wrap(err, "failed to get a response from update release api")
 	}
 
-	var response firebaseAppDistributionUpdateReleaseResponse
-
-	if 200 <= code && code < 300 {
-		if err := json.Unmarshal(bytes, &response); err != nil {
-			return nil, errors.Wrap(err, "cannot unmarshal update release response")
+	if resp.Successful() {
+		if v, err := resp.ParseJson(&firebaseAppDistributionUpdateReleaseResponse{}); err != nil {
+			return nil, errors.Wrap(err, "succeeded to upload the release but something went wrong")
 		} else {
-			return &response, nil
+			return v.(*firebaseAppDistributionUpdateReleaseResponse), nil
 		}
 	} else {
-		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
+		return nil, errors.Wrap(resp.Err(), "failed to upload the release")
 	}
 }
 
@@ -100,15 +105,15 @@ func (p *FirebaseAppDistributionProvider) distributeRelease(request *firebaseApp
 		return errors.Wrap(err, "cannot marshal the distribute release request")
 	}
 
-	code, bytes, err := client.DoPost(p.ctx, []string{path}, nil, "application/json", bytes2.NewBuffer(bytes))
+	resp, err := client.DoPost(p.ctx, []string{path}, nil, "application/json", bytes2.NewBuffer(bytes))
 
 	if err != nil {
 		return errors.Wrap(err, "failed to get a response from distribute api")
 	}
 
-	if 200 <= code && code < 300 {
+	if resp.Successful() {
 		return nil
 	} else {
-		return errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
+		return errors.Wrap(resp.Err(), "failed to distribute the release to testers")
 	}
 }

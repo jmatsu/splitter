@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	logger2 "github.com/jmatsu/splitter/internal/logger"
@@ -31,6 +30,30 @@ type FirebaseAppDistributionProvider struct {
 	config.FirebaseAppDistributionConfig
 	ctx    context.Context
 	client *net.HttpClient
+}
+
+type FirebaseAppDistributionDistributionResult struct {
+	firebaseAppDistributionGetOperationStateResponse
+
+	AabInfo *firebaseAppDistributionAabInfoResponse
+}
+
+func (r *FirebaseAppDistributionDistributionResult) RawJsonResponse() string {
+	return r.firebaseAppDistributionGetOperationStateResponse.RawResponse.RawJson()
+}
+
+func (r *FirebaseAppDistributionDistributionResult) ValueResponse() any {
+	return *r
+}
+
+type firebaseAppDistributionUploadResponse struct {
+	OperationName string `json:"name"`
+
+	RawResponse *net.HttpResponse `json:"-"`
+}
+
+func (r *firebaseAppDistributionUploadResponse) Set(v *net.HttpResponse) {
+	r.RawResponse = v
 }
 
 type FirebaseAppDistributionUploadAppRequest struct {
@@ -119,40 +142,35 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		}
 	}
 
-	var response firebaseAppDistributionUploadResponse
-	var rawJson string
+	var operation string
 
-	if bytes, err := p.distribute(request); err != nil {
+	if r, err := p.upload(request); err != nil {
 		return nil, err
-	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return nil, errors.Wrap(err, "failed to parse the response of your app to Firebase App Distribution but succeeded to upload")
 	} else {
-		rawJson = string(bytes)
+		operation = r.OperationName
 	}
 
-	var release firebaseAppDistributionRelease
-	var result string
+	var response *firebaseAppDistributionGetOperationStateResponse
 
-	firebaseAppDistributionLogger.Debug().Msgf("start waiting for %s", response.OperationName)
+	firebaseAppDistributionLogger.Debug().Msgf("start waiting for %s", operation)
 
 	if resp, err := p.waitForOperationDone(&firebaseAppDistributionGetOperationStateRequest{
-		operationName: response.OperationName,
+		operationName: operation,
 	}); err != nil {
 		return nil, err
 	} else {
-		release = resp.Response.Release
-		result = resp.Response.Result
+		response = resp
 	}
 
 	if request.releaseNote != nil {
 		firebaseAppDistributionLogger.Debug().Msg("start updating the release note")
 
-		req := release.NewUpdateRequest(*request.releaseNote)
+		req := response.Response.Release.NewUpdateRequest(*request.releaseNote)
 
 		if resp, err := p.updateReleaseNote(req); err != nil {
 			firebaseAppDistributionLogger.Warn().Err(err).Msg("failed to update the release note")
 		} else {
-			release = resp.firebaseAppDistributionRelease
+			response.Response.Release = resp.firebaseAppDistributionRelease
 		}
 	}
 
@@ -170,7 +188,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 			testerEmails = *request.testerEmails
 		}
 
-		req := release.NewDistributeRequest(testerEmails, groupAliases)
+		req := response.Response.Release.NewDistributeRequest(testerEmails, groupAliases)
 
 		if err := p.distributeRelease(req); err != nil {
 			firebaseAppDistributionLogger.Warn().Err(err).Msg("failed to distribute the release")
@@ -178,16 +196,14 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 	}
 
 	return &FirebaseAppDistributionDistributionResult{
-		Release: release,
-		Result:  result,
+		firebaseAppDistributionGetOperationStateResponse: *response,
 		AabInfo: aabInfo,
-		RawJson: rawJson,
 	}, nil
 }
 
 // https://firebase.google.com/docs/reference/app-distribution/rest/v1/upload.v1.projects.apps.releases/upload
 // required: firebaseappdistro.releases.update
-func (p *FirebaseAppDistributionProvider) distribute(request *FirebaseAppDistributionUploadAppRequest) ([]byte, error) {
+func (p *FirebaseAppDistributionProvider) upload(request *FirebaseAppDistributionUploadAppRequest) (*firebaseAppDistributionUploadResponse, error) {
 	path := fmt.Sprintf("/upload/v1/projects/%s/apps/%s/releases:upload", request.projectNumber, request.appId)
 
 	client := p.client.WithHeaders(map[string][]string{
@@ -196,15 +212,19 @@ func (p *FirebaseAppDistributionProvider) distribute(request *FirebaseAppDistrib
 		"X-Goog-Upload-Protocol":  {"raw"},
 	})
 
-	code, bytes, err := client.DoPostFileBody(p.ctx, []string{path}, request.filePath)
+	resp, err := client.DoPostFileBody(p.ctx, []string{path}, request.filePath)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to distribute to Firebase App Distribution")
 	}
 
-	if code <= 200 && code < 300 {
-		return bytes, nil
+	if resp.Successful() {
+		if v, err := resp.ParseJson(&firebaseAppDistributionUploadResponse{}); err != nil {
+			return nil, errors.Wrap(err, "succeeded to upload but something went wrong")
+		} else {
+			return v.(*firebaseAppDistributionUploadResponse), nil
+		}
 	} else {
-		return nil, errors.New(fmt.Sprintf("failed to upload your app to Firebase App Distribution due to '%s'", string(bytes)))
+		return nil, errors.Wrap(resp.Err(), "failed to upload your app to Firebase App Distribution")
 	}
 }

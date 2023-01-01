@@ -1,9 +1,9 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
+	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -16,11 +16,21 @@ type firebaseAppDistributionGetOperationStateResponse struct {
 	OperationName string                                          `json:"name"`
 	Done          bool                                            `json:"done"`
 	Response      *firebaseAppDistributionV1UploadReleaseResponse `json:"response"`
+	RawResponse   *net.HttpResponse                               `json:"-"`
+}
+
+func (r *firebaseAppDistributionGetOperationStateResponse) Set(v *net.HttpResponse) {
+	r.RawResponse = v
 }
 
 type firebaseAppDistributionV1UploadReleaseResponse struct {
-	Result  string `json:"result"`
-	Release firebaseAppDistributionRelease
+	Result      string `json:"result"`
+	Release     firebaseAppDistributionRelease
+	RawResponse *net.HttpResponse `json:"-"`
+}
+
+func (r *firebaseAppDistributionV1UploadReleaseResponse) Set(v *net.HttpResponse) {
+	r.RawResponse = v
 }
 
 // Wait until the processing in app distribution has done
@@ -78,21 +88,19 @@ func (p *FirebaseAppDistributionProvider) getOperationState(request *firebaseApp
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 
-	code, bytes, err := client.DoGet(p.ctx, []string{path}, nil)
+	resp, err := client.DoGet(p.ctx, []string{path}, nil)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get a response from operation state api")
 	}
 
-	var response firebaseAppDistributionGetOperationStateResponse
-
-	if 200 <= code && code < 300 {
-		if err := json.Unmarshal(bytes, &response); err != nil {
-			return nil, errors.Wrap(err, "cannot unmarshal operation state response")
+	if resp.Successful() {
+		if v, err := resp.ParseJson(&firebaseAppDistributionGetOperationStateResponse{}); err != nil {
+			return nil, errors.Wrap(err, "succeeded to monitor the operation state but something went wrong")
 		} else {
-			return &response, nil
+			return v.(*firebaseAppDistributionGetOperationStateResponse), nil
 		}
 	} else {
-		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
+		return nil, errors.Wrap(resp.Err(), "failed to monitor the operation state")
 	}
 }

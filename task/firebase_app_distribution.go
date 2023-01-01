@@ -30,6 +30,8 @@ func DistributeToFirebaseAppDistribution(ctx context.Context, conf config.Fireba
 var FirebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 	resp := v.(service.FirebaseAppDistributionDistributionResult)
 
+	release := resp.Response.Release
+
 	w.AppendHeader(table.Row{
 		"Key", "Value",
 	})
@@ -40,14 +42,14 @@ var FirebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 	w.AppendSeparator()
 
 	w.AppendRows([]table.Row{
-		{"Processed State", resp.Result},
-		{"First Uploaded At", resp.Release.CreatedAt},
-		{"First Uploaded At", resp.Release.CreatedAt},
+		{"Processed State", resp.Response.Result},
+		{"First Uploaded At", release.CreatedAt},
+		{"First Uploaded At", release.CreatedAt},
 	})
 
-	if resp.Release.ReleaseNote != nil {
+	if release.ReleaseNote != nil {
 		w.AppendRows([]table.Row{
-			{"Release Note", resp.Release.ReleaseNote.Text},
+			{"Release Note", release.ReleaseNote.Text},
 		})
 	}
 
@@ -73,7 +75,7 @@ var FirebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 	})
 	w.AppendSeparator()
 	w.AppendRows([]table.Row{
-		{"App Version Code", resp.Release.BuildVersion},
-		{"App Version Name", resp.Release.DisplayVersion},
+		{"App Version Code", release.BuildVersion},
+		{"App Version Name", release.DisplayVersion},
 	})
 }
