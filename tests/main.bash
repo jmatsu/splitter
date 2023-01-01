@@ -26,3 +26,9 @@ splitter \
   deploy \
   -n case4 \
   -f .fixtures/app.apk
+
+splitter \
+  --config ./splitter.another.yml \
+  deploy \
+  -n case5 \
+  -f .fixtures/app.apk

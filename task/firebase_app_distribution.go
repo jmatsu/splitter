@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/service"
@@ -73,6 +74,11 @@ var firebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 			})
 		}
 	}
+
+	w.AppendRows([]table.Row{
+		{"Groups", fmt.Sprintf("%d groups", len(resp.GroupAliases))},
+		{"Individual Testers", fmt.Sprintf("%d testers", len(resp.TesterEmails))},
+	})
 
 	w.AppendSeparator()
 	w.AppendRows([]table.Row{

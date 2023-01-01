@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  SPLITTER_LOG_LEVEL: info
+
 jobs:
   deploygate:
     timeout-minutes: 5
@@ -70,4 +73,3 @@ jobs:
           local
           --source-file ./examples/io.github.jmatsu.splitter.example.apk
           --destination ./dist/example.apk
-          --credentials .fixtures/google_credentials.json
