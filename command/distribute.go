@@ -62,7 +62,7 @@ func Distribute(name string, aliases []string) *cli.Command {
 				case config.DeploygateService:
 					dg := d.ServiceConfig.(*config.DeployGateConfig)
 
-					return task.DistributeToDeployGate(context.Context, *dg, sourceFilePath, func(req *service.DeployGateUploadAppRequest) {
+					return task.DistributeToDeployGate(context.Context, *dg, sourceFilePath, func(req *service.DeployGateDistributionRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetMessage(v)
 							req.SetDistributionReleaseNote(v)

@@ -77,7 +77,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				ApiToken:     context.String("api-token"),
 			}
 
-			return task.DistributeToDeployGate(context.Context, conf, context.String("source-file"), func(req *service.DeployGateUploadAppRequest) {
+			return task.DistributeToDeployGate(context.Context, conf, context.String("source-file"), func(req *service.DeployGateDistributionRequest) {
 				if v := context.String("message"); context.IsSet("message") {
 					req.SetMessage(v)
 				}

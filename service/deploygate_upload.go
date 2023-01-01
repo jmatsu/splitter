@@ -6,8 +6,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewDeployGateUploadAppRequest(filePath string) *DeployGateUploadAppRequest {
-	return &DeployGateUploadAppRequest{
+func NewDeployGateDistributionRequest(filePath string) *DeployGateDistributionRequest {
+	return &DeployGateDistributionRequest{
 		filePath:            filePath,
 		distributionOptions: deployGateDistributionOptions{},
 	}
@@ -67,26 +67,6 @@ type deployGateDistributionOptions struct {
 
 type deployGateIOSOptions struct {
 	DisableNotification bool
-}
-
-func (r *DeployGateUploadAppRequest) SetMessage(value string) {
-	r.message = value
-}
-
-func (r *DeployGateUploadAppRequest) SetDistributionAccessKey(value string) {
-	r.distributionOptions.AccessKey = value
-}
-
-func (r *DeployGateUploadAppRequest) SetDistributionName(value string) {
-	r.distributionOptions.Name = value
-}
-
-func (r *DeployGateUploadAppRequest) SetDistributionReleaseNote(value string) {
-	r.distributionOptions.ReleaseNote = value
-}
-
-func (r *DeployGateUploadAppRequest) SetIOSDisableNotification(value bool) {
-	r.iOSOptions.DisableNotification = value
 }
 
 func (r *DeployGateUploadAppRequest) toForm() *net.Form {

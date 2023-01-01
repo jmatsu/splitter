@@ -3,6 +3,7 @@ package task
 import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jmatsu/splitter/internal/config"
+	"github.com/jmatsu/splitter/service"
 	"testing"
 )
 
@@ -38,6 +39,8 @@ func Test_Formatter_Format(t *testing.T) {
 
 type testDistributionResult struct {
 }
+
+var _ service.DistributionResult = &testDistributionResult{}
 
 func (r *testDistributionResult) ValueResponse() any {
 	return struct{}{}

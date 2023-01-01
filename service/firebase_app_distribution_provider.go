@@ -37,6 +37,8 @@ type FirebaseAppDistributionDistributionResult struct {
 	AabInfo *FirebaseAppDistributionAabInfoResponse
 }
 
+var _ DistributionResult = &FirebaseAppDistributionDistributionResult{}
+
 func (r *FirebaseAppDistributionDistributionResult) RawJsonResponse() string {
 	return r.FirebaseAppDistributionGetOperationStateResponse.RawResponse.RawJson()
 }
@@ -59,11 +61,7 @@ func (r *FirebaseAppDistributionDistributeRequest) SetReleaseNote(value string) 
 }
 
 func (r *FirebaseAppDistributionDistributeRequest) SetTesterEmails(value []string) {
-	if value != nil && len(value) > 0 {
-		r.testerEmails = value
-	} else {
-		r.testerEmails = []string{}
-	}
+	r.testerEmails = value
 }
 
 func (r *FirebaseAppDistributionDistributeRequest) OsName() string {
@@ -110,10 +108,7 @@ func (p *FirebaseAppDistributionProvider) Distribute(filePath string, builder fu
 		projectNumber: p.ProjectNumber(),
 		appId:         p.AppId,
 		filePath:      filePath,
-	}
-
-	if len(p.FirebaseAppDistributionConfig.GroupAliases) > 0 {
-		request.groupAliases = p.FirebaseAppDistributionConfig.GroupAliases
+		groupAliases:  p.FirebaseAppDistributionConfig.GroupAliases,
 	}
 
 	builder(request)

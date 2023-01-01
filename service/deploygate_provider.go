@@ -28,9 +28,49 @@ type DeployGateProvider struct {
 	client *net.HttpClient
 }
 
+type DeployGateDistributionRequest struct {
+	filePath            string
+	message             string
+	distributionOptions deployGateDistributionOptions
+	iOSOptions          deployGateIOSOptions
+}
+
+func (r *DeployGateDistributionRequest) SetMessage(value string) {
+	r.message = value
+}
+
+func (r *DeployGateDistributionRequest) SetDistributionAccessKey(value string) {
+	r.distributionOptions.AccessKey = value
+}
+
+func (r *DeployGateDistributionRequest) SetDistributionName(value string) {
+	r.distributionOptions.Name = value
+}
+
+func (r *DeployGateDistributionRequest) SetDistributionReleaseNote(value string) {
+	r.distributionOptions.ReleaseNote = value
+}
+
+func (r *DeployGateDistributionRequest) SetIOSDisableNotification(value bool) {
+	r.iOSOptions.DisableNotification = value
+}
+
+func (r *DeployGateDistributionRequest) NewUploadRequest() *DeployGateUploadAppRequest {
+	request := DeployGateUploadAppRequest{
+		filePath:            r.filePath,
+		message:             r.message,
+		distributionOptions: r.distributionOptions,
+		iOSOptions:          r.iOSOptions,
+	}
+
+	return &request
+}
+
 type DeployGateDistributionResult struct {
 	DeployGateUploadResponse
 }
+
+var _ DistributionResult = &DeployGateDistributionResult{}
 
 func (r *DeployGateDistributionResult) RawJsonResponse() string {
 	return r.DeployGateUploadResponse.RawResponse.RawJson()
@@ -40,14 +80,14 @@ func (r *DeployGateDistributionResult) ValueResponse() any {
 	return *r
 }
 
-func (p *DeployGateProvider) Distribute(filePath string, builder func(req *DeployGateUploadAppRequest)) (*DeployGateDistributionResult, error) {
-	request := NewDeployGateUploadAppRequest(filePath)
+func (p *DeployGateProvider) Distribute(filePath string, builder func(req *DeployGateDistributionRequest)) (*DeployGateDistributionResult, error) {
+	request := NewDeployGateDistributionRequest(filePath)
 
 	builder(request)
 
 	deployGateLogger.Debug().Msgf("the request has been built: %v", *request)
 
-	if r, err := p.upload(request); err != nil {
+	if r, err := p.upload(request.NewUploadRequest()); err != nil {
 		return nil, err
 	} else {
 		return &DeployGateDistributionResult{

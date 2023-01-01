@@ -44,6 +44,8 @@ type LocalDistributionResult struct {
 	RawJson string
 }
 
+var _ DistributionResult = &LocalDistributionResult{}
+
 func (r *LocalDistributionResult) RawJsonResponse() string {
 	return r.RawJson
 }
