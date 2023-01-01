@@ -1,0 +1,16 @@
+deployments:
+  case1:
+    service: "deploygate"
+    app-owner-name: "format:${DEPLOYGATE_APP_OWNER_NAME}"
+  case2:
+    service: "firebase-app-distribution"
+    credentials-path: "./.fixtures/google_credentials.json"
+    app-id: 'format:${TEST_FIREBASE_APP_ID}'
+  case3:
+    service: "local"
+    destination-path: "./dist/sample.txt"
+    pre-steps:
+      - ['rm', '-fr', './dist']
+      - ['mkdir', '-p', './dist']
+    post-steps:
+      - ['cp', '-f', './dist/sample.txt', './dist/sample.copied.txt']

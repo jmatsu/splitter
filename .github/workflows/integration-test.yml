@@ -1,0 +1,73 @@
+name: Integration Test
+
+on:
+  workflow_dispatch:
+    inputs:
+
+  push:
+    branches:
+      - main
+
+jobs:
+  deploygate:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-go
+      - run: go install
+      - name: simple
+        run: >
+          splitter
+          deploygate
+          --source-file ./examples/io.github.jmatsu.splitter.example.aab
+          --app-owner-name "${{ secrets.DEPLOYGATE_APP_OWNER_NAME }}"
+          --api-token "${{ secrets.DEPLOYGATE_API_TOKEN }}"
+
+  firebase-app-distribution:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-go
+      - run: go install
+
+      - name: Create a credential file
+        run: |
+          mkdir -p .fixtures
+          
+          cat<<EOF | base64 -d > .fixtures/google_credentials.json
+          ${{ BASE64_ENCODED_GOOGLE_CREDENTIALS }}
+          EOF
+      - name: simple
+        run: >
+          splitter
+          firebase-app-distribution
+          --source-file ./examples/io.github.jmatsu.splitter.example.apk
+          --app-id "${{ secrets.FIREBASE_APP_ID }}"
+          --credentials .fixtures/google_credentials.json
+
+      - name: with group
+        run: >
+          splitter
+          firebase-app-distribution
+          --source-file ./examples/io.github.jmatsu.splitter.example.apk
+          --app-id "${{ secrets.FIREBASE_APP_ID }}"
+          --credentials .fixtures/google_credentials.json
+          --group-aliases "integration-test-1"
+
+local:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-go
+      - run: go install
+      - run: mkdir -p dist/
+      - name: simple
+        run: >
+          splitter
+          local
+          --source-file ./examples/io.github.jmatsu.splitter.example.apk
+          --destination-path ./dist/example.apk
+          --credentials .fixtures/google_credentials.json

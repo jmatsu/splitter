@@ -289,10 +289,10 @@ func Test_HttpClient_DoPostMultipartForm(t *testing.T) {
 
 			var resp testResponse
 
-			if _, bytes, err := client.DoPostMultipartForm(ctx, c.paths, &c.form); err != nil {
+			if r, err := client.DoPostMultipartForm(ctx, c.paths, &c.form); err != nil {
 				t.Errorf("%s is expected to be success but not: %v", name, err)
-			} else if err := json.Unmarshal(bytes, &resp); err != nil {
-				t.Errorf("%s is expected to be success but not due to comparison failure: %s", name, string(bytes))
+			} else if _, err := r.ParseJson(&resp); err != nil {
+				t.Errorf("%s failed to parse the response: %v", name, err)
 			}
 
 			if !reflect.DeepEqual(c.expected, resp) {
@@ -313,5 +313,43 @@ func Test_HttpClient_clone(t *testing.T) {
 
 	if client == &newClient {
 		t.Errorf("clone requires a different instance but not")
+	}
+}
+
+type testTypedHttpResponse struct {
+	Name        string        `json:"name"`
+	RawResponse *HttpResponse `json:"-"`
+}
+
+var _ TypedHttpResponse = &testTypedHttpResponse{}
+
+func (r *testTypedHttpResponse) Set(v *HttpResponse) {
+	r.RawResponse = v
+}
+
+func Test_HttpResponse_ParseJson(t *testing.T) {
+	resp := HttpResponse{
+		Code:  200,
+		bytes: []byte("{ \"name\": \"value\" }"),
+	}
+
+	var r1 testTypedHttpResponse
+
+	r2, err := resp.ParseJson(&r1)
+
+	if err != nil {
+		t.Fatalf("failed to parse json: %v", err)
+	}
+
+	if &r1 != r2 {
+		t.Fatalf("failed to return the proper pointer")
+	}
+
+	if r1.Name != "value" {
+		t.Fatalf("failed to parse json properly: %s", r1.Name)
+	}
+
+	if r1.RawResponse == nil {
+		t.Fatalf("failed to set a raw response")
 	}
 }

@@ -32,7 +32,7 @@ func init() {
 func main() {
 	app := &cli.App{
 		Name:      "splitter",
-		Usage:     "An isolated command to distribute your apps to elsewhere",
+		Usage:     "A command to deploy your apps to several mobile app distribution services.",
 		Version:   fmt.Sprintf("%s (git revision %s)", version, commit),
 		Copyright: "Jumpei Matsuda (@jmatsu)",
 		Compiled:  compiledAt,
@@ -55,7 +55,7 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name:     "format",
-				Usage:    "The output style of command outputs. This may work only for some commands.",
+				Usage:    "The output style of command outputs.",
 				Required: false,
 				Value:    config.DefaultFormat,
 				EnvVars: []string{
@@ -64,7 +64,7 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name:     "log-level",
-				Usage:    "Set log level",
+				Usage:    "Set log level.",
 				Required: false,
 				EnvVars: []string{
 					config.ToEnvName("LOG_LEVEL"),
@@ -73,7 +73,7 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name:        "network-timeout",
-				Usage:       "Set network timeout for read/connection timeout",
+				Usage:       "Set network timeout for read/connection timeout.",
 				Required:    false,
 				DefaultText: config.DefaultNetworkTimeout,
 				EnvVars: []string{
@@ -82,7 +82,7 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name:        "wait-timeout",
-				Usage:       "Set wait timeout for polling services' processing states",
+				Usage:       "Set wait timeout for polling services' processing states.",
 				Required:    false,
 				DefaultText: config.DefaultWaitTimeout,
 				EnvVars: []string{
@@ -136,7 +136,8 @@ func main() {
 			command.Local("local", []string{""}),
 			command.DeployGate("deploygate", []string{"dg"}),
 			command.FirebaseAppDistribution("firebase-app-distribution", []string{"firebase", "fad"}),
-			command.Distribute("distribute", []string{}),
+			command.Deploy("deploy", []string{}),
+			command.AddDeploymentConfig("add-deployment", []string{}),
 		},
 	}
 

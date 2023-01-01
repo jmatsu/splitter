@@ -30,7 +30,7 @@ func Test_DeployGateUploadAppRequest_toForm(t *testing.T) {
 		"with too much distribution options": {
 			request: DeployGateUploadAppRequest{
 				filePath: "path/to/file",
-				distributionOptions: &deployGateDistributionOptions{
+				distributionOptions: deployGateDistributionOptions{
 					AccessKey: "dist_key",
 					Name:      "dist_name",
 				},
@@ -45,9 +45,9 @@ func Test_DeployGateUploadAppRequest_toForm(t *testing.T) {
 		"with fully distribution options": {
 			request: DeployGateUploadAppRequest{
 				filePath: "path/to/file",
-				distributionOptions: &deployGateDistributionOptions{
+				distributionOptions: deployGateDistributionOptions{
 					AccessKey:   "dist_key",
-					ReleaseNote: &sampleMessage1,
+					ReleaseNote: sampleMessage1,
 				},
 			},
 			expected: net.Form{
@@ -61,8 +61,8 @@ func Test_DeployGateUploadAppRequest_toForm(t *testing.T) {
 		"with partial distribution options": {
 			request: DeployGateUploadAppRequest{
 				filePath: "path/to/file",
-				message:  &sampleMessage1,
-				distributionOptions: &deployGateDistributionOptions{
+				message:  sampleMessage1,
+				distributionOptions: deployGateDistributionOptions{
 					Name: "dist_name1",
 				},
 			},

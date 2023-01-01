@@ -22,7 +22,7 @@ func NewFormatter() *Formatter {
 	}
 }
 
-func (f *Formatter) Format(r service.DistributionResult) error {
+func (f *Formatter) Format(r service.DeployResult) error {
 	w := table.NewWriter()
 	w.SetOutputMirror(os.Stdout)
 	w.SetStyle(table.StyleDefault)

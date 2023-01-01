@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func DistributeToDeployGate(ctx context.Context, conf config.DeployGateConfig, filePath string, builder func(req *service.DeployGateUploadAppRequest)) error {
+func DeployToDeployGate(ctx context.Context, conf config.DeployGateConfig, filePath string, builder func(req *service.DeployGateDeployRequest)) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}
@@ -19,8 +19,8 @@ func DistributeToDeployGate(ctx context.Context, conf config.DeployGateConfig, f
 	formatter := NewFormatter()
 	formatter.TableBuilder = deployGateTableBuilder
 
-	if response, err := provider.Distribute(filePath, builder); err != nil {
-		return errors.Wrap(err, "cannot distribute this app")
+	if response, err := provider.Deploy(filePath, builder); err != nil {
+		return errors.Wrap(err, "cannot deploy this app")
 	} else if err := formatter.Format(response); err != nil {
 		return errors.Wrap(err, "cannot format the response")
 	}
@@ -29,7 +29,7 @@ func DistributeToDeployGate(ctx context.Context, conf config.DeployGateConfig, f
 }
 
 var deployGateTableBuilder = func(w table.Writer, v any) {
-	resp := v.(service.DeployGateDistributionResult).Results
+	resp := v.(service.DeployGateDeployResult).Results
 
 	w.AppendHeader(table.Row{
 		"Key", "Value",
@@ -57,9 +57,9 @@ var deployGateTableBuilder = func(w table.Writer, v any) {
 
 	if resp.Distribution != nil {
 		w.AppendRows([]table.Row{
-			{"Distribution Name", resp.Distribution.Title},
-			{"Distribution AccessKey", resp.Distribution.AccessKey},
-			{"Distribution URL", resp.Distribution.Url},
+			{"Deployment Name", resp.Distribution.Title},
+			{"Deployment AccessKey", resp.Distribution.AccessKey},
+			{"Deployment URL", resp.Distribution.Url},
 		})
 	}
 
@@ -77,7 +77,7 @@ var deployGateTableBuilder = func(w table.Writer, v any) {
 			{"Version Code", resp.VersionCode},
 			{"Version Name", resp.VersionName},
 			{"Min SDK Version", resp.SdkVersion},
-			{"Target SDK Version", *resp.TargetSdkVersion},
+			{"Target SDK Version", resp.TargetSdkVersion},
 		})
 
 	case "ios":
@@ -86,7 +86,7 @@ var deployGateTableBuilder = func(w table.Writer, v any) {
 			{"Bundle Identifier", resp.PackageName},
 			{"Version Code", resp.VersionCode},
 			{"Version Name", resp.VersionName},
-			{"Build SDK Version", *resp.RawSdkVersion},
+			{"Build SDK Version", resp.RawSdkVersion},
 		})
 	}
 }

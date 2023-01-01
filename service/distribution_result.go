@@ -1,6 +1,6 @@
 package service
 
-type DistributionResult interface {
+type DeployResult interface {
 	ValueResponse() any
 	RawJsonResponse() string
 }

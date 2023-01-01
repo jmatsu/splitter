@@ -1,19 +1,13 @@
-distributions:
+deployments:
   pull-request:
     service: "deploygate"
     app-owner-name: "format:${DEPLOYGATE_APP_OWNER_NAME}"
     distribution-name: "format:pulls/${GITHUB_PULL_NUMBER}"
   dogfooding:
-    service: "deploygate"
-    app-owner-name: ...
-    distribution-access-key: ...
-  test:
     service: "firebase-app-distribution"
     credentials-path: "./service/.fixtures/google_credentials.json"
     app-id: 'format:${TEST_FIREBASE_APP_ID}'
     pre-steps:
-      - ['echo', 'pre step 1']
-      - ['echo', 'pre step 2']
+      - ['echo', 'assembling builds for dogfooding']
     post-steps:
-      - ['echo', 'post step 1']
-      - ['echo', 'post step 2']
+      - ['echo', 'Sending the notification to the testers...']

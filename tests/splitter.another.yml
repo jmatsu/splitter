@@ -1,0 +1,5 @@
+deployments:
+  case4:
+    service: "deploygate"
+    app-owner-name: "format:${DEPLOYGATE_APP_OWNER_NAME}"
+    distribution-name: "format:pulls/${GITHUB_PULL_NUMBER}"

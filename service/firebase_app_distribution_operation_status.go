@@ -1,9 +1,9 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
+	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -12,24 +12,38 @@ type firebaseAppDistributionGetOperationStateRequest struct {
 	operationName string
 }
 
-type firebaseAppDistributionGetOperationStateResponse struct {
+type FirebaseAppDistributionGetOperationStateResponse struct {
 	OperationName string                                          `json:"name"`
 	Done          bool                                            `json:"done"`
-	Response      *firebaseAppDistributionV1UploadReleaseResponse `json:"response"`
+	Response      *FirebaseAppDistributionV1UploadReleaseResponse `json:"response"`
+	RawResponse   *net.HttpResponse                               `json:"-"`
 }
 
-type firebaseAppDistributionV1UploadReleaseResponse struct {
-	Result  string `json:"result"`
-	Release firebaseAppDistributionRelease
+func (r *FirebaseAppDistributionGetOperationStateResponse) Set(v *net.HttpResponse) {
+	r.RawResponse = v
 }
+
+var _ net.TypedHttpResponse = &FirebaseAppDistributionGetOperationStateResponse{}
+
+type FirebaseAppDistributionV1UploadReleaseResponse struct {
+	Result      string `json:"result"`
+	Release     FirebaseAppDistributionReleaseFragment
+	RawResponse *net.HttpResponse `json:"-"`
+}
+
+func (r *FirebaseAppDistributionV1UploadReleaseResponse) Set(v *net.HttpResponse) {
+	r.RawResponse = v
+}
+
+var _ net.TypedHttpResponse = &FirebaseAppDistributionV1UploadReleaseResponse{}
 
 // Wait until the processing in app distribution has done
-func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebaseAppDistributionGetOperationStateRequest) (*firebaseAppDistributionGetOperationStateResponse, error) {
+func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebaseAppDistributionGetOperationStateRequest) (*FirebaseAppDistributionGetOperationStateResponse, error) {
 	waitTimeout := config.CurrentConfig().WaitTimeout()
 
 	var retryCount int
 
-	pipeline := make(chan *firebaseAppDistributionGetOperationStateResponse, 1)
+	pipeline := make(chan *FirebaseAppDistributionGetOperationStateResponse, 1)
 	stopper := make(chan error, 1)
 
 	defer func() {
@@ -71,28 +85,26 @@ func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebase
 	}
 }
 
-func (p *FirebaseAppDistributionProvider) getOperationState(request *firebaseAppDistributionGetOperationStateRequest) (*firebaseAppDistributionGetOperationStateResponse, error) {
+func (p *FirebaseAppDistributionProvider) getOperationState(request *firebaseAppDistributionGetOperationStateRequest) (*FirebaseAppDistributionGetOperationStateResponse, error) {
 	path := fmt.Sprintf("/v1/%s", request.operationName)
 
 	client := p.client.WithHeaders(map[string][]string{
 		"Authorization": {fmt.Sprintf("Bearer %s", p.AccessToken)},
 	})
 
-	code, bytes, err := client.DoGet(p.ctx, []string{path}, nil)
+	resp, err := client.DoGet(p.ctx, []string{path}, nil)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get a response from operation state api")
 	}
 
-	var response firebaseAppDistributionGetOperationStateResponse
-
-	if 200 <= code && code < 300 {
-		if err := json.Unmarshal(bytes, &response); err != nil {
-			return nil, errors.Wrap(err, "cannot unmarshal operation state response")
+	if resp.Successful() {
+		if v, err := resp.ParseJson(&FirebaseAppDistributionGetOperationStateResponse{}); err != nil {
+			return nil, errors.Wrap(err, "succeeded to monitor the operation state but something went wrong")
 		} else {
-			return &response, nil
+			return v.(*FirebaseAppDistributionGetOperationStateResponse), nil
 		}
 	} else {
-		return nil, errors.New(fmt.Sprintf("got %d response: %s", code, string(bytes)))
+		return nil, errors.Wrap(resp.Err(), "failed to monitor the operation state")
 	}
 }

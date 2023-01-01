@@ -133,7 +133,7 @@ func Test_LocalProvider_Distribute(t *testing.T) {
 				DestinationPath: dest.Name(),
 			})
 
-			response, err := provider.Distribute(source.Name())
+			response, err := provider.Deploy(source.Name())
 
 			if err != nil {
 				if !c.Overwrite && strings.Contains(err.Error(), "overwriting is disabled") {
