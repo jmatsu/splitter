@@ -34,7 +34,9 @@ type FirebaseAppDistributionProvider struct {
 type FirebaseAppDistributionDeployResult struct {
 	FirebaseAppDistributionGetOperationStateResponse
 
-	AabInfo *FirebaseAppDistributionAabInfoResponse
+	AabInfo      *FirebaseAppDistributionAabInfoResponse
+	GroupAliases []string
+	TesterEmails []string
 }
 
 var _ DeployResult = &FirebaseAppDistributionDeployResult{}
@@ -162,6 +164,11 @@ func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(r
 		}
 	}
 
+	result := FirebaseAppDistributionDeployResult{
+		FirebaseAppDistributionGetOperationStateResponse: *response,
+		AabInfo: aabInfo,
+	}
+
 	if len(request.groupAliases) > 0 || len(request.testerEmails) > 0 {
 		firebaseAppDistributionLogger.Debug().Msg("start distribution the release")
 
@@ -180,11 +187,11 @@ func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(r
 
 		if err := p.distributeRelease(req); err != nil {
 			firebaseAppDistributionLogger.Warn().Err(err).Msg("failed to distribute the release")
+		} else {
+			result.GroupAliases = groupAliases
+			result.TesterEmails = testerEmails
 		}
 	}
 
-	return &FirebaseAppDistributionDeployResult{
-		FirebaseAppDistributionGetOperationStateResponse: *response,
-		AabInfo: aabInfo,
-	}, nil
+	return &result, nil
 }

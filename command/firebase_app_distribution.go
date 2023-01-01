@@ -68,7 +68,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				AppId:                 context.String("app-id"),
 			}
 
-			if v := strings.Split(context.String("group-aliases"), ","); len(v) > 0 {
+			if v := strings.Split(context.String("group-aliases"), ","); context.IsSet("group-aliases") && len(v) > 0 {
 				conf.GroupAliases = v
 			}
 
@@ -77,7 +77,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 					req.SetReleaseNote(v)
 				}
 
-				if v := strings.Split(context.String("tester-emails"), ","); len(v) > 0 {
+				if v := strings.Split(context.String("tester-emails"), ","); context.IsSet("tester-emails") && len(v) > 0 {
 					req.SetTesterEmails(v)
 				}
 			})
