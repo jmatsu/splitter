@@ -5,16 +5,17 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
+	"net/url"
 	"strings"
 )
 
 type valueAssignFormat = string
 
 const (
-	requestBodyAssignFormat      valueAssignFormat = "request_body"
-	formParamsAssignFormatPrefix valueAssignFormat = "form_params."
-	headersAssignFormatPrefix    valueAssignFormat = "headers."
-	queryAssignFormatPrefix      valueAssignFormat = "query."
+	RequestBodyAssignFormat      valueAssignFormat = "request_body"
+	FormParamsAssignFormatPrefix valueAssignFormat = "form_params."
+	HeadersAssignFormatPrefix    valueAssignFormat = "headers."
+	QueryAssignFormatPrefix      valueAssignFormat = "query."
 )
 
 type CustomServiceDefinition struct {
@@ -25,13 +26,20 @@ type CustomServiceDefinition struct {
 }
 
 func (d *CustomServiceDefinition) validate() error {
+	if _, err := url.Parse(d.Endpoint); err != nil {
+		return errors.Wrapf(err, "%s is not a URL format", d.Endpoint)
+	}
 
-	if d.SourceFileFormat != requestBodyAssignFormat {
+	if d.SourceFileFormat != RequestBodyAssignFormat {
 		var valid bool
 
-		for _, prefix := range []string{formParamsAssignFormatPrefix, queryAssignFormatPrefix} {
-			if !strings.HasPrefix(d.SourceFileFormat, prefix) {
-				valid = false
+		for _, prefix := range []string{FormParamsAssignFormatPrefix, QueryAssignFormatPrefix} {
+			if strings.HasPrefix(d.SourceFileFormat, prefix) {
+				if len(d.SourceFileFormat) > len(prefix) {
+					return errors.New(fmt.Sprintf("%s must contain *name*", d.SourceFileFormat))
+				}
+
+				valid = true
 				break
 			}
 		}
@@ -44,6 +52,22 @@ func (d *CustomServiceDefinition) validate() error {
 	return nil
 }
 
+func (d *CustomServiceDefinition) SourceFile() (string, string, error) {
+	if d.SourceFileFormat == RequestBodyAssignFormat {
+		return RequestBodyAssignFormat, "", nil
+	} else if strings.HasPrefix(d.SourceFileFormat, FormParamsAssignFormatPrefix) {
+		name := d.SourceFileFormat[len(FormParamsAssignFormatPrefix):]
+
+		if name == "" {
+			return "", "", errors.New(fmt.Sprintf("no name is available in %s", d.SourceFileFormat))
+		}
+
+		return FormParamsAssignFormatPrefix, name, nil
+	}
+
+	return "", "", errors.New(fmt.Sprintf("no source file format is found in %s", d.SourceFileFormat))
+}
+
 type CustomAuthDefinition struct {
 	StyleFormat valueAssignFormat `yaml:"style-format"`
 	ValueFormat string            `yaml:"value-format"`
@@ -52,9 +76,13 @@ type CustomAuthDefinition struct {
 func (d *CustomAuthDefinition) validate() error {
 	var valid bool
 
-	for _, prefix := range []string{formParamsAssignFormatPrefix, headersAssignFormatPrefix, queryAssignFormatPrefix} {
-		if !strings.HasPrefix(d.StyleFormat, prefix) {
-			valid = false
+	for _, prefix := range []string{FormParamsAssignFormatPrefix, HeadersAssignFormatPrefix, QueryAssignFormatPrefix} {
+		if strings.HasPrefix(d.StyleFormat, prefix) {
+			if len(d.StyleFormat) > len(prefix) {
+				return errors.New(fmt.Sprintf("%s must contain *name*", d.StyleFormat))
+			}
+
+			valid = true
 			break
 		}
 	}
@@ -70,6 +98,22 @@ func (d *CustomAuthDefinition) validate() error {
 	}
 
 	return nil
+}
+
+func (d *CustomAuthDefinition) AuthValue() (string, string, error) {
+	for _, prefix := range []string{FormParamsAssignFormatPrefix, HeadersAssignFormatPrefix, QueryAssignFormatPrefix} {
+		if strings.HasPrefix(d.StyleFormat, prefix) {
+			name := d.StyleFormat[len(prefix):]
+
+			if name == "" {
+				return "", "", errors.New(fmt.Sprintf("no name is available in %s", d.StyleFormat))
+			}
+
+			return prefix, name, nil
+		}
+	}
+
+	return "", "", errors.New(fmt.Sprintf("no authentication method is found in %s", d.StyleFormat))
 }
 
 type DefaultRequestDefinition struct {

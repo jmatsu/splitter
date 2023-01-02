@@ -112,7 +112,7 @@ func (p *DeployGateProvider) upload(request *DeployGateUploadAppRequest) (*Deplo
 		"Authorization": {fmt.Sprintf("Bearer %s", p.ApiToken)},
 	})
 
-	resp, err := client.DoPostMultipartForm(p.ctx, []string{"api", "users", p.AppOwnerName, "apps"}, request.toForm())
+	resp, err := client.DoPostMultipartForm(p.ctx, []string{"api", "users", p.AppOwnerName, "apps"}, nil, request.toForm())
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upload your app to DeployGate")

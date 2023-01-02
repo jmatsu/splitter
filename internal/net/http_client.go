@@ -130,25 +130,25 @@ func (c *HttpClient) DoPost(ctx context.Context, paths []string, queries map[str
 	}
 }
 
-func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, filePath string) (*HttpResponse, error) {
+func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, queries map[string]string, filePath string) (*HttpResponse, error) {
 	if f, err := os.Open(filePath); err != nil {
 		return nil, errors.Wrapf(err, "%s is not found", filePath)
 	} else if b, err := io.ReadAll(f); err != nil {
 		return nil, errors.Wrapf(err, "%s cannot be read", filePath)
 	} else {
 		buffer := bytes.NewBuffer(b)
-		return c.DoPost(ctx, paths, nil, "application/octet-stream", buffer)
+		return c.DoPost(ctx, paths, queries, "application/octet-stream", buffer)
 	}
 }
 
-func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, form *Form) (*HttpResponse, error) {
+func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, queries map[string]string, form *Form) (*HttpResponse, error) {
 	contentType, buffer, err := form.Serialize()
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to serialize the request form")
 	}
 
-	return c.DoPost(ctx, paths, nil, contentType, buffer)
+	return c.DoPost(ctx, paths, queries, contentType, buffer)
 }
 
 func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]string, method string, contentType string, requestBody io.Reader) (*HttpResponse, error) {
