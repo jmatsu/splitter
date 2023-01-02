@@ -9,6 +9,10 @@ import (
 
 type CustomServiceUploadAppRequest struct {
 	filePath string
+
+	headers map[string][]string
+	queries map[string]string
+	form    net.Form
 }
 
 type CustomServiceUploadResponse struct {
@@ -22,10 +26,6 @@ func (r *CustomServiceUploadResponse) Set(v *net.HttpResponse) {
 var _ net.TypedHttpResponse = &CustomServiceUploadResponse{}
 
 func (p *CustomServiceProvider) upload(request *CustomServiceUploadAppRequest) (*CustomServiceUploadResponse, error) {
-	var form *net.Form
-	var queries map[string]string
-
-	client := p.client
 	authToken := fmt.Sprintf(p.CustomServiceDefinition.AuthDefinition.ValueFormat, p.CustomServiceConfig.AuthToken)
 
 	if prefix, name, err := p.CustomServiceDefinition.AuthDefinition.AuthValue(); err != nil {
@@ -33,14 +33,11 @@ func (p *CustomServiceProvider) upload(request *CustomServiceUploadAppRequest) (
 	} else {
 		switch prefix {
 		case config.HeadersAssignFormatPrefix:
-			client = p.client.WithHeaders(map[string][]string{
-				name: {authToken},
-			})
+			request.headers[name] = []string{authToken}
 		case config.FormParamsAssignFormatPrefix:
-			form = &net.Form{}
-			form.Set(net.StringField(name, authToken))
+			request.form.Set(net.StringField(name, authToken))
 		case config.QueryAssignFormatPrefix:
-			queries[name] = authToken
+			request.queries[name] = authToken
 		default:
 			panic(fmt.Sprintf("%s is not implemented yet", prefix))
 		}
@@ -49,29 +46,25 @@ func (p *CustomServiceProvider) upload(request *CustomServiceUploadAppRequest) (
 	if format, name, err := p.SourceFile(); err != nil {
 		switch format {
 		case config.RequestBodyAssignFormat:
-			if form != nil {
+			if !request.form.Empty() {
 				return nil, errors.New(fmt.Sprintf("%s is not compatible with form requests", format))
 			}
-
-			// no op
 		case config.FormParamsAssignFormatPrefix:
-			if form == nil {
-				form = &net.Form{}
-			}
-
-			form.Set(net.StringField(name, request.filePath))
+			request.form.Set(net.FileField(name, request.filePath))
 		default:
 			panic(fmt.Sprintf("%s is not implemented yet", format))
 		}
 	}
 
+	client := p.client.WithHeaders(request.headers)
+
 	var resp *net.HttpResponse
 	var err error
 
-	if form != nil {
-		resp, err = client.DoPostMultipartForm(p.ctx, []string{p.path}, queries, form)
+	if request.form.Empty() {
+		resp, err = client.DoPostFileBody(p.ctx, []string{p.path}, request.queries, request.filePath)
 	} else {
-		resp, err = client.DoPostFileBody(p.ctx, []string{p.path}, queries, request.filePath)
+		resp, err = client.DoPostMultipartForm(p.ctx, []string{p.path}, request.queries, &request.form)
 	}
 
 	if err != nil {

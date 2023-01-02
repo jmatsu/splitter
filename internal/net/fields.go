@@ -74,6 +74,10 @@ type Form struct {
 	Fields []ValueField
 }
 
+func (f *Form) Empty() bool {
+	return len(f.Fields) == 0
+}
+
 func (f *Form) Set(field ValueField) {
 	if f.Fields == nil {
 		f.Fields = []ValueField{field}

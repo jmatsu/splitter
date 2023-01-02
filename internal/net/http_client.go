@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 func NewHttpClient(baseUrl string) *HttpClient {
@@ -173,8 +174,8 @@ func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]
 		return nil, errors.Wrap(err, "failed to build the request")
 	}
 
-	for name, value := range c.headers {
-		request.Header.Set(name, value[0])
+	for name, values := range c.headers {
+		request.Header.Set(name, strings.Join(values, ","))
 	}
 
 	if contentType != "" {

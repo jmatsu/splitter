@@ -138,6 +138,7 @@ func main() {
 			command.FirebaseAppDistribution("firebase-app-distribution", []string{"firebase", "fad"}),
 			command.Deploy("deploy", []string{}),
 			command.AddDeploymentConfig("add-deployment", []string{}),
+			command.CustomService("service", []string{}),
 		},
 	}
 

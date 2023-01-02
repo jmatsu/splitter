@@ -331,6 +331,14 @@ func (c *GlobalConfig) Dump(path string) error {
 	return nil
 }
 
+func (c *GlobalConfig) Definition(name string) (CustomServiceDefinition, error) {
+	if s, ok := c.services[name]; ok {
+		return s, nil
+	} else {
+		return CustomServiceDefinition{}, errors.New(fmt.Sprintf("%s is not found in services", name))
+	}
+}
+
 func (c *GlobalConfig) Deployment(name string) (Deployment, error) {
 	if d, ok := c.deployments[name]; ok {
 		switch d.ServiceName {
