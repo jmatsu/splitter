@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DeployToCustomService(ctx context.Context, def config.CustomServiceDefinition, conf config.CustomServiceConfig, filePath string, builder func(req *service.CustomServiceDeployRequest)) error {
+func DeployToCustomService(ctx context.Context, def config.CustomServiceDefinition, conf config.CustomServiceConfig, filePath string, builder func(req *service.CustomServiceDeployRequest) error) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}

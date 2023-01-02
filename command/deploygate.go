@@ -77,7 +77,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				ApiToken:     context.String("api-token"),
 			}
 
-			return task.DeployToDeployGate(context.Context, conf, context.String("source-path"), func(req *service.DeployGateDeployRequest) {
+			return task.DeployToDeployGate(context.Context, conf, context.String("source-path"), func(req *service.DeployGateDeployRequest) error {
 				if v := context.String("message"); context.IsSet("message") {
 					req.SetMessage(v)
 				}
@@ -95,6 +95,8 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				}
 
 				req.SetIOSDisableNotification(context.Bool("disable-ios-notification"))
+
+				return nil
 			})
 		},
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/internal/net"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"strings"
 )
@@ -90,16 +91,18 @@ func (r *CustomServiceDeployResult) ValueResponse() any {
 	return *r
 }
 
-func (p *CustomServiceProvider) Deploy(filePath string, builder func(req *CustomServiceDeployRequest)) (*CustomServiceDeployResult, error) {
+func (p *CustomServiceProvider) Deploy(filePath string, builder func(req *CustomServiceDeployRequest) error) (*CustomServiceDeployResult, error) {
 	request := &CustomServiceDeployRequest{
 		filePath: filePath,
 		headers:  map[string][]string{},
 		queries:  map[string][]string{},
 	}
 
-	builder(request)
-
-	customServiceLogger.Debug().Msgf("the request has been built: %v", *request)
+	if err := builder(request); err != nil {
+		return nil, errors.Wrapf(err, "could not build the request")
+	} else {
+		customServiceLogger.Debug().Msgf("the request has been built: %v", *request)
+	}
 
 	if r, err := p.upload(request.NewUploadRequest()); err != nil {
 		return nil, err

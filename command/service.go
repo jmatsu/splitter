@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/service"
 	"github.com/jmatsu/splitter/task"
@@ -34,7 +35,10 @@ func CustomService(name string, aliases []string) *cli.Command {
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:     "name",
+				Name: "name",
+				Aliases: []string{
+					"n",
+				},
 				Usage:    "A service name in the config file.",
 				Required: true,
 			},
@@ -65,29 +69,40 @@ func CustomService(name string, aliases []string) *cli.Command {
 				return errors.Wrapf(err, "cannot get a definition")
 			}
 
-			return task.DeployToCustomService(context.Context, def, conf, context.String("source-path"), func(req *service.CustomServiceDeployRequest) {
+			return task.DeployToCustomService(context.Context, def, conf, context.String("source-path"), func(req *service.CustomServiceDeployRequest) error {
 				if headers := context.StringSlice("header"); context.IsSet("header") {
 					for _, header := range headers {
-						name, value, _ := strings.Cut(header, "=")
-						req.SetHeader(name, value)
+						if name, value, ok := strings.Cut(header, "="); ok {
+							req.SetHeader(name, value)
+						} else {
+							return errors.New(fmt.Sprintf("--header %s must follow <name>=<value> format", header))
+						}
 					}
 				}
 				if params := context.StringSlice("query-param"); context.IsSet("query-param") {
 					for _, param := range params {
-						name, value, _ := strings.Cut(param, "=")
-						if req.HasQueryParam(name) {
-							req.AddQueryParam(name, value)
+						if name, value, ok := strings.Cut(param, "="); ok {
+							if req.HasQueryParam(name) {
+								req.AddQueryParam(name, value)
+							} else {
+								req.SetQueryParam(name, value)
+							}
 						} else {
-							req.SetQueryParam(name, value)
+							return errors.New(fmt.Sprintf("--query-param %s must follow <name>=<value> format", param))
 						}
 					}
 				}
 				if params := context.StringSlice("form-param"); context.IsSet("form-param") {
 					for _, param := range params {
-						name, value, _ := strings.Cut(param, "=")
-						req.SetFormParam(name, value)
+						if name, value, ok := strings.Cut(param, "="); ok {
+							req.SetFormParam(name, value)
+						} else {
+							return errors.New(fmt.Sprintf("--form-param %s must follow <name>=<value> format", param))
+						}
 					}
 				}
+
+				return nil
 			})
 		},
 	}
