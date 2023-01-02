@@ -27,21 +27,11 @@ var _ net.TypedHttpResponse = &CustomServiceUploadResponse{}
 
 func (p *CustomServiceProvider) upload(request *CustomServiceUploadAppRequest) (*CustomServiceUploadResponse, error) {
 	for name, value := range p.DefaultRequestDefinition.Headers {
-		if _, found := request.headers[name]; found {
-			request.headers[name] = append(request.headers[name], value)
-		} else {
-			request.headers[name] = []string{value}
-		}
+		request.headers[name] = append(request.headers[name], value)
 	}
 
 	for name, values := range p.DefaultRequestDefinition.Queries {
-		for _, value := range values {
-			if _, found := request.queries[name]; found {
-				request.queries[name] = append(request.queries[name], value)
-			} else {
-				request.queries[name] = []string{value}
-			}
-		}
+		request.queries[name] = append(request.queries[name], values...)
 	}
 
 	for name, value := range p.DefaultRequestDefinition.FormParams {

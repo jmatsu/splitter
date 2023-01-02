@@ -176,6 +176,8 @@ func (c *GlobalConfig) configure() error {
 			return errors.Wrapf(err, "cannot load %s service definition", name)
 		} else if err := yaml.Unmarshal(bytes, &definition); err != nil {
 			return errors.Wrapf(err, "cannot load %s service definition", name)
+		} else if err := definition.validate(); err != nil {
+			return errors.Wrapf(err, "%s service definition is invalid", name)
 		}
 
 		c.services[name] = definition
