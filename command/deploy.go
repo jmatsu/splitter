@@ -62,11 +62,13 @@ func Deploy(name string, aliases []string) *cli.Command {
 				case config.DeploygateService:
 					dg := d.ServiceConfig.(config.DeployGateConfig)
 
-					return task.DeployToDeployGate(context.Context, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) {
+					return task.DeployToDeployGate(context.Context, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) error {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetMessage(v)
 							req.SetDistributionReleaseNote(v)
 						}
+
+						return nil
 					})
 				case config.LocalService:
 					lo := d.ServiceConfig.(config.LocalConfig)
@@ -75,10 +77,12 @@ func Deploy(name string, aliases []string) *cli.Command {
 				case config.FirebaseAppDistributionService:
 					fad := d.ServiceConfig.(config.FirebaseAppDistributionConfig)
 
-					return task.DeployToFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) {
+					return task.DeployToFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) error {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetReleaseNote(v)
 						}
+
+						return nil
 					})
 				default:
 					return errors.New(fmt.Sprintf("%s is not implemented yet", d.ServiceName))

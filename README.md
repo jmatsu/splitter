@@ -17,7 +17,23 @@ splitter deploy -f path/to/aab -n design-review
 
 ## Install
 
-Download the latest binary from GitHub Release.
+Please download the latest binary from GitHub Release. The following code may be useful.
+
+```shell
+version=<latest version>
+
+# for windows
+curl -sL -o "splitter.zip" \
+    "https://github.com/jmatsu/splitter/releases/download/$version/splitter_$(uname -s)_$(uname -m).zip"
+unzip splitter.zip
+./spliter -h
+
+# for linux or macOS
+curl -sL -o "splitter.tar" \
+    "https://github.com/jmatsu/splitter/releases/download/$version/splitter_$(uname -s)_$(uname -m).tar.gz"
+tar -xf splitter.tar
+./spliter -h
+```
 
 ## Configuration-based deployment
 
@@ -34,6 +50,8 @@ OPTIONS:
 ```
 
 ### Syntax
+
+Please check [splitter.document.yml](splitter.document.yml) and [examples/splitter.yml](examples/splitter.yml) as well.
 
 ### DeployGate configuration
 
@@ -60,6 +78,14 @@ https://github.com/jmatsu/splitter/blob/main/internal/config/firebase_app_distri
 - `destination-path`
 
 https://github.com/jmatsu/splitter/blob/main/internal/config/local_config.go
+
+#### Custom service configuration
+
+**Required**
+
+- `auth-token`
+
+https://github.com/jmatsu/splitter/blob/main/internal/config/custom_service_config.go
 
 ### Pre-/Post-Steps
 
@@ -129,6 +155,23 @@ OPTIONS:
    --delete-source                     Specify true if you would not like to keep the source file. (default: false)
    --overwrite                         Specify true if you allow to overwrite the existing destination file. (default: false)
    --file-mode value                   The final file permission of the destination path. (default: Same to the source)
+```
+
+### Custom Service
+
+`service` command does this. You can distribute your apps to the defined service in the config file.
+
+```text
+USAGE:
+   splitter service [command options] [arguments...]
+
+OPTIONS:
+   --source-path value, -f value                A path to an app file.
+   --auth-token value, -t value                 The auth token to use for this distribution.
+   --name value, -n value                       A service name in the config file.
+   --header value [ --header value ]            Append <key>=<value> to headers
+   --query-param value [ --query-param value ]  Append <key>=<value> to query parameters
+   --form-param value [ --form-param value ]    Append <key>=<value> to form parameters
 ```
 
 ## About the supported services 
