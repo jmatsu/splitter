@@ -53,29 +53,29 @@ func Deploy(name string, aliases []string) *cli.Command {
 				return err
 			}
 
-			executor := task.NewExecutor(nil, context.Context, d.Lifecycle)
+			executor := task.NewExecutor(nil, context.Context, &d.Lifecycle)
 
 			return executor.Execute(func() error {
 				sourceFilePath := context.String("source-path")
 
 				switch d.ServiceName {
 				case config.DeploygateService:
-					dg := d.ServiceConfig.(*config.DeployGateConfig)
+					dg := d.ServiceConfig.(config.DeployGateConfig)
 
-					return task.DeployToDeployGate(context.Context, *dg, sourceFilePath, func(req *service.DeployGateDeployRequest) {
+					return task.DeployToDeployGate(context.Context, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetMessage(v)
 							req.SetDistributionReleaseNote(v)
 						}
 					})
 				case config.LocalService:
-					lo := d.ServiceConfig.(*config.LocalConfig)
+					lo := d.ServiceConfig.(config.LocalConfig)
 
-					return task.DeployToLocal(context.Context, *lo, sourceFilePath)
+					return task.DeployToLocal(context.Context, lo, sourceFilePath)
 				case config.FirebaseAppDistributionService:
-					fad := d.ServiceConfig.(*config.FirebaseAppDistributionConfig)
+					fad := d.ServiceConfig.(config.FirebaseAppDistributionConfig)
 
-					return task.DeployToFirebaseAppDistribution(context.Context, *fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) {
+					return task.DeployToFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) {
 						if v := context.String("release-note"); context.IsSet("release-note") {
 							req.SetReleaseNote(v)
 						}

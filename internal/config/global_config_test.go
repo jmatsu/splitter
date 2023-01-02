@@ -67,7 +67,7 @@ func Test_Config_configure(t *testing.T) {
 					NetworkTimeout: DefaultNetworkTimeout,
 					WaitTimeout:    DefaultWaitTimeout,
 				},
-				deployments: map[string]*Deployment{
+				deployments: map[string]Deployment{
 					"def1": {
 						ServiceName: DeploygateService,
 						ServiceConfig: DeployGateConfig{
@@ -111,7 +111,7 @@ func Test_Config_configure(t *testing.T) {
 					NetworkTimeout: DefaultNetworkTimeout,
 					WaitTimeout:    DefaultWaitTimeout,
 				},
-				deployments: map[string]*Deployment{
+				deployments: map[string]Deployment{
 					"def1": {
 						ServiceName:   DeploygateService,
 						ServiceConfig: DeployGateConfig{},
