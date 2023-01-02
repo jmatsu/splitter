@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/internal/net"
+	"github.com/jmatsu/splitter/internal/util"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"strings"
 )
 
 var customServiceLogger zerolog.Logger
@@ -18,14 +17,13 @@ func init() {
 }
 
 func NewCustomServiceProvider(ctx context.Context, definition *config.CustomServiceDefinition, conf *config.CustomServiceConfig) *CustomServiceProvider {
-	scheme, t, _ := strings.Cut(definition.Endpoint, "://")
-	hostname, path, _ := strings.Cut(t, "/")
+	baseUrl, path := util.CutEndpoint(definition.Endpoint)
 
 	return &CustomServiceProvider{
 		CustomServiceConfig:     *conf,
 		CustomServiceDefinition: *definition,
 		ctx:                     ctx,
-		client:                  net.NewHttpClient(fmt.Sprintf("%s://%s", scheme, hostname)),
+		client:                  net.NewHttpClient(baseUrl),
 		path:                    path,
 	}
 }
