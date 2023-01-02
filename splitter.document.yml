@@ -62,6 +62,24 @@ deployments: # Array<Map>
         # Optional
         delete-source: bool
 
+    use-custom-service:
+        # set a name defined in services section
+        service: <custom-service-name>
+
+        # An auth token of this service
+        # Required
+        auth-token: string
+
+    any-services: # the following parameters are available for all services
+        # command calls will be executed before the deployment
+        # Optional
+        pre-steps: # [][]string
+            - ["cmd", "arg1", ..., "argN"]
+        # command calls will be executed after the successful deployment
+        # Optional
+        post-steps: # [][]string
+            - ["cmd", "arg1", ..., "argN"]
+
 # Define unsupported services as custom services.
 # This section cannot use variable expansion.
 # Optional
