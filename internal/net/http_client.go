@@ -163,8 +163,10 @@ func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]
 	for name, values := range queries {
 		for _, value := range values {
 			if q.Has(name) {
+				logger.Logger.Debug().Msgf("add %s to query params", name)
 				q.Add(name, value)
 			} else {
+				logger.Logger.Debug().Msgf("set %s to query params", name)
 				q.Set(name, value)
 			}
 		}
@@ -181,11 +183,31 @@ func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]
 	}
 
 	for name, values := range c.headers {
-		request.Header.Set(name, strings.Join(values, ","))
+		var added bool
+
+		for _, value := range values {
+			if added {
+				logger.Logger.Debug().Msgf("add %s header", name)
+				request.Header.Add(name, value)
+			} else {
+				logger.Logger.Debug().Msgf("set %s header", name)
+				added = true
+				request.Header.Set(name, value)
+			}
+		}
 	}
 
 	if contentType != "" {
-		request.Header.Set("Content-Type", contentType)
+		if values := request.Header.Values("Content-Type"); len(values) > 0 {
+			if strings.HasPrefix(contentType, "multipart/form-data") {
+				logger.Logger.Warn().Msg("Content-Type: multipart/form-data... takes a priority")
+				request.Header.Set("Content-Type", contentType)
+			} else {
+				logger.Logger.Warn().Msgf("Content-Type: %s is ignored because the header is already filled", contentType)
+			}
+		} else {
+			request.Header.Set("Content-Type", contentType)
+		}
 	}
 
 	resp, err := c.client.Do(request)

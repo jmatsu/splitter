@@ -141,6 +141,10 @@ func (c *GlobalConfig) configure() error {
 		c.deployments = map[string]Deployment{}
 	}
 
+	if c.services == nil {
+		c.services = map[string]CustomServiceDefinition{}
+	}
+
 	if c.rawConfig.FormatStyle == "" {
 		c.rawConfig.FormatStyle = DefaultFormat
 	}
@@ -356,6 +360,12 @@ func (c *GlobalConfig) Deployment(name string) (Deployment, error) {
 			}
 		case LocalService:
 			config := d.ServiceConfig.(*LocalConfig)
+
+			if err := evaluateAndValidate(config); err != nil {
+				return Deployment{}, err
+			}
+		default:
+			config := d.ServiceConfig.(*CustomServiceConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
 				return Deployment{}, err

@@ -22,3 +22,14 @@ deployments:
     delete-source: false
     post-steps:
       - ['./notify-to-slack', '--text', 'We put a new apk to the shared drive.', '--channel', 'Cxyz123']
+
+services:
+  localhost:
+    endpoint: "http://localhost:3000/users/developer/apps"
+    source-file-format: "form_params.file"
+    auth:
+      style-format: "headers.Authorization"
+      value-format: "Bearer %s"
+    default:
+      form-params:
+        message: "splitter test"

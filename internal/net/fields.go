@@ -110,12 +110,14 @@ func (f *Form) Serialize() (string, *bytes.Buffer, error) {
 
 			switch field.Kind {
 			case File:
+				logger.Logger.Debug().Msgf("serialize %s as file in from", name)
 				if fw, err := w.CreateFormFile(name, filepath.Base(field.Value)); err != nil {
 					return err
 				} else if _, err = io.Copy(fw, reader); err != nil {
 					return err
 				}
 			case NonFile:
+				logger.Logger.Debug().Msgf("serialize %s as string in from", name)
 				if fw, err := w.CreateFormField(name); err != nil {
 					return err
 				} else if _, err = io.Copy(fw, reader); err != nil {

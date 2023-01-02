@@ -75,7 +75,11 @@ func CustomService(name string, aliases []string) *cli.Command {
 				if params := context.StringSlice("query-param"); context.IsSet("query-param") {
 					for _, param := range params {
 						name, value, _ := strings.Cut(param, "=")
-						req.SetQueryParam(name, value)
+						if req.HasQueryParam(name) {
+							req.AddQueryParam(name, value)
+						} else {
+							req.SetQueryParam(name, value)
+						}
 					}
 				}
 				if params := context.StringSlice("form-param"); context.IsSet("form-param") {

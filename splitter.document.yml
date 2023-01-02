@@ -1,3 +1,5 @@
+# Define configurations that you often reuse in this section
+# Optional
 deployments: # Array<Map>
     # each Mapping must have service key
 
@@ -59,6 +61,45 @@ deployments: # Array<Map>
         # Specify true if you would like to delete the source file later and the behavior looks *move* then.
         # Optional
         delete-source: bool
+
+# Define unsupported services as custom services.
+# This section cannot use variable expansion.
+# Optional
+services: # Array<Map>
+    <custom-service-name>:
+        # the endpoint. e.g. https://..../path/to/endpoint
+        # Required
+        endpoint: string
+
+        # specify how splitter set a source file to
+        # Required
+        #
+        # form_params.<name> : a form request that uses <name> field to upload a source file
+        # request_body : set a source file as binary
+        source-file-format: enum string
+
+        # specify how splitter set a token to
+        # Required
+        auth:
+            # form_params.<name> : a form request that uses <name> field for a token
+            # query_params.<name> : set a named param for a token
+            # headers.<name> : set a named header for a token
+            style-format: "headers.Authorization"
+
+            # the value format of tokens
+            # this value must include exact one %s
+            value-format: "Bearer %s"
+
+        # default values of requests
+        default:
+            headers: # map[string]string
+                <header_name>: header_value
+            form-params: # map[string]string
+                <field_name>: field_value
+            queries: # map[string][]string
+                <query_param>:
+                    - value1
+                    - value2
 
 # The output format (Values: pretty, raw, markdown)
 format-style: enum string

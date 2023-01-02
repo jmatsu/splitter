@@ -49,6 +49,11 @@ func (r *CustomServiceDeployRequest) SetHeader(name string, value string) {
 	r.headers[name] = []string{value}
 }
 
+func (r *CustomServiceDeployRequest) HasQueryParam(name string) bool {
+	_, found := r.queries[name]
+	return found
+}
+
 func (r *CustomServiceDeployRequest) SetQueryParam(name string, value string) {
 	r.queries[name] = []string{value}
 }
@@ -88,6 +93,8 @@ func (r *CustomServiceDeployResult) ValueResponse() any {
 func (p *CustomServiceProvider) Deploy(filePath string, builder func(req *CustomServiceDeployRequest)) (*CustomServiceDeployResult, error) {
 	request := &CustomServiceDeployRequest{
 		filePath: filePath,
+		headers:  map[string][]string{},
+		queries:  map[string][]string{},
 	}
 
 	builder(request)

@@ -15,13 +15,13 @@ const (
 	RequestBodyAssignFormat      valueAssignFormat = "request_body"
 	FormParamsAssignFormatPrefix valueAssignFormat = "form_params."
 	HeadersAssignFormatPrefix    valueAssignFormat = "headers."
-	QueryAssignFormatPrefix      valueAssignFormat = "query."
+	QueryAssignFormatPrefix      valueAssignFormat = "query_params."
 )
 
 type CustomServiceDefinition struct {
-	Endpoint                 string                   `yaml:"endpoint"`
-	SourceFileFormat         valueAssignFormat        `yaml:"source-file-format"`
-	AuthDefinition           CustomAuthDefinition     `yaml:"auth"`
+	Endpoint                 string                   `yaml:"endpoint" required:"true"`
+	SourceFileFormat         valueAssignFormat        `yaml:"source-file-format" required:"true"`
+	AuthDefinition           CustomAuthDefinition     `yaml:"auth" required:"true"`
 	DefaultRequestDefinition DefaultRequestDefinition `yaml:"default,omitempty"`
 }
 
@@ -117,9 +117,9 @@ func (d *CustomAuthDefinition) AuthValue() (string, string, error) {
 }
 
 type DefaultRequestDefinition struct {
-	Headers    map[string]string `yaml:"headers,omitempty"`
-	Query      map[string]string `yaml:"query,omitempty"`
-	FormParams map[string]string `yaml:"form-params,omitempty"`
+	Headers    map[string]string   `yaml:"headers,omitempty"`
+	Queries    map[string][]string `yaml:"queries,omitempty"`
+	FormParams map[string]string   `yaml:"form-params,omitempty"`
 }
 
 func (d *DefaultRequestDefinition) validate() error {
@@ -127,7 +127,7 @@ func (d *DefaultRequestDefinition) validate() error {
 		return errors.New("headers has at least one empty key")
 	}
 
-	if slices.Contains(maps.Keys(d.Query), "") {
+	if slices.Contains(maps.Keys(d.Queries), "") {
 		return errors.New("query has at least one empty key")
 	}
 
