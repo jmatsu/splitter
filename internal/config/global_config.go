@@ -343,38 +343,44 @@ func (c *GlobalConfig) Definition(name string) (CustomServiceDefinition, error) 
 	}
 }
 
-func (c *GlobalConfig) Deployment(name string) (Deployment, error) {
+func (c *GlobalConfig) Deployment(name string) (Deployment, CustomServiceDefinition, error) {
+	var definition CustomServiceDefinition
+
 	if d, ok := c.deployments[name]; ok {
 		switch d.ServiceName {
 		case DeploygateService:
 			config := d.ServiceConfig.(*DeployGateConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, err
+				return Deployment{}, definition, err
 			}
 		case FirebaseAppDistributionService:
 			config := d.ServiceConfig.(*FirebaseAppDistributionConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, err
+				return Deployment{}, definition, err
 			}
 		case LocalService:
 			config := d.ServiceConfig.(*LocalConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, err
+				return Deployment{}, definition, err
 			}
 		default:
 			config := d.ServiceConfig.(*CustomServiceConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, err
+				return Deployment{}, definition, err
+			} else if v, err := c.Definition(config.Name); err != nil {
+				return Deployment{}, definition, err
+			} else {
+				definition = v
 			}
 		}
 
-		return d, nil
+		return d, definition, nil
 	} else {
-		return Deployment{}, errors.New(fmt.Sprintf("%s deployment is not found", name))
+		return Deployment{}, definition, errors.New(fmt.Sprintf("%s deployment is not found", name))
 	}
 }
 

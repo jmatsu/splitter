@@ -1,12 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/service"
 	"github.com/jmatsu/splitter/task"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
 
@@ -47,20 +45,20 @@ func Deploy(name string, aliases []string) *cli.Command {
 
 			logger.Logger.Info().Msgf("Loading %s config...", name)
 
-			d, err := config.CurrentConfig().Deployment(name)
+			deployment, definition, err := config.CurrentConfig().Deployment(name)
 
 			if err != nil {
 				return err
 			}
 
-			executor := task.NewExecutor(nil, context.Context, &d.Lifecycle)
+			executor := task.NewExecutor(nil, context.Context, &deployment.Lifecycle)
 
 			return executor.Execute(func() error {
 				sourceFilePath := context.String("source-path")
 
-				switch d.ServiceName {
+				switch deployment.ServiceName {
 				case config.DeploygateService:
-					dg := d.ServiceConfig.(config.DeployGateConfig)
+					dg := deployment.ServiceConfig.(config.DeployGateConfig)
 
 					return task.DeployToDeployGate(context.Context, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) error {
 						if v := context.String("release-note"); context.IsSet("release-note") {
@@ -71,11 +69,11 @@ func Deploy(name string, aliases []string) *cli.Command {
 						return nil
 					})
 				case config.LocalService:
-					lo := d.ServiceConfig.(config.LocalConfig)
+					lo := deployment.ServiceConfig.(config.LocalConfig)
 
 					return task.DeployToLocal(context.Context, lo, sourceFilePath)
 				case config.FirebaseAppDistributionService:
-					fad := d.ServiceConfig.(config.FirebaseAppDistributionConfig)
+					fad := deployment.ServiceConfig.(config.FirebaseAppDistributionConfig)
 
 					return task.DeployToFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) error {
 						if v := context.String("release-note"); context.IsSet("release-note") {
@@ -85,7 +83,11 @@ func Deploy(name string, aliases []string) *cli.Command {
 						return nil
 					})
 				default:
-					return errors.New(fmt.Sprintf("%s is not implemented yet", d.ServiceName))
+					custom := deployment.ServiceConfig.(config.CustomServiceConfig)
+
+					return task.DeployToCustomService(context.Context, definition, custom, sourceFilePath, func(req *service.CustomServiceDeployRequest) error {
+						return nil
+					})
 				}
 			})
 		},
