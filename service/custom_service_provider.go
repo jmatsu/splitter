@@ -41,7 +41,7 @@ type CustomServiceDeployRequest struct {
 	filePath string
 
 	headers map[string][]string
-	query   map[string]string
+	queries map[string][]string
 	form    net.Form
 }
 
@@ -50,7 +50,11 @@ func (r *CustomServiceDeployRequest) SetHeader(name string, value string) {
 }
 
 func (r *CustomServiceDeployRequest) SetQueryParam(name string, value string) {
-	r.query[name] = value
+	r.queries[name] = []string{value}
+}
+
+func (r *CustomServiceDeployRequest) AddQueryParam(name string, value string) {
+	r.queries[name] = append(r.queries[name], value)
 }
 
 func (r *CustomServiceDeployRequest) SetFormParam(name string, value string) {
@@ -62,7 +66,7 @@ func (r *CustomServiceDeployRequest) NewUploadRequest() *CustomServiceUploadAppR
 		filePath: r.filePath,
 
 		headers: r.headers,
-		queries: r.query,
+		queries: r.queries,
 		form:    r.form,
 	}
 }
@@ -88,7 +92,7 @@ func (p *CustomServiceProvider) Deploy(filePath string, builder func(req *Custom
 
 	builder(request)
 
-	deployGateLogger.Debug().Msgf("the request has been built: %v", *request)
+	customServiceLogger.Debug().Msgf("the request has been built: %v", *request)
 
 	if r, err := p.upload(request.NewUploadRequest()); err != nil {
 		return nil, err

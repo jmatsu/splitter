@@ -103,11 +103,11 @@ func (c *HttpClient) setDefaultHeaders(headers http.Header) {
 	maps.Copy(c.headers, headers)
 }
 
-func (c *HttpClient) DoGet(ctx context.Context, paths []string, queries map[string]string) (*HttpResponse, error) {
+func (c *HttpClient) DoGet(ctx context.Context, paths []string, queries map[string][]string) (*HttpResponse, error) {
 	return c.do(ctx, paths, queries, http.MethodGet, "", nil)
 }
 
-func (c *HttpClient) DoPut(ctx context.Context, paths []string, queries map[string]string, contentType string, requestBody *bytes.Buffer) (*HttpResponse, error) {
+func (c *HttpClient) DoPut(ctx context.Context, paths []string, queries map[string][]string, contentType string, requestBody *bytes.Buffer) (*HttpResponse, error) {
 	if requestBody != nil {
 		return c.do(ctx, paths, queries, http.MethodPut, contentType, requestBody)
 	} else {
@@ -115,7 +115,7 @@ func (c *HttpClient) DoPut(ctx context.Context, paths []string, queries map[stri
 	}
 }
 
-func (c *HttpClient) DoPatch(ctx context.Context, paths []string, queries map[string]string, contentType string, requestBody *bytes.Buffer) (*HttpResponse, error) {
+func (c *HttpClient) DoPatch(ctx context.Context, paths []string, queries map[string][]string, contentType string, requestBody *bytes.Buffer) (*HttpResponse, error) {
 	if requestBody != nil {
 		return c.do(ctx, paths, queries, http.MethodPatch, contentType, requestBody)
 	} else {
@@ -123,7 +123,7 @@ func (c *HttpClient) DoPatch(ctx context.Context, paths []string, queries map[st
 	}
 }
 
-func (c *HttpClient) DoPost(ctx context.Context, paths []string, queries map[string]string, contentType string, requestBody *bytes.Buffer) (*HttpResponse, error) {
+func (c *HttpClient) DoPost(ctx context.Context, paths []string, queries map[string][]string, contentType string, requestBody *bytes.Buffer) (*HttpResponse, error) {
 	if requestBody != nil {
 		return c.do(ctx, paths, queries, http.MethodPost, contentType, requestBody)
 	} else {
@@ -131,7 +131,7 @@ func (c *HttpClient) DoPost(ctx context.Context, paths []string, queries map[str
 	}
 }
 
-func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, queries map[string]string, filePath string) (*HttpResponse, error) {
+func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, queries map[string][]string, filePath string) (*HttpResponse, error) {
 	if f, err := os.Open(filePath); err != nil {
 		return nil, errors.Wrapf(err, "%s is not found", filePath)
 	} else if b, err := io.ReadAll(f); err != nil {
@@ -142,7 +142,7 @@ func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, queries
 	}
 }
 
-func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, queries map[string]string, form *Form) (*HttpResponse, error) {
+func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, queries map[string][]string, form *Form) (*HttpResponse, error) {
 	contentType, buffer, err := form.Serialize()
 
 	if err != nil {
@@ -152,16 +152,22 @@ func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, qu
 	return c.DoPost(ctx, paths, queries, contentType, buffer)
 }
 
-func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]string, method string, contentType string, requestBody io.Reader) (*HttpResponse, error) {
+func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string][]string, method string, contentType string, requestBody io.Reader) (*HttpResponse, error) {
 	if queries == nil {
-		queries = map[string]string{}
+		queries = map[string][]string{}
 	}
 
 	uri := c.baseURL.JoinPath(paths...)
 	q := uri.Query()
 
-	for name, value := range queries {
-		q.Set(name, value)
+	for name, values := range queries {
+		for _, value := range values {
+			if q.Has(name) {
+				q.Add(name, value)
+			} else {
+				q.Set(name, value)
+			}
+		}
 	}
 
 	uri.RawQuery = q.Encode()

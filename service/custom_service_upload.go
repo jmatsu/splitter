@@ -11,7 +11,7 @@ type CustomServiceUploadAppRequest struct {
 	filePath string
 
 	headers map[string][]string
-	queries map[string]string
+	queries map[string][]string
 	form    net.Form
 }
 
@@ -37,7 +37,7 @@ func (p *CustomServiceProvider) upload(request *CustomServiceUploadAppRequest) (
 		case config.FormParamsAssignFormatPrefix:
 			request.form.Set(net.StringField(name, authToken))
 		case config.QueryAssignFormatPrefix:
-			request.queries[name] = authToken
+			request.queries[name] = []string{authToken}
 		default:
 			panic(fmt.Sprintf("%s is not implemented yet", prefix))
 		}
