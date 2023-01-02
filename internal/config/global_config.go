@@ -27,7 +27,8 @@ const (
 
 	DefaultConfigName = "splitter.yml"
 
-	deploymentsKey = "deployments" // deployment definitions' key in the config file.
+	deploymentsKey        = "deployments" // deployment definitions' key in the config file.
+	serviceDefinitionsKey = "services"    // service definitions' key in the config file.
 
 	DeploygateService              = "deploygate"                // represents DeployGateConfig
 	LocalService                   = "local"                     // represents LocalConfig
@@ -41,11 +42,13 @@ func ToEnvName(name string) string {
 // GlobalConfig is a shared configuration in one command execution.
 type GlobalConfig struct {
 	rawConfig   rawConfig
-	deployments map[string]*Deployment
+	deployments map[string]Deployment
+	services    map[string]CustomServiceDefinition
 }
 
 type rawConfig struct {
 	Deployments    map[string]interface{} `yaml:"deployments"`
+	Services       map[string]interface{} `yaml:"services"`
 	FormatStyle    string                 `yaml:"format-style,omitempty"`
 	NetworkTimeout string                 `yaml:"network-timeout,omitempty"`
 	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
@@ -55,7 +58,7 @@ type rawConfig struct {
 type Deployment struct {
 	ServiceName   string
 	ServiceConfig any // See serviceConfig interface
-	Lifecycle     *ExecutionConfig
+	Lifecycle     ExecutionConfig
 }
 
 type FormatStyle = string
@@ -120,6 +123,7 @@ func LoadGlobalConfig(path *string) error {
 
 	config.rawConfig = rawConfig{
 		Deployments:    viper.GetStringMap(deploymentsKey),
+		Services:       viper.GetStringMap(serviceDefinitionsKey),
 		FormatStyle:    viper.GetString("format-style"),
 		WaitTimeout:    viper.GetString("wait-timeout"),
 		NetworkTimeout: viper.GetString("network-timeout"),
@@ -134,7 +138,11 @@ func LoadGlobalConfig(path *string) error {
 
 func (c *GlobalConfig) configure() error {
 	if c.deployments == nil {
-		c.deployments = map[string]*Deployment{}
+		c.deployments = map[string]Deployment{}
+	}
+
+	if c.services == nil {
+		c.services = map[string]CustomServiceDefinition{}
 	}
 
 	if c.rawConfig.FormatStyle == "" {
@@ -149,8 +157,34 @@ func (c *GlobalConfig) configure() error {
 		c.rawConfig.WaitTimeout = DefaultWaitTimeout
 	}
 
+	for name, values := range c.rawConfig.Services {
+		logger.Logger.Debug().Msgf("Configuring the service of %s", name)
+
+		values, correct := values.(map[string]interface{})
+
+		if !correct {
+			return errors.New(fmt.Sprintf("%s must be Mapping", name))
+		}
+
+		if slices.Contains([]string{DeploygateService, FirebaseAppDistributionService, LocalService}, name) {
+			return errors.New(fmt.Sprintf("%s is a reserved name", name))
+		}
+
+		var definition CustomServiceDefinition
+
+		if bytes, err := yaml.Marshal(values); err != nil {
+			return errors.Wrapf(err, "cannot load %s service definition", name)
+		} else if err := yaml.Unmarshal(bytes, &definition); err != nil {
+			return errors.Wrapf(err, "cannot load %s service definition", name)
+		} else if err := definition.validate(); err != nil {
+			return errors.Wrapf(err, "%s service definition is invalid", name)
+		}
+
+		c.services[name] = definition
+	}
+
 	for name, values := range c.rawConfig.Deployments {
-		logger.Logger.Debug().Msgf("Configuring %s", name)
+		logger.Logger.Debug().Msgf("Configuring the deployment of %s", name)
 
 		values, correct := values.(map[string]interface{})
 
@@ -174,10 +208,10 @@ func (c *GlobalConfig) configure() error {
 				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
-			c.deployments[name] = &Deployment{
+			c.deployments[name] = Deployment{
 				ServiceName:   deploygate.Name,
-				ServiceConfig: &deploygate,
-				Lifecycle:     &deploygate.ExecutionConfig,
+				ServiceConfig: deploygate,
+				Lifecycle:     deploygate.ExecutionConfig,
 			}
 		case FirebaseAppDistributionService:
 			firebase := FirebaseAppDistributionConfig{}
@@ -186,10 +220,10 @@ func (c *GlobalConfig) configure() error {
 				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
-			c.deployments[name] = &Deployment{
+			c.deployments[name] = Deployment{
 				ServiceName:   firebase.Name,
-				ServiceConfig: &firebase,
-				Lifecycle:     &firebase.ExecutionConfig,
+				ServiceConfig: firebase,
+				Lifecycle:     firebase.ExecutionConfig,
 			}
 		case LocalService:
 			local := LocalConfig{}
@@ -198,13 +232,29 @@ func (c *GlobalConfig) configure() error {
 				return errors.Wrapf(err, "cannot load %s config", name)
 			}
 
-			c.deployments[name] = &Deployment{
+			c.deployments[name] = Deployment{
 				ServiceName:   local.Name,
-				ServiceConfig: &local,
-				Lifecycle:     &local.ExecutionConfig,
+				ServiceConfig: local,
+				Lifecycle:     local.ExecutionConfig,
 			}
 		default:
-			return errors.New(fmt.Sprintf("%s of %s is an unknown service", service.Name, name))
+			if _, ok := c.services[name]; ok {
+				logger.Logger.Debug().Msgf("%s is a custom service", name)
+
+				custom := CustomServiceConfig{}
+
+				if err := loadServiceConfig(&custom, values); err != nil {
+					return errors.Wrapf(err, "cannot load %s config", name)
+				}
+
+				c.deployments[name] = Deployment{
+					ServiceName:   name,
+					ServiceConfig: custom,
+					Lifecycle:     custom.ExecutionConfig,
+				}
+			} else {
+				return errors.New(fmt.Sprintf("%s of %s is an unknown service", service.Name, name))
+			}
 		}
 	}
 
@@ -287,40 +337,60 @@ func (c *GlobalConfig) Dump(path string) error {
 	return nil
 }
 
-func (c *GlobalConfig) Deployment(name string) (*Deployment, error) {
-	if d := c.deployments[name]; d != nil {
+func (c *GlobalConfig) Definition(name string) (CustomServiceDefinition, error) {
+	if s, ok := c.services[name]; ok {
+		return s, nil
+	} else {
+		return CustomServiceDefinition{}, errors.New(fmt.Sprintf("%s is not found in services", name))
+	}
+}
+
+func (c *GlobalConfig) Deployment(name string) (Deployment, CustomServiceDefinition, error) {
+	var definition CustomServiceDefinition
+
+	if d, ok := c.deployments[name]; ok {
 		switch d.ServiceName {
 		case DeploygateService:
 			config := d.ServiceConfig.(*DeployGateConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
-				return nil, err
+				return Deployment{}, definition, err
 			}
 		case FirebaseAppDistributionService:
 			config := d.ServiceConfig.(*FirebaseAppDistributionConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
-				return nil, err
+				return Deployment{}, definition, err
 			}
 		case LocalService:
 			config := d.ServiceConfig.(*LocalConfig)
 
 			if err := evaluateAndValidate(config); err != nil {
-				return nil, err
+				return Deployment{}, definition, err
+			}
+		default:
+			config := d.ServiceConfig.(*CustomServiceConfig)
+
+			if err := evaluateAndValidate(config); err != nil {
+				return Deployment{}, definition, err
+			} else if v, err := c.Definition(config.Name); err != nil {
+				return Deployment{}, definition, err
+			} else {
+				definition = v
 			}
 		}
 
-		return d, nil
+		return d, definition, nil
 	} else {
-		return nil, errors.New(fmt.Sprintf("%s deployment is not found", name))
+		return Deployment{}, definition, errors.New(fmt.Sprintf("%s deployment is not found", name))
 	}
 }
 
 func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
-	if d := c.deployments[name]; d != nil {
+	if d, ok := c.deployments[name]; ok {
 		return errors.New(fmt.Sprintf("%s (service = %s) already exists in the config.", name, d.ServiceName))
 	} else {
-		d = &Deployment{
+		d = Deployment{
 			ServiceName: serviceName,
 		}
 
@@ -362,4 +432,14 @@ func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
 
 		return c.configure()
 	}
+}
+
+func evaluateAndValidate(v any) error {
+	if err := evaluateValues(v); err != nil {
+		return err
+	} else if err := validateMissingValues(v); err != nil {
+		return err
+	}
+
+	return nil
 }

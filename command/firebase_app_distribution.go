@@ -72,7 +72,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				conf.GroupAliases = v
 			}
 
-			return task.DeployToFirebaseAppDistribution(context.Context, conf, context.String("source-path"), func(req *service.FirebaseAppDistributionDeployRequest) {
+			return task.DeployToFirebaseAppDistribution(context.Context, conf, context.String("source-path"), func(req *service.FirebaseAppDistributionDeployRequest) error {
 				if v := context.String("release-note"); context.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}
@@ -80,6 +80,8 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				if v := strings.Split(context.String("tester-emails"), ","); context.IsSet("tester-emails") && len(v) > 0 {
 					req.SetTesterEmails(v)
 				}
+
+				return nil
 			})
 		},
 	}

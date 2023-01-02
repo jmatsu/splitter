@@ -5,6 +5,7 @@ import (
 	"github.com/jmatsu/splitter/internal/config"
 	logger2 "github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/internal/net"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -80,14 +81,16 @@ func (r *DeployGateDeployResult) ValueResponse() any {
 	return *r
 }
 
-func (p *DeployGateProvider) Deploy(filePath string, builder func(req *DeployGateDeployRequest)) (*DeployGateDeployResult, error) {
+func (p *DeployGateProvider) Deploy(filePath string, builder func(req *DeployGateDeployRequest) error) (*DeployGateDeployResult, error) {
 	request := &DeployGateDeployRequest{
 		filePath: filePath,
 	}
 
-	builder(request)
-
-	deployGateLogger.Debug().Msgf("the request has been built: %v", *request)
+	if err := builder(request); err != nil {
+		return nil, errors.Wrapf(err, "could not build the request")
+	} else {
+		deployGateLogger.Debug().Msgf("the request has been built: %v", *request)
+	}
 
 	if r, err := p.upload(request.NewUploadRequest()); err != nil {
 		return nil, err

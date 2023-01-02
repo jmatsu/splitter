@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DeployToFirebaseAppDistribution(ctx context.Context, conf config.FirebaseAppDistributionConfig, filePath string, builder func(req *service.FirebaseAppDistributionDeployRequest)) error {
+func DeployToFirebaseAppDistribution(ctx context.Context, conf config.FirebaseAppDistributionConfig, filePath string, builder func(req *service.FirebaseAppDistributionDeployRequest) error) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}

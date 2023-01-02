@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func DeployToDeployGate(ctx context.Context, conf config.DeployGateConfig, filePath string, builder func(req *service.DeployGateDeployRequest)) error {
+func DeployToDeployGate(ctx context.Context, conf config.DeployGateConfig, filePath string, builder func(req *service.DeployGateDeployRequest) error) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}

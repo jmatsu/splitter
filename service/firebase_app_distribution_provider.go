@@ -99,12 +99,8 @@ func (p *FirebaseAppDistributionProvider) fetchToken() error {
 	return nil
 }
 
-func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(req *FirebaseAppDistributionDeployRequest)) (*FirebaseAppDistributionDeployResult, error) {
+func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(req *FirebaseAppDistributionDeployRequest) error) (*FirebaseAppDistributionDeployResult, error) {
 	firebaseAppDistributionLogger.Info().Msg("preparing to upload...")
-
-	if err := p.fetchToken(); err != nil {
-		return nil, errors.Wrap(err, "a valid token is required to make requests")
-	}
 
 	request := &FirebaseAppDistributionDeployRequest{
 		projectNumber: p.ProjectNumber(),
@@ -113,9 +109,15 @@ func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(r
 		groupAliases:  p.FirebaseAppDistributionConfig.GroupAliases,
 	}
 
-	builder(request)
+	if err := builder(request); err != nil {
+		return nil, errors.Wrapf(err, "could not build the request")
+	} else {
+		firebaseAppDistributionLogger.Debug().Msgf("the request has been built: %v", *request)
+	}
 
-	firebaseAppDistributionLogger.Debug().Msgf("the request has been built: %v", *request)
+	if err := p.fetchToken(); err != nil {
+		return nil, errors.Wrap(err, "a valid token is required to make requests")
+	}
 
 	var aabInfo *FirebaseAppDistributionAabInfoResponse
 

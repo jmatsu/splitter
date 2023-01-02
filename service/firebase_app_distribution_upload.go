@@ -36,7 +36,7 @@ func (p *FirebaseAppDistributionProvider) upload(request *FirebaseAppDistributio
 		"X-Goog-Upload-Protocol":  {"raw"},
 	})
 
-	resp, err := client.DoPostFileBody(p.ctx, []string{path}, request.filePath)
+	resp, err := client.DoPostFileBody(p.ctx, []string{path}, nil, request.filePath)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to distribute to Firebase App Distribution")

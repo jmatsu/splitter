@@ -77,8 +77,8 @@ func (p *FirebaseAppDistributionProvider) updateReleaseNote(request *firebaseApp
 		return nil, errors.Wrap(err, "cannot marshal the update release request")
 	}
 
-	resp, err := client.DoPatch(p.ctx, []string{path}, map[string]string{
-		"updateMask": "release_notes.text",
+	resp, err := client.DoPatch(p.ctx, []string{path}, map[string][]string{
+		"updateMask": {"release_notes.text"},
 	}, "application/json", bytes2.NewBuffer(bytes))
 
 	if err != nil {

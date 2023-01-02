@@ -289,7 +289,7 @@ func Test_HttpClient_DoPostMultipartForm(t *testing.T) {
 
 			var resp testResponse
 
-			if r, err := client.DoPostMultipartForm(ctx, c.paths, &c.form); err != nil {
+			if r, err := client.DoPostMultipartForm(ctx, c.paths, nil, &c.form); err != nil {
 				t.Errorf("%s is expected to be success but not: %v", name, err)
 			} else if _, err := r.ParseJson(&resp); err != nil {
 				t.Errorf("%s failed to parse the response: %v", name, err)
