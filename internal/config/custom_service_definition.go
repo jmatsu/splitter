@@ -49,6 +49,14 @@ func (d *CustomServiceDefinition) validate() error {
 		}
 	}
 
+	if err := d.AuthDefinition.validate(); err != nil {
+		return err
+	}
+
+	if err := d.DefaultRequestDefinition.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -69,8 +77,8 @@ func (d *CustomServiceDefinition) SourceFile() (string, string, error) {
 }
 
 type CustomAuthDefinition struct {
-	StyleFormat valueAssignFormat `yaml:"style-format"`
-	ValueFormat string            `yaml:"value-format"`
+	StyleFormat valueAssignFormat `yaml:"style-format" required:"true"`
+	ValueFormat string            `yaml:"value-format" required:"true"`
 }
 
 func (d *CustomAuthDefinition) validate() error {
