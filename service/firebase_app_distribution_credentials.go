@@ -5,7 +5,6 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"io"
 	"os"
 )
 
@@ -18,21 +17,11 @@ func FirebaseToken(ctx context.Context, credentialsPath string) (*oauth2.Token, 
 	var jsonContent string
 
 	if credentialsPath != "" {
-		f, err := os.Open(credentialsPath)
-
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to open %s", credentialsPath)
-		}
-
-		defer f.Close()
-
-		bytes, err := io.ReadAll(f)
-
-		if err != nil {
+		if bytes, err := os.ReadFile(credentialsPath); err != nil {
 			return nil, errors.Wrapf(err, "failed to read %s", credentialsPath)
+		} else {
+			jsonContent = string(bytes)
 		}
-
-		jsonContent = string(bytes)
 	}
 
 	if c, err := findGoogleCredentials(ctx, jsonContent); err != nil {

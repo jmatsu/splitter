@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+var SplitterVersion string
+
 func NewHttpClient(baseUrl string) *HttpClient {
 	baseURL, err := url.ParseRequestURI(baseUrl)
 
@@ -31,13 +33,17 @@ func NewHttpClient(baseUrl string) *HttpClient {
 		baseURL: *baseURL,
 		headers: http.Header{
 			"User-Agent": {
-				"splitter/", // TODO assign versions
+				UserAgent(),
 			},
 			"Accept": {
 				"application/json", // by default
 			},
 		},
 	}
+}
+
+func UserAgent() string {
+	return fmt.Sprintf("splitter/%s", SplitterVersion)
 }
 
 type HttpResponse struct {
@@ -132,9 +138,7 @@ func (c *HttpClient) DoPost(ctx context.Context, paths []string, queries map[str
 }
 
 func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, queries map[string][]string, filePath string) (*HttpResponse, error) {
-	if f, err := os.Open(filePath); err != nil {
-		return nil, errors.Wrapf(err, "%s is not found", filePath)
-	} else if b, err := io.ReadAll(f); err != nil {
+	if b, err := os.ReadFile(filePath); err != nil {
 		return nil, errors.Wrapf(err, "%s cannot be read", filePath)
 	} else {
 		buffer := bytes.NewBuffer(b)

@@ -5,6 +5,7 @@ import (
 	"github.com/jmatsu/splitter/command"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 	"os"
 	"time"
@@ -27,6 +28,8 @@ func init() {
 	if err != nil {
 		compiledAt = time.Now()
 	}
+
+	net.SplitterVersion = version
 }
 
 func main() {
