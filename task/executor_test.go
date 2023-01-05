@@ -209,7 +209,7 @@ func Test_Executor_Execute(t *testing.T) {
 				ExactOrder:    true,
 			}
 
-			executor := NewExecutor(sh, context.TODO(), c.conf)
+			executor := NewExecutor(context.TODO(), sh, c.conf)
 
 			result := executor.Execute(func() error {
 				return c.contentResult
