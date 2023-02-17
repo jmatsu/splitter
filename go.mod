@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/viper v1.15.0
-	github.com/urfave/cli/v2 v2.23.7
+	github.com/urfave/cli/v2 v2.24.3
 	golang.org/x/exp v0.0.0-20221229233502-02c3fc3b3eb4
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
 	gopkg.in/yaml.v3 v3.0.1
