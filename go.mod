@@ -6,7 +6,7 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.29.0
+	github.com/rs/zerolog v1.29.1
 	github.com/spf13/viper v1.15.0
 	github.com/urfave/cli/v2 v2.25.1
 	golang.org/x/exp v0.0.0-20221229233502-02c3fc3b3eb4
