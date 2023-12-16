@@ -35,7 +35,7 @@ jobs:
           distribution: goreleaser
           version: 1.14.0
           args: release --rm-dist --snapshot
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*
