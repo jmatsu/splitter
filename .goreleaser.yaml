@@ -12,9 +12,9 @@ builds:
     ldflags:
       - '-s'
       - '-w'
-      - '-X main.version={{.Version}}'
-      - '-X main.commit={{.ShortCommit}}'
-      - '-X "main.timestamp={{ time "2006-01-02 15:04:05" }}"'
+      - '-X internal.Version={{.Version}}'
+      - '-X internal.Commit={{.ShortCommit}}'
+      - '-X "internal.Timestamp={{ time "2006-01-02 15:04:05" }}"'
 
 archives:
   - format: tar.gz

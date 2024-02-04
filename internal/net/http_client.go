@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jmatsu/splitter/internal"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ func NewHttpClient(baseUrl string) *HttpClient {
 		baseURL: *baseURL,
 		headers: http.Header{
 			"User-Agent": {
-				"splitter/", // TODO assign versions
+				fmt.Sprintf("splitter/%s (build: %s)", internal.Version, internal.Commit),
 			},
 			"Accept": {
 				"application/json", // by default
