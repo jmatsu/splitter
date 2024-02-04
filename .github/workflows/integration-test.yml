@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
     inputs:
 
+  pull_request:
+
   push:
     branches:
       - main
@@ -13,6 +15,9 @@ env:
 
 jobs:
   deploygate:
+    if: >
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["jmatsu", "dependabot[bot]"]'), github.actor)
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +33,9 @@ jobs:
           --api-token "${{ secrets.DEPLOYGATE_API_TOKEN }}"
 
   firebase-app-distribution:
+    if: >
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["jmatsu", "dependabot[bot]"]'), github.actor)
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
