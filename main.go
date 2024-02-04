@@ -3,39 +3,21 @@ package main
 import (
 	"fmt"
 	"github.com/jmatsu/splitter/command"
+	"github.com/jmatsu/splitter/internal"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
-	"os"
-	"time"
-
 	"github.com/urfave/cli/v2"
+	"os"
 )
-
-var (
-	version    = "undefined"
-	commit     = "undefined"
-	timestamp  = "undefined"
-	compiledAt time.Time
-)
-
-func init() {
-	var err error
-
-	compiledAt, err = time.Parse("", timestamp)
-
-	if err != nil {
-		compiledAt = time.Now()
-	}
-}
 
 func main() {
 	app := &cli.App{
 		Name:      "splitter",
 		Usage:     "A command to deploy your apps to several mobile app distribution services.",
-		Version:   fmt.Sprintf("%s (git revision %s)", version, commit),
+		Version:   fmt.Sprintf("%s (git revision %s)", internal.Version, internal.Commit),
 		Copyright: "Jumpei Matsuda (@jmatsu)",
-		Compiled:  compiledAt,
+		Compiled:  internal.CompiledAt,
 		Flags: []cli.Flag{
 			&cli.PathFlag{
 				Name:     "config",
