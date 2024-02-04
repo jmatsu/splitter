@@ -24,7 +24,7 @@ jobs:
           startsWith( github.ref, 'refs/tags/v' )
         with:
           distribution: goreleaser
-          version: 1.14.0
+          version: 1.23.0
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,7 +33,7 @@ jobs:
           !startsWith( github.ref, 'refs/tags/v' )
         with:
           distribution: goreleaser
-          version: 1.14.0
+          version: 1.23.0
           args: release --rm-dist --snapshot
       - uses: actions/upload-artifact@v4
         with:

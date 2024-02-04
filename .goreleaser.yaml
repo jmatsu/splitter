@@ -1,7 +1,6 @@
 before:
   hooks:
     - go mod tidy
-#    - go generate ./...
 builds:
   - env:
       - CGO_ENABLED=0
@@ -12,9 +11,9 @@ builds:
     ldflags:
       - '-s'
       - '-w'
-      - '-X internal.Version={{.Version}}'
-      - '-X internal.Commit={{.ShortCommit}}'
-      - '-X "internal.Timestamp={{ time "2006-01-02 15:04:05" }}"'
+      - '-X "github.com/jmatsu/splitter/internal.Version={{.Version}}"'
+      - '-X "github.com/jmatsu/splitter/internal.Commit={{.ShortCommit}}"'
+      - '-X "github.com/jmatsu/splitter/internal.Timestamp={{ time "2006-01-02 15:04:05" }}"'
 
 archives:
   - format: tar.gz
