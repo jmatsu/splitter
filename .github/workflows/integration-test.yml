@@ -16,7 +16,8 @@ env:
 jobs:
   deploygate:
     if: >
-      ${{ secrets.DEPLOYGATE_APP_OWNER_NAME }}
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["jmatsu", "dependabot[bot]"]'), github.actor)
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +34,8 @@ jobs:
 
   firebase-app-distribution:
     if: >
-      ${{ secrets.FIREBASE_APP_ID }}
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["jmatsu", "dependabot[bot]"]'), github.actor)
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
