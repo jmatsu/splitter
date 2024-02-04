@@ -82,6 +82,12 @@ func Deploy(name string, aliases []string) *cli.Command {
 
 						return nil
 					})
+				case config.TestFlightService:
+					tf := deployment.ServiceConfig.(config.TestFlightConfig)
+
+					return task.DeployToTestFlight(context.Context, tf, sourceFilePath, func(req *service.TestFlightDeployRequest) error {
+						return nil
+					})
 				default:
 					custom := deployment.ServiceConfig.(config.CustomServiceConfig)
 

@@ -10,7 +10,7 @@ type serviceNameHolder struct {
 }
 
 type serviceConfig interface {
-	testConfig | DeployGateConfig | LocalConfig | FirebaseAppDistributionConfig | CustomServiceConfig
+	testConfig | DeployGateConfig | LocalConfig | FirebaseAppDistributionConfig | CustomServiceConfig | TestFlightConfig
 }
 
 // Set values to the config. Priority: Environment Variables > Given values
