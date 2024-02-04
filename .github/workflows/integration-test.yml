@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
     inputs:
 
+  pull_request:
+
   push:
     branches:
       - main
@@ -13,6 +15,8 @@ env:
 
 jobs:
   deploygate:
+    if: >
+      ${{ secrets.DEPLOYGATE_APP_OWNER_NAME }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +32,8 @@ jobs:
           --api-token "${{ secrets.DEPLOYGATE_API_TOKEN }}"
 
   firebase-app-distribution:
+    if: >
+      ${{ secrets.FIREBASE_APP_ID }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
