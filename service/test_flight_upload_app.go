@@ -2,7 +2,7 @@ package service
 
 import "github.com/jmatsu/splitter/internal/exec"
 
-type testFlightUploadAppRequest struct {
+type TestFlightUploadAppRequest struct {
 	appleID  string
 	password string
 	filePath string
@@ -11,7 +11,7 @@ type testFlightUploadAppRequest struct {
 type testFlightUploadAppResponse struct {
 }
 
-func (p *TestFlightProvider) uploadApp(request *testFlightUploadAppRequest) ([]byte, error) {
+func (p *TestFlightProvider) uploadApp(request *TestFlightUploadAppRequest) ([]byte, error) {
 	altool := exec.NewAltool(p.ctx)
 	return altool.UploadApp(request.filePath, request.appleID, request.password)
 }

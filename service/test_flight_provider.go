@@ -27,14 +27,14 @@ type TestFlightProvider struct {
 	ctx context.Context
 }
 
-type testFlightDeployRequest struct {
+type TestFlightDeployRequest struct {
 	appleID  string
 	password string
 	filePath string
 }
 
-func (r *testFlightDeployRequest) NewUploadAppRequest() *testFlightUploadAppRequest {
-	request := testFlightUploadAppRequest{
+func (r *TestFlightDeployRequest) NewUploadAppRequest() *TestFlightUploadAppRequest {
+	request := TestFlightUploadAppRequest{
 		appleID:  r.appleID,
 		password: r.password,
 		filePath: r.filePath,
@@ -58,11 +58,17 @@ func (r *TestFlightDeployResult) ValueResponse() any {
 	return *r
 }
 
-func (p *TestFlightProvider) Deploy(filePath string) (*TestFlightDeployResult, error) {
-	request := testFlightDeployRequest{
+func (p *TestFlightProvider) Deploy(filePath string, builder func(req *TestFlightDeployRequest) error) (*TestFlightDeployResult, error) {
+	request := &TestFlightDeployRequest{
 		filePath: filePath,
 		appleID:  p.AppleID,
 		password: p.Password,
+	}
+
+	if err := builder(request); err != nil {
+		return nil, errors.Wrapf(err, "could not build the request")
+	} else {
+		testFlightLogger.Debug().Msgf("the request has been built: %v", *request)
 	}
 
 	var response testFlightUploadAppResponse
