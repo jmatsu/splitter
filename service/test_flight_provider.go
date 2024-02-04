@@ -30,6 +30,8 @@ type TestFlightProvider struct {
 type TestFlightDeployRequest struct {
 	appleID  string
 	password string
+	issueID  string
+	apiKey   string
 	filePath string
 }
 
@@ -37,6 +39,8 @@ func (r *TestFlightDeployRequest) NewUploadAppRequest() *TestFlightUploadAppRequ
 	request := TestFlightUploadAppRequest{
 		appleID:  r.appleID,
 		password: r.password,
+		issuerID: r.issueID,
+		apiKey:   r.apiKey,
 		filePath: r.filePath,
 	}
 
@@ -63,6 +67,8 @@ func (p *TestFlightProvider) Deploy(filePath string, builder func(req *TestFligh
 		filePath: filePath,
 		appleID:  p.AppleID,
 		password: p.Password,
+		issueID:  p.IssuerID,
+		apiKey:   p.ApiKey,
 	}
 
 	if err := builder(request); err != nil {

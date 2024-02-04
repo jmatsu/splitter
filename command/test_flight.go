@@ -38,11 +38,25 @@ func TestFlight(name string, aliases []string) *cli.Command {
 				Required: false,
 				EnvVars:  []string{"TESTFLIGHT_PASSWORD"},
 			},
+			&cli.StringFlag{
+				Name:     "api-key",
+				Usage:    "API key",
+				Required: false,
+				EnvVars:  []string{"TESTFLIGHT_API_KEY"},
+			},
+			&cli.StringFlag{
+				Name:     "issuer-id",
+				Usage:    "Issuer ID of API Key",
+				Required: false,
+				EnvVars:  []string{"TESTFLIGHT_ISSUER_ID"},
+			},
 		},
 		Action: func(context *cli.Context) error {
 			conf := config.TestFlightConfig{
 				AppleID:  context.String("apple-id"),
 				Password: context.String("password"),
+				ApiKey:   context.String("api-key"),
+				IssuerID: context.String("issuer-id"),
 			}
 
 			return task.DeployToTestFlight(context.Context, conf, context.String("source-path"), func(req *service.TestFlightDeployRequest) error {

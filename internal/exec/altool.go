@@ -9,19 +9,29 @@ type Altool struct {
 	commandLine CommandLine
 }
 
+type AltoolCredential struct {
+	Password string
+	IssuerID string
+	ApiKey   string
+}
+
 func NewAltool(ctx context.Context) *Altool {
 	return &Altool{
 		commandLine: NewCommandLine(ctx, nil),
 	}
 }
 
-func (n *Altool) UploadApp(path, appleID, password string) ([]byte, error) {
+func (n *Altool) UploadApp(path, appleID string, credential *AltoolCredential) ([]byte, error) {
 	args := []string{
-		path,
 		"-f", path,
 		"-t", "ios",
 		"--username", appleID,
-		"--password", password,
+	}
+
+	if credential.Password != "" {
+		args = append(args, "--password", credential.Password)
+	} else {
+		args = append(args, "--apiKey", credential.ApiKey, "--apiIssuer", credential.IssuerID)
 	}
 
 	stdout, _, err := n.exec("--upload-app", args...)

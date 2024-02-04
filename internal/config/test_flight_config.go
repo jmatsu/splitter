@@ -14,6 +14,12 @@ type TestFlightConfig struct {
 
 	// App-specific password
 	Password string `yaml:"password,omitempty"`
+
+	// Api Key
+	ApiKey string `yaml:"api-key,omitempty"`
+
+	// Issuer ID of the specified api key
+	IssuerID string `yaml:"issuer-id,omitempty"`
 }
 
 func (c *TestFlightConfig) Validate() error {
@@ -23,6 +29,12 @@ func (c *TestFlightConfig) Validate() error {
 
 	if c.AppleID == "" {
 		logger.Logger.Warn().Msg("we recommend specifying an AppleID explicitly")
+	}
+
+	if c.Password != "" {
+		if c.ApiKey != "" || c.IssuerID != "" {
+			logger.Logger.Info().Msg("password will be chosen for TestFlight deployment")
+		}
 	}
 
 	return nil
