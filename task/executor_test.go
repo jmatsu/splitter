@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func Test_Executor_Execute(t *testing.T) {
+func Test_StepExecutor_Execute(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {

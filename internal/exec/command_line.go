@@ -29,7 +29,7 @@ func NewCommandLine(ctx context.Context, execution exec.Interface) CommandLine {
 
 	return &commandExecutor{
 		ctx:       ctx,
-		execution: exec.New(),
+		execution: execution,
 		stdout:    withLogger(&logger.Logger, zerolog.InfoLevel),
 		stderr:    withLogger(&logger.Logger, zerolog.WarnLevel),
 	}
