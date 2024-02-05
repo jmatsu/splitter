@@ -33,6 +33,7 @@ const (
 	DeploygateService              = "deploygate"                // represents DeployGateConfig
 	LocalService                   = "local"                     // represents LocalConfig
 	FirebaseAppDistributionService = "firebase-app-distribution" // represents FirebaseAppDistributionConfig
+	TestFlightService              = "test-flight"               // represents TestFlightConfig
 )
 
 func ToEnvName(name string) string {
@@ -166,7 +167,7 @@ func (c *GlobalConfig) configure() error {
 			return errors.New(fmt.Sprintf("%s must be Mapping", name))
 		}
 
-		if slices.Contains([]string{DeploygateService, FirebaseAppDistributionService, LocalService}, name) {
+		if slices.Contains([]string{DeploygateService, FirebaseAppDistributionService, LocalService, TestFlightService}, name) {
 			return errors.New(fmt.Sprintf("%s is a reserved name", name))
 		}
 
@@ -236,6 +237,18 @@ func (c *GlobalConfig) configure() error {
 				ServiceName:   local.Name,
 				ServiceConfig: local,
 				Lifecycle:     local.ExecutionConfig,
+			}
+		case TestFlightService:
+			testFlight := TestFlightConfig{}
+
+			if err := loadServiceConfig(&testFlight, values); err != nil {
+				return errors.Wrapf(err, "cannot load %s config", name)
+			}
+
+			c.deployments[name] = Deployment{
+				ServiceName:   testFlight.Name,
+				ServiceConfig: testFlight,
+				Lifecycle:     testFlight.ExecutionConfig,
 			}
 		default:
 			if _, ok := c.services[name]; ok {
@@ -368,6 +381,12 @@ func (c *GlobalConfig) Deployment(name string) (Deployment, CustomServiceDefinit
 			if err := evaluateAndValidate(config); err != nil {
 				return Deployment{}, definition, err
 			}
+		case TestFlightService:
+			config := d.ServiceConfig.(*TestFlightConfig)
+
+			if err := evaluateAndValidate(config); err != nil {
+				return Deployment{}, definition, err
+			}
 		default:
 			config := d.ServiceConfig.(*CustomServiceConfig)
 
@@ -417,6 +436,15 @@ func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
 					Name: LocalService,
 				},
 				DestinationPath: "path to the destination",
+			}
+		case TestFlightService:
+			d.ServiceConfig = TestFlightConfig{
+				serviceNameHolder: serviceNameHolder{
+					Name: TestFlightService,
+				},
+				AppleID:  "Your AppleID",
+				ApiKey:   "format:${%s_TESTFLIGHT_API_KEY}",
+				IssuerID: "Issuer ID of ApiKey. You can use app-specific password instead of api key and issuer id",
 			}
 		}
 

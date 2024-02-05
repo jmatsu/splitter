@@ -121,6 +121,7 @@ func main() {
 			command.Deploy("deploy", []string{}),
 			command.AddDeploymentConfig("add-deployment", []string{}),
 			command.CustomService("service", []string{}),
+			command.TestFlight("test-flight", []string{"tf"}),
 		},
 	}
 

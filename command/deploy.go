@@ -51,7 +51,7 @@ func Deploy(name string, aliases []string) *cli.Command {
 				return err
 			}
 
-			executor := task.NewExecutor(nil, context.Context, &deployment.Lifecycle)
+			executor := task.NewExecutor(context.Context, nil, &deployment.Lifecycle)
 
 			return executor.Execute(func() error {
 				sourceFilePath := context.String("source-path")
@@ -80,6 +80,12 @@ func Deploy(name string, aliases []string) *cli.Command {
 							req.SetReleaseNote(v)
 						}
 
+						return nil
+					})
+				case config.TestFlightService:
+					tf := deployment.ServiceConfig.(config.TestFlightConfig)
+
+					return task.DeployToTestFlight(context.Context, tf, sourceFilePath, func(req *service.TestFlightDeployRequest) error {
 						return nil
 					})
 				default:

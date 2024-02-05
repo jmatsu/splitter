@@ -59,6 +59,11 @@ func Test_Config_configure(t *testing.T) {
 						"service":          LocalService,
 						"destination-path": "def3-destination-path",
 					},
+					"def4": map[string]interface{}{
+						"service":  TestFlightService,
+						"apple-id": "def4-apple-id",
+						"password": "def4-password",
+					},
 				},
 			},
 			expected: &GlobalConfig{
@@ -88,6 +93,13 @@ func Test_Config_configure(t *testing.T) {
 							DestinationPath: "def3-destination-path",
 						},
 					},
+					"def4": {
+						ServiceName: TestFlightService,
+						ServiceConfig: TestFlightConfig{
+							AppleID:  "def3-apple-id",
+							Password: "def4-password",
+						},
+					},
 				},
 			},
 		},
@@ -102,6 +114,9 @@ func Test_Config_configure(t *testing.T) {
 					},
 					"def3": map[string]interface{}{
 						"service": LocalService,
+					},
+					"def4": map[string]interface{}{
+						"service": TestFlightService,
 					},
 				},
 			},
@@ -123,6 +138,10 @@ func Test_Config_configure(t *testing.T) {
 					"def3": {
 						ServiceName:   LocalService,
 						ServiceConfig: LocalConfig{},
+					},
+					"def4": {
+						ServiceName:   TestFlightService,
+						ServiceConfig: TestFlightConfig{},
 					},
 				},
 			},

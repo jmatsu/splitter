@@ -251,3 +251,4 @@ vendor/
 dist/
 
 .fixtures/
+/splitter
