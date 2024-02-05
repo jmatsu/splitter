@@ -36,19 +36,19 @@ func TestFlight(name string, aliases []string) *cli.Command {
 				},
 				Usage:    "App specific password",
 				Required: false,
-				EnvVars:  []string{"TESTFLIGHT_PASSWORD"},
+				EnvVars:  []string{"TESTFLIGHT_PASSWORD", "TEST_FLIGHT_PASSWORD"},
 			},
 			&cli.StringFlag{
 				Name:     "api-key",
 				Usage:    "API key",
 				Required: false,
-				EnvVars:  []string{"TESTFLIGHT_API_KEY"},
+				EnvVars:  []string{"TESTFLIGHT_API_KEY", "TEST_FLIGHT_API_KEY"},
 			},
 			&cli.StringFlag{
 				Name:     "issuer-id",
 				Usage:    "Issuer ID of API Key",
 				Required: false,
-				EnvVars:  []string{"TESTFLIGHT_ISSUER_ID"},
+				EnvVars:  []string{"TESTFLIGHT_ISSUER_ID", "TEST_FLIGHT_ISSUER_ID"},
 			},
 		},
 		Action: func(context *cli.Context) error {
