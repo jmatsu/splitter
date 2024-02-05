@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/pkg/errors"
 )
 
 // TestFlightConfig contains the enough values to use TestFlight.
@@ -27,13 +28,17 @@ func (c *TestFlightConfig) Validate() error {
 		return err
 	}
 
-	if c.AppleID == "" {
-		logger.Logger.Warn().Msg("we recommend specifying an AppleID explicitly")
+	if c.Password == "" && (c.ApiKey == "" || c.IssuerID == "") {
+		return errors.New("app-specific password or a pair of api key and issuer id is required")
 	}
 
 	if c.Password != "" {
-		if c.ApiKey != "" || c.IssuerID != "" {
-			logger.Logger.Info().Msg("password will be chosen for TestFlight deployment")
+		if c.ApiKey != "" && c.IssuerID != "" {
+			logger.Logger.Warn().Msg("api key and issuer id will be chosen for TestFlight deployment")
+			c.ApiKey = ""
+		} else {
+			c.ApiKey = ""
+			c.IssuerID = ""
 		}
 	}
 

@@ -443,7 +443,8 @@ func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
 					Name: TestFlightService,
 				},
 				AppleID:  "Your AppleID",
-				Password: fmt.Sprintf("format:${%s_TESTFLIGHT_PASSWORD}", name),
+				ApiKey:   "format:${%s_TESTFLIGHT_API_KEY}",
+				IssuerID: "Issuer ID of ApiKey. You can use app-specific password instead of api key and issuer id",
 			}
 		}
 

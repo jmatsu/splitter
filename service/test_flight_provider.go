@@ -48,7 +48,7 @@ func (r *TestFlightDeployRequest) NewUploadAppRequest() *TestFlightUploadAppRequ
 }
 
 type TestFlightDeployResult struct {
-	testFlightUploadAppResponse
+	TestFlightUploadAppResponse
 	RawJson string
 }
 
@@ -77,7 +77,7 @@ func (p *TestFlightProvider) Deploy(filePath string, builder func(req *TestFligh
 		testFlightLogger.Debug().Msgf("the request has been built: %v", *request)
 	}
 
-	var response testFlightUploadAppResponse
+	var response TestFlightUploadAppResponse
 
 	if bytes, err := p.uploadApp(request.NewUploadAppRequest()); err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (p *TestFlightProvider) Deploy(filePath string, builder func(req *TestFligh
 		return nil, errors.Wrap(err, "failed to unmarshal")
 	} else {
 		return &TestFlightDeployResult{
-			testFlightUploadAppResponse: response,
+			TestFlightUploadAppResponse: response,
 			RawJson:                     string(bytes),
 		}, nil
 	}

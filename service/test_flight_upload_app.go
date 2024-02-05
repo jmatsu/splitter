@@ -11,12 +11,6 @@ type TestFlightUploadAppRequest struct {
 }
 
 func (r *TestFlightUploadAppRequest) NewAltoolCredential() *exec.AltoolCredential {
-	if r.password != "" {
-		if r.issuerID != "" || r.apiKey != "" {
-			testFlightLogger.Warn().Msg("issuer id and api key will be ignored")
-		}
-	}
-
 	return &exec.AltoolCredential{
 		Password: r.password,
 		IssuerID: r.issuerID,
@@ -24,7 +18,8 @@ func (r *TestFlightUploadAppRequest) NewAltoolCredential() *exec.AltoolCredentia
 	}
 }
 
-type testFlightUploadAppResponse struct {
+type TestFlightUploadAppResponse struct {
+	// TODO assign attributes
 }
 
 func (p *TestFlightProvider) uploadApp(request *TestFlightUploadAppRequest) ([]byte, error) {
