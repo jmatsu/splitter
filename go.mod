@@ -7,7 +7,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.4.9
 	github.com/magiconair/properties v1.8.7
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.31.0
+	github.com/rs/zerolog v1.32.0
 	github.com/spf13/viper v1.18.2
 	github.com/urfave/cli/v2 v2.27.1
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
