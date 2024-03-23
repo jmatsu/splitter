@@ -15,7 +15,7 @@ jobs:
       github.actor == 'dependabot[bot]'
     steps:
       - id: metadata
-        uses: dependabot/fetch-metadata@v1.6.0
+        uses: dependabot/fetch-metadata@v2.0.0
       - if: >
           steps.metadata.outputs.update-type == 'version-update:semver-patch'
         run: gh pr merge --auto --merge "${{ github.event.pull_request.html_url }}"
