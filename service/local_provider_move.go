@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type sideEffect = string
@@ -62,14 +63,18 @@ func (p *LocalProvider) move(request *LocalMoveRequest) ([]byte, error) {
 		if !request.deleteResource {
 			var tmp *os.File
 
-			if v, err := os.CreateTemp("", "local-dest-*"); err != nil {
+			// The temp file must sit next to the destination because os.Rename cannot cross filesystems.
+			if v, err := os.CreateTemp(filepath.Dir(request.destinationFilePath), ".splitter-local-*"); err != nil {
 				return "", errors.Wrap(err, "failed to create a temp file")
 			} else {
 				tmp = v
+				renameFromPath = tmp.Name()
+
 				defer func() {
 					_ = tmp.Close()
+					// Renaming has removed the temp file already on the successful path.
+					_ = os.Remove(tmp.Name())
 				}()
-				renameFromPath = tmp.Name()
 			}
 
 			src, err := os.Open(request.sourceFilePath)
@@ -99,7 +104,7 @@ func (p *LocalProvider) move(request *LocalMoveRequest) ([]byte, error) {
 	}
 
 	if v, err := os.Stat(request.destinationFilePath); err != nil {
-		panic(err)
+		return nil, errors.Wrapf(err, "failed to get the file mode of %s", request.destinationFilePath)
 	} else if v.Mode() == request.fileMode {
 		localLogger.Debug().Msgf("%s already has permission %d", request.destinationFilePath, request.fileMode)
 	} else if err := os.Chmod(request.destinationFilePath, request.fileMode); err != nil {

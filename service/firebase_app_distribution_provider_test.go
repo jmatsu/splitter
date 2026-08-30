@@ -214,6 +214,44 @@ func Test_FirebaseAppDistributionProvider_Deploy_appBundle(t *testing.T) {
 	}
 }
 
+func Test_FirebaseAppDistributionProvider_Deploy_unavailableAabInfo(t *testing.T) {
+	cases := map[string]struct {
+		fileName        string
+		expectedSuccess bool
+	}{
+		// An app bundle cannot be uploaded without knowing the play store integration state.
+		"app bundle": {fileName: "app.aab"},
+		// An apk does not need it so the deployment must go on.
+		"apk": {fileName: "app.apk", expectedSuccess: true},
+	}
+
+	for name, c := range cases {
+		name, c := name, c
+
+		t.Run(name, func(t *testing.T) {
+			handler := &firebaseHandler{operationDone: true, aabInfoCode: http.StatusForbidden}
+			server := newTestServer(t, handler.handle)
+
+			provider := newTestFirebaseAppDistributionProvider(t, server.URL, config.FirebaseAppDistributionConfig{
+				AppId:       testFirebaseAppId,
+				AccessToken: "token1",
+			})
+
+			path := newSourceFile(t, c.fileName, "app content")
+
+			result, err := provider.Deploy(path, func(req *FirebaseAppDistributionDeployRequest) error { return nil })
+
+			if (err == nil) != c.expectedSuccess {
+				t.Fatalf("%s case is expected to be %t but %t: %v", name, c.expectedSuccess, err == nil, err)
+			}
+
+			if c.expectedSuccess && result.AabInfo != nil {
+				t.Errorf("aab info is expected to be empty but %#v", result.AabInfo)
+			}
+		})
+	}
+}
+
 func Test_FirebaseAppDistributionProvider_Deploy_failures(t *testing.T) {
 	t.Run("builder error", func(t *testing.T) {
 		handler := &firebaseHandler{operationDone: true}

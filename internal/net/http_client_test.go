@@ -158,6 +158,37 @@ func Test_HttpClient_WithHeaders(t *testing.T) {
 	}
 }
 
+func Test_HttpClient_WithHeaders_doesNotAffectTheOriginal(t *testing.T) {
+	t.Parallel()
+
+	client := NewHttpClient("https://example.com")
+	userAgent := client.headers.Get("User-Agent")
+
+	authorized := client.WithHeaders(map[string][]string{
+		"Authorization": {"Bearer secret"},
+		"User-Agent":    {"overridden"},
+	})
+
+	if v := client.headers.Get("Authorization"); v != "" {
+		t.Errorf("the original client is expected to have no authorization but %s", v)
+	}
+
+	if v := client.headers.Get("User-Agent"); v != userAgent {
+		t.Errorf("the original user agent is expected to be %s but %s", userAgent, v)
+	}
+
+	if v := authorized.headers.Get("Authorization"); v != "Bearer secret" {
+		t.Errorf("the derived client is expected to have the authorization but %s", v)
+	}
+
+	// A client derived twice must not inherit the headers of its sibling either.
+	sibling := client.WithHeaders(map[string][]string{"X-Sibling": {"value"}})
+
+	if v := sibling.headers.Get("Authorization"); v != "" {
+		t.Errorf("the sibling client is expected to have no authorization but %s", v)
+	}
+}
+
 type testResponse struct {
 	RequestURI  string
 	Fields      map[string]string

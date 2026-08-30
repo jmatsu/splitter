@@ -6,29 +6,16 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
-
-	"github.com/spf13/viper"
 )
-
-func init() {
-	baseName, extName, _ := strings.Cut(DefaultConfigName, ".")
-
-	viper.SetConfigName(baseName)
-	viper.SetConfigType(extName)
-
-	viper.SetEnvPrefix(envPrefix)
-}
 
 const (
 	envPrefix = "SPLITTER_" // The prefix of environment variables used for splitter's global options.
 
 	DefaultConfigName = "splitter.yml"
-
-	deploymentsKey        = "deployments" // deployment definitions' key in the config file.
-	serviceDefinitionsKey = "services"    // service definitions' key in the config file.
 
 	DeploygateService              = "deploygate"                // represents DeployGateConfig
 	LocalService                   = "local"                     // represents LocalConfig
@@ -75,6 +62,9 @@ const (
 	DefaultWaitTimeout    = "5m"
 )
 
+// configNameCandidates are looked up on the working directory in this order when --config is absent.
+var configNameCandidates = []string{DefaultConfigName, "splitter.yaml"}
+
 var styles = []FormatStyle{
 	PrettyFormat,
 	RawFormat,
@@ -100,41 +90,72 @@ func SetGlobalWaitTimeout(value string) {
 }
 
 func CurrentConfig() *GlobalConfig {
-	config := config // create a shallow copy
 	return config
 }
 
 func LoadGlobalConfig(path *string) error {
-	if path != nil {
-		viper.SetConfigFile(*path)
-		logger.Logger.Debug().Msgf("Loading a config file on %s", *path)
-	} else {
-		viper.AddConfigPath(".")
+	filePath, err := resolveConfigPath(path)
 
-		if wd, err := os.Getwd(); err == nil {
-			logger.Logger.Debug().Msgf("Loading a config file on the current directory: %s", wd)
-		} else {
-			logger.Logger.Debug().Err(err).Msgf("Cannot loading the current working directory")
+	if err != nil {
+		return err
+	}
+
+	var raw rawConfig
+
+	if filePath != "" {
+		logger.Logger.Debug().Msgf("Loading a config file on %s", filePath)
+
+		bytes, err := os.ReadFile(filePath)
+
+		if err != nil {
+			return errors.Wrapf(err, "failed to read a config file on %s", filePath)
+		}
+
+		// The config file is parsed by yaml directly because deployment and service names are
+		// case-sensitive keys that a user refers to by --name.
+		if err := yaml.Unmarshal(bytes, &raw); err != nil {
+			return errors.Wrapf(err, "failed to parse a config file on %s", filePath)
 		}
 	}
 
-	if err := viper.ReadInConfig(); path != nil && err != nil {
-		return errors.Wrap(err, "failed to read a config file")
-	}
-
-	config.rawConfig = rawConfig{
-		Deployments:    viper.GetStringMap(deploymentsKey),
-		Services:       viper.GetStringMap(serviceDefinitionsKey),
-		FormatStyle:    viper.GetString("format-style"),
-		WaitTimeout:    viper.GetString("wait-timeout"),
-		NetworkTimeout: viper.GetString("network-timeout"),
-	}
+	config.rawConfig = raw
 
 	if err := config.configure(); err != nil {
 		return errors.Wrap(err, "your config file may not contain some of required values or they are invalid")
 	}
 
 	return nil
+}
+
+// resolveConfigPath returns a path to the config file to load. An empty path means no config file
+// is available, which is not an error unless a user has specified one explicitly.
+func resolveConfigPath(path *string) (string, error) {
+	if path != nil {
+		if _, err := os.Stat(*path); err != nil {
+			return "", errors.Wrapf(err, "failed to read a config file on %s", *path)
+		}
+
+		return *path, nil
+	}
+
+	wd, err := os.Getwd()
+
+	if err != nil {
+		logger.Logger.Debug().Err(err).Msg("Cannot load the current working directory")
+		return "", nil
+	}
+
+	for _, name := range configNameCandidates {
+		candidate := filepath.Join(wd, name)
+
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+	}
+
+	logger.Logger.Debug().Msgf("No config file is found on the current directory: %s", wd)
+
+	return "", nil
 }
 
 func (c *GlobalConfig) configure() error {
@@ -316,7 +337,7 @@ func (c *GlobalConfig) Validate() error {
 	if c.rawConfig.NetworkTimeout != "" {
 		if v, err := time.ParseDuration(c.rawConfig.NetworkTimeout); err != nil {
 			return errors.Wrapf(err, "network timeout is not valid time format: %s", c.rawConfig.NetworkTimeout)
-		} else if v < 0 {
+		} else if v <= 0 {
 			return errors.New("network timeout must be positive")
 		} else if v.Minutes() > 30 {
 			return errors.New("network timeout must be equal or less than 30 minutes")
@@ -328,7 +349,7 @@ func (c *GlobalConfig) Validate() error {
 	if c.rawConfig.WaitTimeout != "" {
 		if v, err := time.ParseDuration(c.rawConfig.WaitTimeout); err != nil {
 			return errors.Wrapf(err, "wait timeout is not valid time format: %s", c.rawConfig.WaitTimeout)
-		} else if v < 0 {
+		} else if v <= 0 {
 			return errors.New("wait timeout must be positive")
 		} else if v.Minutes() > 10 {
 			return errors.New("wait timeout must be equal or less than 10 minutes")
@@ -448,9 +469,15 @@ func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
 					Name: TestFlightService,
 				},
 				AppleID:  "Your AppleID",
-				ApiKey:   "format:${%s_TESTFLIGHT_API_KEY}",
+				ApiKey:   fmt.Sprintf("format:${%s_TESTFLIGHT_API_KEY}", name),
 				IssuerID: "Issuer ID of ApiKey. You can use app-specific password instead of api key and issuer id",
 			}
+		default:
+			return errors.New(fmt.Sprintf("%s is an unknown service. %s are supported", serviceName, strings.Join([]string{DeploygateService, FirebaseAppDistributionService, LocalService, TestFlightService}, ", ")))
+		}
+
+		if c.rawConfig.Deployments == nil {
+			c.rawConfig.Deployments = map[string]interface{}{}
 		}
 
 		var values map[string]interface{}

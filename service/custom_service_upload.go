@@ -87,7 +87,7 @@ func (p *CustomServiceProvider) upload(request *CustomServiceUploadAppRequest) (
 	}
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to upload your app to DeployGate")
+		return nil, errors.Wrap(err, "failed to upload your app to custom service")
 	}
 
 	if resp.Successful() {

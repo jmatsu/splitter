@@ -26,6 +26,7 @@ func (n *Altool) UploadApp(path, appleID string, credential *AltoolCredential) (
 		"-f", path,
 		"-t", "ios",
 		"--username", appleID,
+		"--output-format", "json", // splitter parses stdout as json
 	}
 
 	if credential.Password != "" {

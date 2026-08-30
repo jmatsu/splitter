@@ -105,7 +105,7 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			command.InitConfig("init", []string{}),
-			command.Local("local", []string{""}),
+			command.Local("local", []string{}),
 			command.DeployGate("deploygate", []string{"dg"}),
 			command.FirebaseAppDistribution("firebase-app-distribution", []string{"firebase", "fad"}),
 			command.Deploy("deploy", []string{}),
