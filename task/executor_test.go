@@ -231,3 +231,37 @@ func Test_StepExecutor_Execute(t *testing.T) {
 		})
 	}
 }
+
+func Test_NewExecutor_withDefaultShell(t *testing.T) {
+	t.Parallel()
+
+	// A nil shell must fall back into the real one.
+	executor := NewExecutor(context.TODO(), nil, &config.ExecutionConfig{})
+
+	if executor.commandLine == nil {
+		t.Errorf("NewExecutor must build a command line")
+	}
+
+	if err := executor.Execute(func() error { return nil }); err != nil {
+		t.Errorf("failed to execute: %v", err)
+	}
+}
+
+func Test_StepExecutor_Execute_withoutConfig(t *testing.T) {
+	t.Parallel()
+
+	var called bool
+
+	executor := NewExecutor(context.TODO(), nil, nil)
+
+	if err := executor.Execute(func() error {
+		called = true
+		return nil
+	}); err != nil {
+		t.Errorf("failed to execute: %v", err)
+	}
+
+	if !called {
+		t.Errorf("the content is expected to be executed but not")
+	}
+}

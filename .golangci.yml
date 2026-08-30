@@ -1,7 +1,11 @@
+version: "2"
+
 run:
   timeout: 1m
   tests: true
-  skip-dirs:
-    - fixtures
-  skip-dirs-use-default: true
   modules-download-mode: readonly
+
+linters:
+  exclusions:
+    paths:
+      - fixtures

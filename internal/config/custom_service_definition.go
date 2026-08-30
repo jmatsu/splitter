@@ -31,21 +31,13 @@ func (d *CustomServiceDefinition) validate() error {
 	}
 
 	if d.SourceFileFormat != RequestBodyAssignFormat {
-		var valid bool
-
-		for _, prefix := range []string{FormParamsAssignFormatPrefix, QueryAssignFormatPrefix} {
-			if strings.HasPrefix(d.SourceFileFormat, prefix) {
-				if len(d.SourceFileFormat) > len(prefix) {
-					return errors.New(fmt.Sprintf("%s must contain *name*", d.SourceFileFormat))
-				}
-
-				valid = true
-				break
-			}
+		// SourceFile and the upload logic support form params only.
+		if !strings.HasPrefix(d.SourceFileFormat, FormParamsAssignFormatPrefix) {
+			return errors.New(fmt.Sprintf("%s does not follow the correct format", d.SourceFileFormat))
 		}
 
-		if !valid {
-			return errors.New(fmt.Sprintf("%s does not follow the correct format", d.SourceFileFormat))
+		if len(d.SourceFileFormat) <= len(FormParamsAssignFormatPrefix) {
+			return errors.New(fmt.Sprintf("%s must contain *name*", d.SourceFileFormat))
 		}
 	}
 
@@ -86,7 +78,7 @@ func (d *CustomAuthDefinition) validate() error {
 
 	for _, prefix := range []string{FormParamsAssignFormatPrefix, HeadersAssignFormatPrefix, QueryAssignFormatPrefix} {
 		if strings.HasPrefix(d.StyleFormat, prefix) {
-			if len(d.StyleFormat) > len(prefix) {
+			if len(d.StyleFormat) <= len(prefix) {
 				return errors.New(fmt.Sprintf("%s must contain *name*", d.StyleFormat))
 			}
 
@@ -99,10 +91,10 @@ func (d *CustomAuthDefinition) validate() error {
 		return errors.New(fmt.Sprintf("%s does not follow the correct format", d.StyleFormat))
 	}
 
-	if n := len(strings.SplitN(d.ValueFormat, "%s", 3)); n > 1 {
-		return errors.New(fmt.Sprintf("%s contains 2 or more %%s", d.StyleFormat))
+	if n := strings.Count(d.ValueFormat, "%s"); n > 1 {
+		return errors.New(fmt.Sprintf("%s contains 2 or more %%s", d.ValueFormat))
 	} else if n == 0 {
-		return errors.New(fmt.Sprintf("%s must contain %%s", d.StyleFormat))
+		return errors.New(fmt.Sprintf("%s must contain %%s", d.ValueFormat))
 	}
 
 	return nil
