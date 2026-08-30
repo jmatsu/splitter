@@ -415,8 +415,9 @@ func Test_E2E_deployToCustomService(t *testing.T) {
 		if err := r.ParseMultipartForm(32 << 20); err == nil && r.MultipartForm != nil {
 			if headers := r.MultipartForm.File["file"]; len(headers) > 0 {
 				if f, err := headers[0].Open(); err == nil {
-					//goland:noinspection GoUnhandledErrorResult
-					defer f.Close()
+					defer func() {
+						_ = f.Close()
+					}()
 
 					bytes := make([]byte, headers[0].Size)
 					_, _ = f.Read(bytes)

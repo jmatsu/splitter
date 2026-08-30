@@ -67,8 +67,9 @@ func newTestServer(t *testing.T, handler func(r recordedRequest, w http.Response
 				}
 
 				if f, err := headers[0].Open(); err == nil {
-					//goland:noinspection GoUnhandledErrorResult
-					defer f.Close()
+					defer func() {
+						_ = f.Close()
+					}()
 
 					bytes := make([]byte, headers[0].Size)
 					_, _ = f.Read(bytes)
