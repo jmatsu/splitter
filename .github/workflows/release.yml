@@ -15,27 +15,27 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-go
-      - uses: goreleaser/goreleaser-action@v5
+      - uses: goreleaser/goreleaser-action@v7
         if: >
           startsWith( github.ref, 'refs/tags/v' )
         with:
           distribution: goreleaser
-          version: 1.23.0
-          args: release --rm-dist
+          version: '~> v2'
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: goreleaser/goreleaser-action@v5
+      - uses: goreleaser/goreleaser-action@v7
         if: >
           !startsWith( github.ref, 'refs/tags/v' )
         with:
           distribution: goreleaser
-          version: 1.23.0
-          args: release --rm-dist --snapshot
-      - uses: actions/upload-artifact@v4
+          version: '~> v2'
+          args: release --clean --snapshot
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*
