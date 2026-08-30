@@ -43,13 +43,9 @@ func (p *FirebaseAppDistributionProvider) waitForOperationDone(request *firebase
 
 	var retryCount int
 
+	// Buffered so that the watcher never blocks, and never closed because it may outlive this call on timeout.
 	pipeline := make(chan *FirebaseAppDistributionGetOperationStateResponse, 1)
 	stopper := make(chan error, 1)
-
-	defer func() {
-		close(pipeline)
-		close(stopper)
-	}()
 
 	go func() {
 		for {

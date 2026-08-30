@@ -51,3 +51,43 @@ func Test_LocalConfig_validateMissingValues(t *testing.T) {
 		})
 	}
 }
+
+func Test_LocalConfig_Validate(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		config            LocalConfig
+		expectedValidness bool
+	}{
+		"fully-filled": {
+			config: LocalConfig{
+				DestinationPath: "path/to/dest",
+				AllowOverwrite:  true,
+				FileMode:        0644,
+				DeleteSource:    true,
+			},
+			expectedValidness: true,
+		},
+		"required only": {
+			config: LocalConfig{
+				DestinationPath: "path/to/dest",
+			},
+			expectedValidness: true,
+		},
+		"zero": {
+			config:            LocalConfig{},
+			expectedValidness: false,
+		},
+	}
+
+	for name, c := range cases {
+		name, c := name, c
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if err := c.config.Validate(); (err == nil) != c.expectedValidness {
+				t.Errorf("%s case is expected to be %t but %t", name, c.expectedValidness, err == nil)
+			}
+		})
+	}
+}

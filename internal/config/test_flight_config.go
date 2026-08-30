@@ -35,7 +35,7 @@ func (c *TestFlightConfig) Validate() error {
 	if c.Password != "" {
 		if c.ApiKey != "" && c.IssuerID != "" {
 			logger.Logger.Warn().Msg("api key and issuer id will be chosen for TestFlight deployment")
-			c.ApiKey = ""
+			c.Password = "" // altool prioritizes a password so drop it to respect the warning above
 		} else {
 			c.ApiKey = ""
 			c.IssuerID = ""

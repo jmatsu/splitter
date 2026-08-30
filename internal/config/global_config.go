@@ -251,8 +251,8 @@ func (c *GlobalConfig) configure() error {
 				Lifecycle:     testFlight.ExecutionConfig,
 			}
 		default:
-			if _, ok := c.services[name]; ok {
-				logger.Logger.Debug().Msgf("%s is a custom service", name)
+			if _, ok := c.services[service.Name]; ok {
+				logger.Logger.Debug().Msgf("%s is a custom service", service.Name)
 
 				custom := CustomServiceConfig{}
 
@@ -261,7 +261,7 @@ func (c *GlobalConfig) configure() error {
 				}
 
 				c.deployments[name] = Deployment{
-					ServiceName:   name,
+					ServiceName:   service.Name,
 					ServiceConfig: custom,
 					Lifecycle:     custom.ExecutionConfig,
 				}
@@ -317,9 +317,9 @@ func (c *GlobalConfig) Validate() error {
 		if v, err := time.ParseDuration(c.rawConfig.NetworkTimeout); err != nil {
 			return errors.Wrapf(err, "network timeout is not valid time format: %s", c.rawConfig.NetworkTimeout)
 		} else if v < 0 {
-			return errors.Wrapf(err, "network timeout must be positive")
+			return errors.New("network timeout must be positive")
 		} else if v.Minutes() > 30 {
-			return errors.Wrapf(err, "network timeout must be equal or less than 30 minutes")
+			return errors.New("network timeout must be equal or less than 30 minutes")
 		}
 	} else {
 		return errors.New("empty network timeout is invalid")
@@ -329,9 +329,9 @@ func (c *GlobalConfig) Validate() error {
 		if v, err := time.ParseDuration(c.rawConfig.WaitTimeout); err != nil {
 			return errors.Wrapf(err, "wait timeout is not valid time format: %s", c.rawConfig.WaitTimeout)
 		} else if v < 0 {
-			return errors.Wrapf(err, "wait timeout must be positive")
+			return errors.New("wait timeout must be positive")
 		} else if v.Minutes() > 10 {
-			return errors.Wrapf(err, "wait timeout must be equal or less than 10 minutes")
+			return errors.New("wait timeout must be equal or less than 10 minutes")
 		}
 	} else {
 		return errors.New("empty wait timeout is invalid")
@@ -361,48 +361,53 @@ func (c *GlobalConfig) Definition(name string) (CustomServiceDefinition, error) 
 func (c *GlobalConfig) Deployment(name string) (Deployment, CustomServiceDefinition, error) {
 	var definition CustomServiceDefinition
 
-	if d, ok := c.deployments[name]; ok {
-		switch d.ServiceName {
-		case DeploygateService:
-			config := d.ServiceConfig.(*DeployGateConfig)
+	d, ok := c.deployments[name]
 
-			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, definition, err
-			}
-		case FirebaseAppDistributionService:
-			config := d.ServiceConfig.(*FirebaseAppDistributionConfig)
-
-			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, definition, err
-			}
-		case LocalService:
-			config := d.ServiceConfig.(*LocalConfig)
-
-			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, definition, err
-			}
-		case TestFlightService:
-			config := d.ServiceConfig.(*TestFlightConfig)
-
-			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, definition, err
-			}
-		default:
-			config := d.ServiceConfig.(*CustomServiceConfig)
-
-			if err := evaluateAndValidate(config); err != nil {
-				return Deployment{}, definition, err
-			} else if v, err := c.Definition(config.Name); err != nil {
-				return Deployment{}, definition, err
-			} else {
-				definition = v
-			}
-		}
-
-		return d, definition, nil
-	} else {
+	if !ok {
 		return Deployment{}, definition, errors.New(fmt.Sprintf("%s deployment is not found", name))
 	}
+
+	// configure stores service configs by value so the evaluated values must be written back.
+	switch conf := d.ServiceConfig.(type) {
+	case DeployGateConfig:
+		if err := evaluateAndValidate(&conf); err != nil {
+			return Deployment{}, definition, err
+		}
+
+		d.ServiceConfig = conf
+	case FirebaseAppDistributionConfig:
+		if err := evaluateAndValidate(&conf); err != nil {
+			return Deployment{}, definition, err
+		}
+
+		d.ServiceConfig = conf
+	case LocalConfig:
+		if err := evaluateAndValidate(&conf); err != nil {
+			return Deployment{}, definition, err
+		}
+
+		d.ServiceConfig = conf
+	case TestFlightConfig:
+		if err := evaluateAndValidate(&conf); err != nil {
+			return Deployment{}, definition, err
+		}
+
+		d.ServiceConfig = conf
+	case CustomServiceConfig:
+		if err := evaluateAndValidate(&conf); err != nil {
+			return Deployment{}, definition, err
+		} else if v, err := c.Definition(conf.Name); err != nil {
+			return Deployment{}, definition, err
+		} else {
+			definition = v
+		}
+
+		d.ServiceConfig = conf
+	default:
+		return Deployment{}, definition, errors.New(fmt.Sprintf("%s deployment has an unknown service config", name))
+	}
+
+	return d, definition, nil
 }
 
 func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {

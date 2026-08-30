@@ -34,3 +34,41 @@ func Test_CustomServiceConfig_validateMissingValues(t *testing.T) {
 		})
 	}
 }
+
+func Test_CustomServiceConfig_Validate(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		config            CustomServiceConfig
+		expectedValidness bool
+	}{
+		"fully-filled": {
+			config: CustomServiceConfig{
+				serviceNameHolder: serviceNameHolder{Name: "custom1"},
+				AuthToken:         "AuthToken",
+			},
+			expectedValidness: true,
+		},
+		"missing auth token": {
+			config: CustomServiceConfig{
+				serviceNameHolder: serviceNameHolder{Name: "custom1"},
+			},
+			expectedValidness: false,
+		},
+		"zero": {
+			config:            CustomServiceConfig{},
+			expectedValidness: false,
+		},
+	}
+
+	for name, c := range cases {
+		name, c := name, c
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if err := c.config.Validate(); (err == nil) != c.expectedValidness {
+				t.Errorf("%s case is expected to be %t but %t", name, c.expectedValidness, err == nil)
+			}
+		})
+	}
+}
