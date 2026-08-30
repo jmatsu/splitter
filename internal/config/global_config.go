@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
-	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 	"os"
+	"slices"
 	"strings"
 	"time"
 

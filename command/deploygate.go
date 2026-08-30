@@ -1,10 +1,11 @@
 package command
 
 import (
+	"context"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/service"
 	"github.com/jmatsu/splitter/task"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // DeployGate command distributes your app to DeployGate. This command is standalone so this does not use the values for DeployGate in your config file.
@@ -23,7 +24,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				},
 				Usage:    "User name or Organization name.",
 				Required: true,
-				EnvVars:  []string{"DEPLOYGATE_APP_OWNER_NAME"},
+				Sources:  cli.EnvVars("DEPLOYGATE_APP_OWNER_NAME"),
 			},
 			&cli.StringFlag{
 				Name: "api-token",
@@ -32,15 +33,16 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				},
 				Usage:    "The api token of the app owner.",
 				Required: true,
-				EnvVars:  []string{"DEPLOYGATE_API_TOKEN"},
+				Sources:  cli.EnvVars("DEPLOYGATE_API_TOKEN"),
 			},
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A path to an app file.",
-				Required: true,
+				Usage:     "A path to an app file.",
+				Required:  true,
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name: "message",
@@ -71,30 +73,30 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				Required: false,
 			},
 		},
-		Action: func(context *cli.Context) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			conf := config.DeployGateConfig{
-				AppOwnerName: context.String("app-owner-name"),
-				ApiToken:     context.String("api-token"),
+				AppOwnerName: cmd.String("app-owner-name"),
+				ApiToken:     cmd.String("api-token"),
 			}
 
-			return task.DeployToDeployGate(context.Context, conf, context.String("source-path"), func(req *service.DeployGateDeployRequest) error {
-				if v := context.String("message"); context.IsSet("message") {
+			return task.DeployToDeployGate(ctx, conf, cmd.String("source-path"), func(req *service.DeployGateDeployRequest) error {
+				if v := cmd.String("message"); cmd.IsSet("message") {
 					req.SetMessage(v)
 				}
 
-				if v := context.String("distribution-key"); context.IsSet("distribution-key") {
+				if v := cmd.String("distribution-key"); cmd.IsSet("distribution-key") {
 					req.SetDistributionAccessKey(v)
 				}
 
-				if v := context.String("distribution-name"); context.IsSet("distribution-name") {
+				if v := cmd.String("distribution-name"); cmd.IsSet("distribution-name") {
 					req.SetDistributionName(v)
 				}
 
-				if v := context.String("release-note"); context.IsSet("release-note") {
+				if v := cmd.String("release-note"); cmd.IsSet("release-note") {
 					req.SetDistributionReleaseNote(v)
 				}
 
-				req.SetIOSDisableNotification(context.Bool("disable-ios-notification"))
+				req.SetIOSDisableNotification(cmd.Bool("disable-ios-notification"))
 
 				return nil
 			})

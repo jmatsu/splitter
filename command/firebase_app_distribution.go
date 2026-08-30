@@ -1,10 +1,11 @@
 package command
 
 import (
+	"context"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/service"
 	"github.com/jmatsu/splitter/task"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"strings"
 )
 
@@ -21,15 +22,16 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Name:     "app-id",
 				Usage:    "Firebase App ID. e.g. 1:123456578:android:xxxxxxx",
 				Required: true,
-				EnvVars:  []string{"FIREBASE_APP_ID"},
+				Sources:  cli.EnvVars("FIREBASE_APP_ID"),
 			},
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A path to an app file.",
-				Required: true,
+				Usage:     "A path to an app file.",
+				Required:  true,
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name: "access-token",
@@ -38,12 +40,13 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				},
 				Usage:    "The access token to use for this distribution.",
 				Required: false,
-				EnvVars:  []string{"FIREBASE_CLI_TOKEN"},
+				Sources:  cli.EnvVars("FIREBASE_CLI_TOKEN"),
 			},
-			&cli.PathFlag{
-				Name:     "credentials",
-				Usage:    "A path to a credentials json file.",
-				Required: false,
+			&cli.StringFlag{
+				Name:      "credentials",
+				Usage:     "A path to a credentials json file.",
+				Required:  false,
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name:     "release-note",
@@ -61,23 +64,23 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				Required: false,
 			},
 		},
-		Action: func(context *cli.Context) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			conf := config.FirebaseAppDistributionConfig{
-				AccessToken:           context.String("access-token"),
-				GoogleCredentialsPath: context.String("credentials"),
-				AppId:                 context.String("app-id"),
+				AccessToken:           cmd.String("access-token"),
+				GoogleCredentialsPath: cmd.String("credentials"),
+				AppId:                 cmd.String("app-id"),
 			}
 
-			if v := strings.Split(context.String("group-aliases"), ","); context.IsSet("group-aliases") && len(v) > 0 {
+			if v := strings.Split(cmd.String("group-aliases"), ","); cmd.IsSet("group-aliases") && len(v) > 0 {
 				conf.GroupAliases = v
 			}
 
-			return task.DeployToFirebaseAppDistribution(context.Context, conf, context.String("source-path"), func(req *service.FirebaseAppDistributionDeployRequest) error {
-				if v := context.String("release-note"); context.IsSet("release-note") {
+			return task.DeployToFirebaseAppDistribution(ctx, conf, cmd.String("source-path"), func(req *service.FirebaseAppDistributionDeployRequest) error {
+				if v := cmd.String("release-note"); cmd.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}
 
-				if v := strings.Split(context.String("tester-emails"), ","); context.IsSet("tester-emails") && len(v) > 0 {
+				if v := strings.Split(cmd.String("tester-emails"), ","); cmd.IsSet("tester-emails") && len(v) > 0 {
 					req.SetTesterEmails(v)
 				}
 

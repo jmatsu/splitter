@@ -1,12 +1,13 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/service"
 	"github.com/jmatsu/splitter/task"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"strings"
 )
 
@@ -18,13 +19,14 @@ func CustomService(name string, aliases []string) *cli.Command {
 		Usage:       "Deploy your apps to the defined service in the config file.",
 		Description: "You can distribute your apps to the defined service in the config file.",
 		Flags: []cli.Flag{
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A path to an app file.",
-				Required: true,
+				Usage:     "A path to an app file.",
+				Required:  true,
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name: "auth-token",
@@ -58,19 +60,19 @@ func CustomService(name string, aliases []string) *cli.Command {
 				Required: false,
 			},
 		},
-		Action: func(context *cli.Context) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			conf := config.CustomServiceConfig{
-				AuthToken: context.String("auth-token"),
+				AuthToken: cmd.String("auth-token"),
 			}
 
-			def, err := config.CurrentConfig().Definition(context.String("name"))
+			def, err := config.CurrentConfig().Definition(cmd.String("name"))
 
 			if err != nil {
 				return errors.Wrapf(err, "cannot get a definition")
 			}
 
-			return task.DeployToCustomService(context.Context, def, conf, context.String("source-path"), func(req *service.CustomServiceDeployRequest) error {
-				if headers := context.StringSlice("header"); context.IsSet("header") {
+			return task.DeployToCustomService(ctx, def, conf, cmd.String("source-path"), func(req *service.CustomServiceDeployRequest) error {
+				if headers := cmd.StringSlice("header"); cmd.IsSet("header") {
 					for _, header := range headers {
 						if name, value, ok := strings.Cut(header, "="); ok {
 							req.SetHeader(name, value)
@@ -79,7 +81,7 @@ func CustomService(name string, aliases []string) *cli.Command {
 						}
 					}
 				}
-				if params := context.StringSlice("query-param"); context.IsSet("query-param") {
+				if params := cmd.StringSlice("query-param"); cmd.IsSet("query-param") {
 					for _, param := range params {
 						if name, value, ok := strings.Cut(param, "="); ok {
 							if req.HasQueryParam(name) {
@@ -92,7 +94,7 @@ func CustomService(name string, aliases []string) *cli.Command {
 						}
 					}
 				}
-				if params := context.StringSlice("form-param"); context.IsSet("form-param") {
+				if params := cmd.StringSlice("form-param"); cmd.IsSet("form-param") {
 					for _, param := range params {
 						if name, value, ok := strings.Cut(param, "="); ok {
 							req.SetFormParam(name, value)

@@ -1,9 +1,10 @@
 package command
 
 import (
+	"context"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"os"
 	"path/filepath"
 )
@@ -30,19 +31,19 @@ func AddDeploymentConfig(name string, aliases []string) *cli.Command {
 				Usage: "A service name.",
 			},
 		},
-		Action: func(context *cli.Context) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			var path string
 
-			if context.IsSet("path") {
-				path = context.String("path")
+			if cmd.IsSet("path") {
+				path = cmd.String("path")
 			} else if wd, err := os.Getwd(); err != nil {
 				return errors.Wrap(err, "cannot get the current working directory")
 			} else {
 				path = filepath.Join(wd, config.DefaultConfigName)
 			}
 
-			name := context.String("name")
-			serviceName := context.String("service")
+			name := cmd.String("name")
+			serviceName := cmd.String("service")
 
 			if name == "" {
 				return errors.New("name must be non-empty")

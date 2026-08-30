@@ -1,11 +1,12 @@
 package command
 
 import (
+	"context"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/jmatsu/splitter/service"
 	"github.com/jmatsu/splitter/task"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // Deploy command distributes your app to pre-defined services in your config file.
@@ -23,25 +24,26 @@ func Deploy(name string, aliases []string) *cli.Command {
 				},
 				Usage:    "deployment name in your configuration file.",
 				Required: true,
-				EnvVars:  []string{config.ToEnvName("DEPLOYMENT_NAME")},
+				Sources:  cli.EnvVars(config.ToEnvName("DEPLOYMENT_NAME")),
 			},
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A path to an app file.",
-				Required: true,
+				Usage:     "A path to an app file.",
+				Required:  true,
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name:     "release-note",
 				Usage:    "An release note of this revision. Some of services may not support this option.",
 				Required: false,
-				EnvVars:  []string{config.ToEnvName("DEPLOYMENT_RELEASE_NOTE")},
+				Sources:  cli.EnvVars(config.ToEnvName("DEPLOYMENT_RELEASE_NOTE")),
 			},
 		},
-		Action: func(context *cli.Context) error {
-			name := context.String("name")
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			name := cmd.String("name")
 
 			logger.Logger.Info().Msgf("Loading %s config...", name)
 
@@ -51,17 +53,17 @@ func Deploy(name string, aliases []string) *cli.Command {
 				return err
 			}
 
-			executor := task.NewExecutor(context.Context, nil, &deployment.Lifecycle)
+			executor := task.NewExecutor(ctx, nil, &deployment.Lifecycle)
 
 			return executor.Execute(func() error {
-				sourceFilePath := context.String("source-path")
+				sourceFilePath := cmd.String("source-path")
 
 				switch deployment.ServiceName {
 				case config.DeploygateService:
 					dg := deployment.ServiceConfig.(config.DeployGateConfig)
 
-					return task.DeployToDeployGate(context.Context, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) error {
-						if v := context.String("release-note"); context.IsSet("release-note") {
+					return task.DeployToDeployGate(ctx, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) error {
+						if v := cmd.String("release-note"); cmd.IsSet("release-note") {
 							req.SetMessage(v)
 							req.SetDistributionReleaseNote(v)
 						}
@@ -71,12 +73,12 @@ func Deploy(name string, aliases []string) *cli.Command {
 				case config.LocalService:
 					lo := deployment.ServiceConfig.(config.LocalConfig)
 
-					return task.DeployToLocal(context.Context, lo, sourceFilePath)
+					return task.DeployToLocal(ctx, lo, sourceFilePath)
 				case config.FirebaseAppDistributionService:
 					fad := deployment.ServiceConfig.(config.FirebaseAppDistributionConfig)
 
-					return task.DeployToFirebaseAppDistribution(context.Context, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) error {
-						if v := context.String("release-note"); context.IsSet("release-note") {
+					return task.DeployToFirebaseAppDistribution(ctx, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) error {
+						if v := cmd.String("release-note"); cmd.IsSet("release-note") {
 							req.SetReleaseNote(v)
 						}
 
@@ -85,13 +87,13 @@ func Deploy(name string, aliases []string) *cli.Command {
 				case config.TestFlightService:
 					tf := deployment.ServiceConfig.(config.TestFlightConfig)
 
-					return task.DeployToTestFlight(context.Context, tf, sourceFilePath, func(req *service.TestFlightDeployRequest) error {
+					return task.DeployToTestFlight(ctx, tf, sourceFilePath, func(req *service.TestFlightDeployRequest) error {
 						return nil
 					})
 				default:
 					custom := deployment.ServiceConfig.(config.CustomServiceConfig)
 
-					return task.DeployToCustomService(context.Context, definition, custom, sourceFilePath, func(req *service.CustomServiceDeployRequest) error {
+					return task.DeployToCustomService(ctx, definition, custom, sourceFilePath, func(req *service.CustomServiceDeployRequest) error {
 						return nil
 					})
 				}

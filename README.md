@@ -41,12 +41,12 @@ splitter allows you to manage deployment configuration as Code. This feature mak
 
 ```text
 USAGE:
-   splitter deploy [command options] [arguments...]
+   splitter deploy [options]
 
 OPTIONS:
-   --name value, -n value         deployment name in your configuration file. [$SPLITTER_DEPLOYMENT_NAME]
-   --source-path value, -f value  A path to an app file.
-   --release-note value           An release note of this revision. Some of services may not support this option. [$SPLITTER_DEPLOYMENT_RELEASE_NOTE]
+   --name string, -n string         deployment name in your configuration file. [$SPLITTER_DEPLOYMENT_NAME]
+   --source-path string, -f string  A path to an app file.
+   --release-note string            An release note of this revision. Some of services may not support this option. [$SPLITTER_DEPLOYMENT_RELEASE_NOTE]
 ```
 
 ### Syntax
@@ -108,17 +108,17 @@ The minimum behaviour just creates new releases, but you can create and/or [Dist
 
 ```text
 USAGE:
-   splitter deploygate [command options] [arguments...]
+   splitter deploygate [options]
 
 OPTIONS:
-   --app-owner-name value, -n value   User name or Organization name. [$DEPLOYGATE_APP_OWNER_NAME]
-   --api-token value, -t value        The api token of the app owner. [$DEPLOYGATE_API_TOKEN]
-   --source-path value, -f value      A path to an app file.
-   --message value, -m value          A short message of this revision.
-   --distribution-access-key value    An access key of a distribution that must exist. If the both of key and name are specified, key takes priority.
-   --distribution-name value          An name (title) of a distribution that does not have to exist. If the both of key and name are specified, key takes priority.
-   --distribution-release-note value  An release note of this revision that will be available only while being distributed via the specified distribution.
-   --disable-ios-notification         Specify this file if you would like to disable notifications for iOS. (default: false)
+   --app-owner-name string, -n string  User name or Organization name. [$DEPLOYGATE_APP_OWNER_NAME]
+   --api-token string, -t string       The api token of the app owner. [$DEPLOYGATE_API_TOKEN]
+   --source-path string, -f string     A path to an app file.
+   --message string, -m string         A short message of this revision.
+   --distribution-access-key string    An access key of a distribution that must exist. If the both of key and name are specified, key takes priority.
+   --distribution-name string          An name (title) of a distribution that does not have to exist. If the both of key and name are specified, key takes priority.
+   --distribution-release-note string  An release note of this revision that will be available only while being distributed via the specified distribution.
+   --disable-ios-notification          Specify this file if you would like to disable notifications for iOS.
 ```
 
 ### Firebase App Distribution - https://firebase.google.com/docs/app-distribution
@@ -127,16 +127,16 @@ The minimum behaviour just creates new releases, but you can update release note
 
 ```text
 USAGE:
-   splitter firebase-app-distribution [command options] [arguments...]
+   splitter firebase-app-distribution [options]
 
 OPTIONS:
-   --app-id value                  Firebase App ID. e.g. 1:123456578:android:xxxxxxx [$FIREBASE_APP_ID]
-   --source-path value, -f value   A path to an app file.
-   --access-token value, -t value  The access token to use for this distribution. [$FIREBASE_CLI_TOKEN]
-   --credentials value             A path to a credentials json file.
-   --release-note value            An release note of this revision.
-   --group-aliases value           Aliases of groups. Separate multiple aliases by commas.
-   --tester-emails value           Emails of testers. Separate multiple aliases by commas.
+   --app-id string                   Firebase App ID. e.g. 1:123456578:android:xxxxxxx [$FIREBASE_APP_ID]
+   --source-path string, -f string   A path to an app file.
+   --access-token string, -t string  The access token to use for this distribution. [$FIREBASE_CLI_TOKEN]
+   --credentials string              A path to a credentials json file.
+   --release-note string             An release note of this revision.
+   --group-aliases string            Aliases of groups. Separate multiple aliases by commas.
+   --tester-emails string            Emails of testers. Separate multiple aliases by commas.
 ```
 
 > To get your access token, we recommend https://github.com/google/oauth2l.
@@ -147,14 +147,14 @@ Your local file system.
 
 ```text
 USAGE:
-   splitter local [command options] [arguments...]
+   splitter local [options]
 
 OPTIONS:
-   --source-path value, -f value       A source path to an app file.
-   --destination-path value            A destination path to an app file.
-   --delete-source                     Specify true if you would not like to keep the source file. (default: false)
-   --overwrite                         Specify true if you allow to overwrite the existing destination file. (default: false)
-   --file-mode value                   The final file permission of the destination path. (default: Same to the source)
+   --source-path string, -f string  A source path to an app file.
+   --destination-path string        A destination path to an app file.
+   --delete-source                  Specify true if you would not like to keep the source file.
+   --overwrite                      Specify true if you allow to overwrite the existing destination file.
+   --file-mode uint                 The final file permission of the destination path. (default: Same to the source)
 ```
 
 ### Custom Service
@@ -163,15 +163,15 @@ OPTIONS:
 
 ```text
 USAGE:
-   splitter service [command options] [arguments...]
+   splitter service [options]
 
 OPTIONS:
-   --source-path value, -f value                A path to an app file.
-   --auth-token value, -t value                 The auth token to use for this distribution.
-   --name value, -n value                       A service name in the config file.
-   --header value [ --header value ]            Append <key>=<value> to headers
-   --query-param value [ --query-param value ]  Append <key>=<value> to query parameters
-   --form-param value [ --form-param value ]    Append <key>=<value> to form parameters
+   --source-path string, -f string                A path to an app file.
+   --auth-token string, -t string                 The auth token to use for this distribution.
+   --name string, -n string                       A service name in the config file.
+   --header string [ --header string ]            Append <key>=<value> to headers
+   --query-param string [ --query-param string ]  Append <key>=<value> to query parameters
+   --form-param string [ --form-param string ]    Append <key>=<value> to form parameters
 ```
 
 ## About the supported services 

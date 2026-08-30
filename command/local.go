@@ -1,9 +1,10 @@
 package command
 
 import (
+	"context"
 	"github.com/jmatsu/splitter/internal/config"
 	"github.com/jmatsu/splitter/task"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"os"
 )
 
@@ -15,18 +16,20 @@ func Local(name string, aliases []string) *cli.Command {
 		Usage:       "Move/Copy your apps to another location.",
 		Description: "You can move/copy your apps to another location.",
 		Flags: []cli.Flag{
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name: "source-path",
 				Aliases: []string{
 					"f",
 				},
-				Usage:    "A source path to an app file.",
-				Required: true,
+				Usage:     "A source path to an app file.",
+				Required:  true,
+				TakesFile: true,
 			},
-			&cli.PathFlag{
-				Name:     "destination-path",
-				Usage:    "A destination path to an app file.",
-				Required: true,
+			&cli.StringFlag{
+				Name:      "destination-path",
+				Usage:     "A destination path to an app file.",
+				Required:  true,
+				TakesFile: true,
 			},
 			&cli.BoolFlag{
 				Name:     "delete-source",
@@ -48,15 +51,15 @@ func Local(name string, aliases []string) *cli.Command {
 				DefaultText: "Same to the source",
 			},
 		},
-		Action: func(context *cli.Context) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			conf := config.LocalConfig{
-				DestinationPath: context.String("destination-path"),
-				DeleteSource:    context.Bool("delete-source"),
-				AllowOverwrite:  context.Bool("overwrite"),
-				FileMode:        os.FileMode(context.Uint("file-mode")),
+				DestinationPath: cmd.String("destination-path"),
+				DeleteSource:    cmd.Bool("delete-source"),
+				AllowOverwrite:  cmd.Bool("overwrite"),
+				FileMode:        os.FileMode(cmd.Uint("file-mode")),
 			}
 
-			return task.DeployToLocal(context.Context, conf, context.String("source-path"))
+			return task.DeployToLocal(ctx, conf, cmd.String("source-path"))
 		},
 	}
 }
