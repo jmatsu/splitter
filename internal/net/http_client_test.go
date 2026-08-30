@@ -217,7 +217,9 @@ func Test_HttpClient_DoPostMultipartForm(t *testing.T) {
 						if f, err := values[0].Open(); err != nil {
 							fields[name] = err.Error()
 						} else {
-							defer f.Close()
+							defer func() {
+								_ = f.Close()
+							}()
 							bytes, _ := io.ReadAll(f)
 							fields[name] = string(bytes)
 						}

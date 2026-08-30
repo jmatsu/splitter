@@ -53,8 +53,9 @@ func Test_ValueField_Open(t *testing.T) {
 				t.Errorf("failed to open the field of %s: %v", name, err)
 			} else {
 				if x, ok := reader.(io.Closer); ok {
-					//goland:noinspection GoUnhandledErrorResult
-					defer x.Close()
+					defer func() {
+						_ = x.Close()
+					}()
 				}
 
 				if c.field.FieldName != name {
@@ -114,8 +115,9 @@ func Test_Form_Serialize(t *testing.T) {
 				t.Errorf("failed to open the field of %s: %v", name, err)
 			} else {
 				if x, ok := reader.(io.Closer); ok {
-					//goland:noinspection GoUnhandledErrorResult
-					defer x.Close()
+					defer func() {
+						_ = x.Close()
+					}()
 				}
 
 				if c.field.FieldName != name {

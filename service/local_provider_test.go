@@ -98,7 +98,9 @@ func Test_LocalProvider_Distribute(t *testing.T) {
 			t.Parallel()
 
 			source, _ := os.CreateTemp("", "source-*")
-			defer source.Close()
+			defer func() {
+				_ = source.Close()
+			}()
 
 			if c.FileMode != 0 {
 				if err := source.Chmod(c.FileMode); err != nil {
@@ -123,7 +125,9 @@ func Test_LocalProvider_Distribute(t *testing.T) {
 			dest, _ := os.CreateTemp("", "dest-*")
 
 			if c.DestinationExists {
-				defer dest.Close()
+				defer func() {
+					_ = dest.Close()
+				}()
 			} else {
 				_ = dest.Close()
 				_ = os.Remove(dest.Name())

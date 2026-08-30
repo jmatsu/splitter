@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -24,7 +25,9 @@ func FirebaseToken(ctx context.Context, credentialsPath string) (*oauth2.Token, 
 			return nil, errors.Wrapf(err, "failed to open %s", credentialsPath)
 		}
 
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 
 		bytes, err := io.ReadAll(f)
 
@@ -50,9 +53,30 @@ func findGoogleCredentials(ctx context.Context, jsonContent string) (*google.Cre
 		State:  "state",
 	}
 
-	if jsonContent != "" {
-		return google.CredentialsFromJSONWithParams(ctx, []byte(jsonContent), params)
-	} else {
+	if jsonContent == "" {
 		return google.FindDefaultCredentialsWithParams(ctx, params)
 	}
+
+	credentialsType, err := credentialsTypeOf([]byte(jsonContent))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return google.CredentialsFromJSONWithTypeAndParams(ctx, []byte(jsonContent), credentialsType, params)
+}
+
+// credentialsTypeOf reads the type a credentials file declares for itself. splitter accepts
+// whichever type a user has configured, so the expected type comes from the file rather than
+// being fixed to one of google's constants.
+func credentialsTypeOf(jsonContent []byte) (google.CredentialsType, error) {
+	var credentials struct {
+		Type string `json:"type"`
+	}
+
+	if err := json.Unmarshal(jsonContent, &credentials); err != nil {
+		return "", errors.Wrap(err, "failed to parse the credentials")
+	}
+
+	return google.CredentialsType(credentials.Type), nil
 }

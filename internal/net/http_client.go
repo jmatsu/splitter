@@ -217,8 +217,9 @@ func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]
 		return nil, err
 	}
 
-	//goland:noinspection GoUnhandledErrorResult
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if //goland:noinspection GoImportUsedAsName
 	bytes, err := io.ReadAll(resp.Body); err != nil {
