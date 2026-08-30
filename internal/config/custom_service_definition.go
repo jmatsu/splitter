@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"net/url"
 	"strings"
 )
@@ -123,15 +121,15 @@ type DefaultRequestDefinition struct {
 }
 
 func (d *DefaultRequestDefinition) validate() error {
-	if slices.Contains(maps.Keys(d.Headers), "") {
+	if _, ok := d.Headers[""]; ok {
 		return errors.New("headers has at least one empty key")
 	}
 
-	if slices.Contains(maps.Keys(d.Queries), "") {
+	if _, ok := d.Queries[""]; ok {
 		return errors.New("query has at least one empty key")
 	}
 
-	if slices.Contains(maps.Keys(d.FormParams), "") {
+	if _, ok := d.FormParams[""]; ok {
 		return errors.New("form-params has at least one empty key")
 	}
 

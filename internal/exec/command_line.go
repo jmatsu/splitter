@@ -3,7 +3,6 @@ package exec
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -58,7 +57,7 @@ func (s *commandExecutor) Exec(command string, args ...string) ([]byte, []byte, 
 	cmd.SetStderr(merr)
 
 	if err := cmd.Run(); err != nil {
-		return stdout.Bytes(), stderr.Bytes(), errors.Wrapf(err, fmt.Sprintf("%s failed to run", command))
+		return stdout.Bytes(), stderr.Bytes(), errors.Wrapf(err, "%s failed to run", command)
 	}
 
 	return stdout.Bytes(), stderr.Bytes(), nil
