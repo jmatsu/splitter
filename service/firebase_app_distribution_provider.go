@@ -42,7 +42,7 @@ type FirebaseAppDistributionDeployResult struct {
 var _ DeployResult = &FirebaseAppDistributionDeployResult{}
 
 func (r *FirebaseAppDistributionDeployResult) RawJsonResponse() string {
-	return r.FirebaseAppDistributionGetOperationStateResponse.RawResponse.RawJson()
+	return r.RawResponse.RawJson()
 }
 
 func (r *FirebaseAppDistributionDeployResult) ValueResponse() any {
@@ -106,7 +106,7 @@ func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(r
 		projectNumber: p.ProjectNumber(),
 		appId:         p.AppId,
 		filePath:      filePath,
-		groupAliases:  p.FirebaseAppDistributionConfig.GroupAliases,
+		groupAliases:  p.GroupAliases,
 	}
 
 	if err := builder(request); err != nil {

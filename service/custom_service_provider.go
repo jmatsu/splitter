@@ -82,7 +82,7 @@ type CustomServiceDeployResult struct {
 var _ DeployResult = &CustomServiceDeployResult{}
 
 func (r *CustomServiceDeployResult) RawJsonResponse() string {
-	return r.CustomServiceUploadResponse.RawResponse.RawJson()
+	return r.RawResponse.RawJson()
 }
 
 func (r *CustomServiceDeployResult) ValueResponse() any {

@@ -38,9 +38,9 @@ func (p *CustomServiceProvider) upload(request *CustomServiceUploadAppRequest) (
 		request.form.Set(net.StringField(name, value))
 	}
 
-	authToken := fmt.Sprintf(p.CustomServiceDefinition.AuthDefinition.ValueFormat, p.CustomServiceConfig.AuthToken)
+	authToken := fmt.Sprintf(p.AuthDefinition.ValueFormat, p.AuthToken)
 
-	if prefix, name, err := p.CustomServiceDefinition.AuthDefinition.AuthValue(); err != nil {
+	if prefix, name, err := p.AuthDefinition.AuthValue(); err != nil {
 		return nil, errors.Wrap(err, "couldn't get an auth")
 	} else {
 		switch prefix {

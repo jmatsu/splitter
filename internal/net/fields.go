@@ -90,8 +90,9 @@ func (f *Form) Serialize() (string, *bytes.Buffer, error) {
 	var buffer bytes.Buffer
 
 	w := multipart.NewWriter(&buffer)
-	//goland:noinspection GoUnhandledErrorResult
-	defer w.Close()
+	defer func() {
+		_ = w.Close()
+	}()
 
 	for _, field := range f.Fields {
 		field := field
@@ -104,8 +105,9 @@ func (f *Form) Serialize() (string, *bytes.Buffer, error) {
 			}
 
 			if closable, ok := reader.(io.Closer); ok {
-				//goland:noinspection GoUnhandledErrorResult
-				defer closable.Close()
+				defer func() {
+					_ = closable.Close()
+				}()
 			}
 
 			switch field.Kind {

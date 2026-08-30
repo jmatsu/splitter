@@ -66,7 +66,9 @@ func (p *LocalProvider) move(request *LocalMoveRequest) ([]byte, error) {
 				return "", errors.Wrap(err, "failed to create a temp file")
 			} else {
 				tmp = v
-				defer tmp.Close()
+				defer func() {
+					_ = tmp.Close()
+				}()
 				renameFromPath = tmp.Name()
 			}
 
@@ -76,7 +78,9 @@ func (p *LocalProvider) move(request *LocalMoveRequest) ([]byte, error) {
 				return "", errors.Wrapf(err, "failed to open %s", request.sourceFilePath)
 			}
 
-			defer src.Close()
+			defer func() {
+				_ = src.Close()
+			}()
 
 			if _, err := io.Copy(tmp, src); err != nil {
 				return "", errors.Wrapf(err, "failed to copy %s to %s", request.sourceFilePath, tmp.Name())

@@ -74,7 +74,7 @@ type DeployGateDeployResult struct {
 var _ DeployResult = &DeployGateDeployResult{}
 
 func (r *DeployGateDeployResult) RawJsonResponse() string {
-	return r.DeployGateUploadResponse.RawResponse.RawJson()
+	return r.RawResponse.RawJson()
 }
 
 func (r *DeployGateDeployResult) ValueResponse() any {
