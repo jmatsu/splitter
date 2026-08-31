@@ -252,6 +252,20 @@ func Test_CustomServiceDefinition_validate(t *testing.T) {
 				},
 			},
 		},
+		"endpoint without a scheme": { // CutEndpoint cannot split it into a base url and a path
+			definition: CustomServiceDefinition{
+				Endpoint:         "example.com/path/to/upload",
+				SourceFileFormat: FormParamsAssignFormatPrefix + "file",
+				AuthDefinition:   validAuth,
+			},
+		},
+		"endpoint without a host": {
+			definition: CustomServiceDefinition{
+				Endpoint:         "/path/to/upload",
+				SourceFileFormat: FormParamsAssignFormatPrefix + "file",
+				AuthDefinition:   validAuth,
+			},
+		},
 		"zero": {definition: CustomServiceDefinition{}},
 	}
 

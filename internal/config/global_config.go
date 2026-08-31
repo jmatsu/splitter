@@ -451,6 +451,12 @@ func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
 				ApiKey:   "format:${%s_TESTFLIGHT_API_KEY}",
 				IssuerID: "Issuer ID of ApiKey. You can use app-specific password instead of api key and issuer id",
 			}
+		default:
+			return errors.New(fmt.Sprintf("%s is an unknown service. %s are supported", serviceName, strings.Join([]string{DeploygateService, FirebaseAppDistributionService, LocalService, TestFlightService}, ", ")))
+		}
+
+		if c.rawConfig.Deployments == nil {
+			c.rawConfig.Deployments = map[string]interface{}{}
 		}
 
 		var values map[string]interface{}

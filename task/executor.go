@@ -59,13 +59,11 @@ func (e *StepExecutor) runSteps(steps [][]string) error {
 	for idx, args := range steps {
 		logger.Logger.Info().Msgf("Start executing steps... %d/%d", idx+1, len(steps))
 
-		var err error
-
-		if len(args) >= 2 {
-			_, _, err = e.commandLine.Exec(args[0], args[1:]...)
-		} else {
-			_, _, err = e.commandLine.Exec(args[0])
+		if len(args) == 0 {
+			return errors.Errorf("a step must have a command but %d/%d is empty", idx+1, len(steps))
 		}
+
+		_, _, err := e.commandLine.Exec(args[0], args[1:]...)
 
 		if err != nil {
 			return errors.Wrapf(err, "failed to execute %s... %d/%d", strings.Join(args, " "), idx+1, len(steps))

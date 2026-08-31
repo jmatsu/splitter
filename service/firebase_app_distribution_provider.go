@@ -67,7 +67,7 @@ func (r *FirebaseAppDistributionDeployRequest) SetTesterEmails(value []string) {
 }
 
 func (r *FirebaseAppDistributionDeployRequest) OsName() string {
-	return strings.SplitN(r.appId, ":", 4)[2]
+	return config.AppIdFragment(r.appId, 2)
 }
 
 func (r *FirebaseAppDistributionDeployRequest) fileType() string {
@@ -122,14 +122,25 @@ func (p *FirebaseAppDistributionProvider) Deploy(filePath string, builder func(r
 	var aabInfo *FirebaseAppDistributionAabInfoResponse
 
 	if request.OsName() == "android" {
-		aabInfo, _ = p.getAabInfo(&firebaseAppDistributionAabInfoRequest{
+		info, err := p.getAabInfo(&firebaseAppDistributionAabInfoRequest{
 			appId:         request.appId,
 			projectNumber: request.projectNumber,
 		})
 
-		if request.fileType() == "aab" {
-			if err := checkAppBundleIntegrationState(aabInfo.IntegrationState); err != nil {
-				return nil, err
+		if err != nil {
+			// An apk upload does not need the app bundle information so a failure is not fatal.
+			if request.fileType() == "aab" {
+				return nil, errors.Wrap(err, "cannot check if this app bundle is ready to be uploaded")
+			}
+
+			firebaseAppDistributionLogger.Warn().Err(err).Msg("failed to get the app bundle information of this app")
+		} else {
+			aabInfo = info
+
+			if request.fileType() == "aab" {
+				if err := checkAppBundleIntegrationState(aabInfo.IntegrationState); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
