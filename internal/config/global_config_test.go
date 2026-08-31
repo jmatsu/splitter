@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -871,7 +870,6 @@ func Test_LoadGlobalConfig(t *testing.T) {
 	original := config
 	t.Cleanup(func() {
 		config = original
-		viper.Reset()
 	})
 
 	content := `
@@ -960,11 +958,108 @@ deployments:
 	}
 }
 
+func Test_LoadGlobalConfig_caseSensitiveNames(t *testing.T) {
+	unsetServiceEnv(t)
+
+	original := config
+	t.Cleanup(func() {
+		config = original
+	})
+
+	content := `
+services:
+  MyService:
+    endpoint: https://example.com/path/to/upload
+    source-file-format: form_params.file
+    auth:
+      style-format: headers.Authorization
+      value-format: "Bearer %s"
+deployments:
+  MyDeploy:
+    service: MyService
+    auth-token: token1
+`
+
+	path := filepath.Join(t.TempDir(), DefaultConfigName)
+
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write a config file: %v", err)
+	}
+
+	config = &GlobalConfig{}
+
+	if err := LoadGlobalConfig(&path); err != nil {
+		t.Fatalf("failed to load the config file: %v", err)
+	}
+
+	loaded := CurrentConfig()
+
+	if _, _, err := loaded.Deployment("MyDeploy"); err != nil {
+		t.Errorf("MyDeploy is expected to be found by the declared name but not: %v", err)
+	}
+
+	if _, err := loaded.Definition("MyService"); err != nil {
+		t.Errorf("MyService is expected to be found by the declared name but not: %v", err)
+	}
+
+	if _, _, err := loaded.Deployment("mydeploy"); err == nil {
+		t.Errorf("a lowercased name is expected not to be found but it is")
+	}
+}
+
+func Test_LoadGlobalConfig_malformedFile(t *testing.T) {
+	original := config
+	t.Cleanup(func() {
+		config = original
+	})
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, DefaultConfigName)
+
+	// A tab cannot be used for the indentation in yaml.
+	if err := os.WriteFile(path, []byte("deployments:\n\tlocal1:\n"), 0644); err != nil {
+		t.Fatalf("failed to write a config file: %v", err)
+	}
+
+	config = &GlobalConfig{}
+
+	if err := LoadGlobalConfig(&path); err == nil {
+		t.Errorf("a malformed config file is expected to be rejected but not")
+	}
+
+	// A config file on the working directory must not be ignored either.
+	t.Chdir(dir)
+
+	config = &GlobalConfig{}
+
+	if err := LoadGlobalConfig(nil); err == nil {
+		t.Errorf("a malformed config file on the working directory is expected to be rejected but not")
+	}
+}
+
+func Test_LoadGlobalConfig_withoutFile(t *testing.T) {
+	original := config
+	t.Cleanup(func() {
+		config = original
+	})
+
+	t.Chdir(t.TempDir())
+
+	config = &GlobalConfig{}
+
+	if err := LoadGlobalConfig(nil); err != nil {
+		t.Fatalf("a missing config file is expected to be acceptable but not: %v", err)
+	}
+
+	if v := CurrentConfig().FormatStyle(); v != DefaultFormat {
+		t.Errorf("format style is expected to be %s but %s", DefaultFormat, v)
+	}
+}
+
 func Test_LoadGlobalConfig_missingFile(t *testing.T) {
 	original := config
 	t.Cleanup(func() {
 		config = original
-		viper.Reset()
 	})
 
 	path := filepath.Join(t.TempDir(), "not-found.yml")
