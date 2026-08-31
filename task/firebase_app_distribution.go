@@ -50,7 +50,6 @@ var firebaseAppDistributionTableBuilder = func(w table.Writer, v any) {
 	w.AppendRows([]table.Row{
 		{"Processed State", resp.Response.Result},
 		{"First Uploaded At", release.CreatedAt},
-		{"First Uploaded At", release.CreatedAt},
 	})
 
 	if release.ReleaseNote != nil {
