@@ -593,6 +593,22 @@ func Test_GlobalConfig_AddDeployment(t *testing.T) {
 		"test flight":               {serviceName: TestFlightService, expectedSuccess: true},
 	}
 
+	unknownServiceConfig := GlobalConfig{
+		rawConfig: rawConfig{
+			Deployments: map[string]interface{}{},
+		},
+	}
+
+	if err := unknownServiceConfig.configure(); err != nil {
+		t.Fatalf("failed to configure: %v", err)
+	}
+
+	if err := unknownServiceConfig.AddDeployment("new1", "obababa"); err == nil {
+		t.Errorf("an unknown service name is expected to be rejected but not")
+	} else if _, ok := unknownServiceConfig.rawConfig.Deployments["new1"]; ok {
+		t.Errorf("an unknown service is expected to leave the raw config untouched but not")
+	}
+
 	for name, c := range cases {
 		name, c := name, c
 

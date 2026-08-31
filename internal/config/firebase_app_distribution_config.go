@@ -1,9 +1,26 @@
 package config
 
 import (
+	"fmt"
 	"github.com/jmatsu/splitter/internal/logger"
+	"github.com/pkg/errors"
 	"strings"
 )
+
+// AppIdFragmentCount is the number of the fragments of <num>:<project number>:<os>:<uid>.
+const AppIdFragmentCount = 4
+
+// AppIdFragment returns the index-th fragment of an app id, or an empty string if the app id does
+// not follow the format. FirebaseAppDistributionConfig#Validate rejects such an app id beforehand.
+func AppIdFragment(appId string, index int) string {
+	fragments := strings.SplitN(appId, ":", AppIdFragmentCount)
+
+	if len(fragments) < AppIdFragmentCount {
+		return ""
+	}
+
+	return fragments[index]
+}
 
 // FirebaseAppDistributionConfig contains the enough values to use Firebase App Distribution.
 // ref: https://firebase.google.com/docs/app-distribution
@@ -29,6 +46,10 @@ func (c *FirebaseAppDistributionConfig) Validate() error {
 		return err
 	}
 
+	if len(strings.SplitN(c.AppId, ":", AppIdFragmentCount)) < AppIdFragmentCount {
+		return errors.New(fmt.Sprintf("%s does not follow the app id format e.g. 1:123456789:android:xxxxx", c.AppId))
+	}
+
 	if c.AccessToken == "" && c.GoogleCredentialsPath == "" {
 		logger.Logger.Warn().Msg("we recommend specifying a token or credentials path explicitly")
 	} else if c.AccessToken != "" && c.GoogleCredentialsPath != "" {
@@ -39,6 +60,5 @@ func (c *FirebaseAppDistributionConfig) Validate() error {
 }
 
 func (c *FirebaseAppDistributionConfig) ProjectNumber() string {
-	// <num>:<project number>:<os>:<uid>
-	return strings.SplitN(c.AppId, ":", 3)[1]
+	return AppIdFragment(c.AppId, 1)
 }

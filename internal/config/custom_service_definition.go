@@ -24,8 +24,11 @@ type CustomServiceDefinition struct {
 }
 
 func (d *CustomServiceDefinition) validate() error {
-	if _, err := url.Parse(d.Endpoint); err != nil {
+	// The endpoint is split into a base url and a path later so a relative url cannot be accepted.
+	if v, err := url.Parse(d.Endpoint); err != nil {
 		return errors.Wrapf(err, "%s is not a URL format", d.Endpoint)
+	} else if v.Scheme == "" || v.Host == "" {
+		return errors.New(fmt.Sprintf("%s must be an absolute URL e.g. https://example.com/path/to/upload", d.Endpoint))
 	}
 
 	if d.SourceFileFormat != RequestBodyAssignFormat {

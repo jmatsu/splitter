@@ -79,6 +79,20 @@ func Test_FirebaseAppDistributionConfig_Validate(t *testing.T) {
 			},
 			expectedValidness: false,
 		},
+		"malformed app id": {
+			config: FirebaseAppDistributionConfig{
+				AppId:       "my-app",
+				AccessToken: "AccessToken",
+			},
+			expectedValidness: false,
+		},
+		"app id that lacks a uid": {
+			config: FirebaseAppDistributionConfig{
+				AppId:       "1:123456:android",
+				AccessToken: "AccessToken",
+			},
+			expectedValidness: false,
+		},
 		"zero": {
 			config:            FirebaseAppDistributionConfig{},
 			expectedValidness: false,
@@ -111,6 +125,10 @@ func Test_FirebaseAppDistributionConfig_ProjectNumber(t *testing.T) {
 		"ios": {
 			appId:    "1:987654321:ios:yyyyy",
 			expected: "987654321",
+		},
+		"malformed": { // Validate rejects it beforehand so it must not panic here
+			appId:    "my-app",
+			expected: "",
 		},
 	}
 

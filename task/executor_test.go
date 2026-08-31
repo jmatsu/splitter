@@ -232,6 +232,31 @@ func Test_StepExecutor_Execute(t *testing.T) {
 	}
 }
 
+func Test_StepExecutor_Execute_withAnEmptyStep(t *testing.T) {
+	t.Parallel()
+
+	var called bool
+
+	sh := &testingexec.FakeExec{ExactOrder: true}
+
+	executor := NewExecutor(context.TODO(), sh, &config.ExecutionConfig{
+		PreSteps: [][]string{{}},
+	})
+
+	err := executor.Execute(func() error {
+		called = true
+		return nil
+	})
+
+	if err == nil {
+		t.Fatalf("an empty step is expected to be an error but not")
+	}
+
+	if called {
+		t.Errorf("the content is expected not to be executed but it was")
+	}
+}
+
 func Test_NewExecutor_withDefaultShell(t *testing.T) {
 	t.Parallel()
 
