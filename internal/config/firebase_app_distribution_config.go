@@ -26,7 +26,6 @@ func AppIdFragment(appId string, index int) string {
 // ref: https://firebase.google.com/docs/app-distribution
 type FirebaseAppDistributionConfig struct {
 	serviceNameHolder `yaml:",inline"`
-	ExecutionConfig   `yaml:",inline"`
 
 	// An app ID. You can get this value from the firebase console's project setting.
 	AppId string `yaml:"app-id" required:"true"`

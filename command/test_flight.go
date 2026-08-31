@@ -61,7 +61,7 @@ func TestFlight(name string, aliases []string) *cli.Command {
 				IssuerID: cmd.String("issuer-id"),
 			}
 
-			return task.DeployToTestFlight(ctx, conf, cmd.String("source-path"), func(req *service.TestFlightDeployRequest) error {
+			return task.DeployToTestFlight(ctx, "", conf, cmd.String("source-path"), func(req *service.TestFlightDeployRequest) error {
 				// no-op
 				return nil
 			})

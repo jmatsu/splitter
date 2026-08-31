@@ -71,7 +71,7 @@ func CustomService(name string, aliases []string) *cli.Command {
 				return errors.Wrapf(err, "cannot get a definition")
 			}
 
-			return task.DeployToCustomService(ctx, def, conf, cmd.String("source-path"), func(req *service.CustomServiceDeployRequest) error {
+			return task.DeployToCustomService(ctx, "", cmd.String("name"), def, conf, cmd.String("source-path"), func(req *service.CustomServiceDeployRequest) error {
 				if headers := cmd.StringSlice("header"); cmd.IsSet("header") {
 					for _, header := range headers {
 						if name, value, ok := strings.Cut(header, "="); ok {

@@ -50,6 +50,10 @@ func (r *testDistributionResult) RawJsonResponse() string {
 	return "ok"
 }
 
+func (r *testDistributionResult) NormalizedResponse() service.NormalizedResult {
+	return service.NormalizedResult{}
+}
+
 func (f *Formatter) withTableBuilder(b TableBuilder) *Formatter {
 	f.TableBuilder = b
 	return f

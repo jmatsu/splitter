@@ -87,15 +87,6 @@ https://github.com/jmatsu/splitter/blob/main/internal/config/local_config.go
 
 https://github.com/jmatsu/splitter/blob/main/internal/config/custom_service_config.go
 
-### Pre-/Post-Steps
-
-You can define pre-steps that will be executed before the deployment and post-steps that will be executed after the successful deployment. 
-
-**Limitation**
-
-- Non-zero status will halt the following steps and deployment.
-- Every step will be executed on different shells so variables are not inherited to other steps.
-
 ## On-demand deployment
 
 splitter provides commands specified for deployment to each service. This mode doesn't use `deployments` configuration in the config file.
@@ -172,6 +163,56 @@ OPTIONS:
    --header string [ --header string ]            Append <key>=<value> to headers
    --query-param string [ --query-param string ]  Append <key>=<value> to query parameters
    --form-param string [ --form-param string ]    Append <key>=<value> to form parameters
+```
+
+## Deployment results
+
+Every successful deployment, whether configuration-based or on-demand, is dumped into `.splitter-dist/<run-name>/<name>.json` so that the following commands in your sequence can consume it without parsing the stdout.
+
+- `<run-name>` is a UTC timestamp such as `20240101T091500Z` unless `--run-name` is given.
+- `<name>` is a deployment name of the configuration-based command, otherwise a service name.
+
+```shell
+splitter deploy -n pull-request -f path/to/apk --run-name "pr-${GITHUB_PULL_NUMBER}"
+
+install_url=$(jq -r '.release.install_url' ".splitter-dist/pr-${GITHUB_PULL_NUMBER}/pull-request.json")
+```
+
+```text
+OPTIONS:
+   --dist-dir string  A base directory that deployment results are dumped into. (default: .splitter-dist) [$SPLITTER_DIST_DIR]
+   --run-name string  A directory name of this execution under the dist directory. (default: the current timestamp) [$SPLITTER_RUN_NAME]
+```
+
+`dist-dir` is also configurable in your config file.
+
+### Schema
+
+`app` and `release` are the normalized view of a response. Every field of them is nullable because no service exposes all of them. `values` is the parsed response of the service and `raw` is the response as-is.
+
+```json
+{
+  "service": "deploygate",
+  "deployment": "pull-request",
+  "run_name": "pr-1234",
+  "deployed_at": "2024-01-01T09:15:00Z",
+  "source_file_path": "path/to/apk",
+  "app": {
+    "name": "Example",
+    "identifier": "com.example",
+    "os": "android",
+    "version_name": "1.0",
+    "version_code": "1"
+  },
+  "release": {
+    "install_url": "https://deploygate.com/distributions/xxxxx",
+    "download_url": "https://deploygate.com/xxxxx",
+    "destination_path": null,
+    "release_note": "a release note"
+  },
+  "values": {},
+  "raw": {}
+}
 ```
 
 ## About the supported services 

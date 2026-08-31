@@ -50,7 +50,7 @@ func (r *TestFlightDeployRequest) NewUploadAppRequest() *TestFlightUploadAppRequ
 
 type TestFlightDeployResult struct {
 	TestFlightUploadAppResponse
-	RawJson string
+	RawJson string `json:"-"`
 }
 
 var _ DeployResult = &TestFlightDeployResult{}
@@ -61,6 +61,11 @@ func (r *TestFlightDeployResult) RawJsonResponse() string {
 
 func (r *TestFlightDeployResult) ValueResponse() any {
 	return *r
+}
+
+// NormalizedResponse is empty because altool reports nothing but its own execution result.
+func (r *TestFlightDeployResult) NormalizedResponse() NormalizedResult {
+	return NormalizedResult{}
 }
 
 func (p *TestFlightProvider) Deploy(filePath string, builder func(req *TestFlightDeployRequest) error) (*TestFlightDeployResult, error) {

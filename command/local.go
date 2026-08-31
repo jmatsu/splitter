@@ -59,7 +59,7 @@ func Local(name string, aliases []string) *cli.Command {
 				FileMode:        os.FileMode(cmd.Uint("file-mode")),
 			}
 
-			return task.DeployToLocal(ctx, conf, cmd.String("source-path"))
+			return task.DeployToLocal(ctx, "", conf, cmd.String("source-path"))
 		},
 	}
 }

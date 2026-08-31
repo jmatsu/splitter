@@ -49,6 +49,30 @@ func (r *FirebaseAppDistributionDeployResult) ValueResponse() any {
 	return *r
 }
 
+func (r *FirebaseAppDistributionDeployResult) NormalizedResponse() NormalizedResult {
+	var result NormalizedResult
+
+	// An app bundle info is fetched only for Android apps while its absence doesn't mean iOS.
+	if r.AabInfo != nil {
+		result.App.Os = nullable("android")
+	}
+
+	if r.Response == nil {
+		return result
+	}
+
+	release := r.Response.Release
+
+	result.App.VersionName = nullable(release.DisplayVersion)
+	result.App.VersionCode = nullable(release.BuildVersion)
+
+	if note := release.ReleaseNote; note != nil {
+		result.Release.ReleaseNote = nullable(note.Text)
+	}
+
+	return result
+}
+
 type FirebaseAppDistributionDeployRequest struct {
 	projectNumber string
 	appId         string

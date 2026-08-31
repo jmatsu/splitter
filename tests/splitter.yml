@@ -9,8 +9,3 @@ deployments:
   case3:
     service: "local"
     destination-path: "./dist/sample.txt"
-    pre-steps:
-      - ['rm', '-fr', './dist']
-      - ['mkdir', '-p', './dist']
-    post-steps:
-      - ['cp', '-f', './dist/sample.txt', './dist/sample.copied.txt']

@@ -75,7 +75,7 @@ func FirebaseAppDistribution(name string, aliases []string) *cli.Command {
 				conf.GroupAliases = v
 			}
 
-			return task.DeployToFirebaseAppDistribution(ctx, conf, cmd.String("source-path"), func(req *service.FirebaseAppDistributionDeployRequest) error {
+			return task.DeployToFirebaseAppDistribution(ctx, "", conf, cmd.String("source-path"), func(req *service.FirebaseAppDistributionDeployRequest) error {
 				if v := cmd.String("release-note"); cmd.IsSet("release-note") {
 					req.SetReleaseNote(v)
 				}

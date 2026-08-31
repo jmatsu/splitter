@@ -51,6 +51,10 @@ func (c *GlobalConfig) assertEquals(other GlobalConfig) error {
 		return errors.New(fmt.Sprintf("%v does not equal to %v due to #WaitTimeout", c.WaitTimeout(), other.WaitTimeout()))
 	}
 
+	if c.DistDir() != other.DistDir() {
+		return errors.New(fmt.Sprintf("%v does not equal to %v due to #DistDir", c.DistDir(), other.DistDir()))
+	}
+
 	if len(c.deployments) != len(other.deployments) {
 		return errors.New(fmt.Sprintf("%v does not equal to %v due to #deployments", c.deployments, other.deployments))
 	}
@@ -216,39 +220,16 @@ func Test_Config_configure(t *testing.T) {
 				},
 			},
 		},
-		"lifecycle steps": {
+		"dist dir": {
 			rawConfig: rawConfig{
-				Deployments: map[string]interface{}{
-					"def1": map[string]interface{}{
-						"service":          LocalService,
-						"destination-path": "def1-destination-path",
-						"pre-steps":        []interface{}{[]interface{}{"echo", "pre"}},
-						"post-steps":       []interface{}{[]interface{}{"echo", "post"}},
-					},
-				},
+				DistDir: "build/splitter",
 			},
 			expected: &GlobalConfig{
 				rawConfig: rawConfig{
 					FormatStyle:    DefaultFormat,
 					NetworkTimeout: DefaultNetworkTimeout,
 					WaitTimeout:    DefaultWaitTimeout,
-				},
-				deployments: map[string]Deployment{
-					"def1": {
-						ServiceName: LocalService,
-						ServiceConfig: LocalConfig{
-							serviceNameHolder: serviceNameHolder{Name: LocalService},
-							ExecutionConfig: ExecutionConfig{
-								PreSteps:  [][]string{{"echo", "pre"}},
-								PostSteps: [][]string{{"echo", "post"}},
-							},
-							DestinationPath: "def1-destination-path",
-						},
-						Lifecycle: ExecutionConfig{
-							PreSteps:  [][]string{{"echo", "pre"}},
-							PostSteps: [][]string{{"echo", "post"}},
-						},
-					},
+					DistDir:        "build/splitter",
 				},
 			},
 		},
@@ -733,6 +714,7 @@ func Test_GlobalConfig_Validate(t *testing.T) {
 
 	cases := map[string]struct {
 		rawConfig         rawConfig
+		runName           string
 		expectedValidness bool
 	}{
 		"defaults": {
@@ -833,6 +815,48 @@ func Test_GlobalConfig_Validate(t *testing.T) {
 				WaitTimeout:    DefaultWaitTimeout,
 			},
 		},
+		"dist dir": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: DefaultNetworkTimeout,
+				WaitTimeout:    DefaultWaitTimeout,
+				DistDir:        "build/splitter",
+			},
+			expectedValidness: true,
+		},
+		"blank dist dir": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: DefaultNetworkTimeout,
+				WaitTimeout:    DefaultWaitTimeout,
+				DistDir:        "  ",
+			},
+		},
+		"run name": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: DefaultNetworkTimeout,
+				WaitTimeout:    DefaultWaitTimeout,
+			},
+			runName:           "pr-1234.1_x",
+			expectedValidness: true,
+		},
+		"run name with a path separator": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: DefaultNetworkTimeout,
+				WaitTimeout:    DefaultWaitTimeout,
+			},
+			runName: "pull/1234",
+		},
+		"run name traversing the parent": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: DefaultNetworkTimeout,
+				WaitTimeout:    DefaultWaitTimeout,
+			},
+			runName: "..",
+		},
 		"zero": {
 			rawConfig: rawConfig{},
 		},
@@ -844,7 +868,7 @@ func Test_GlobalConfig_Validate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			config := GlobalConfig{rawConfig: c.rawConfig}
+			config := GlobalConfig{rawConfig: c.rawConfig, runName: c.runName}
 
 			if err := config.Validate(); (err == nil) != c.expectedValidness {
 				t.Errorf("%s case is expected to be %t but %t: %v", name, c.expectedValidness, err == nil, err)

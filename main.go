@@ -61,6 +61,30 @@ func main() {
 				DefaultText: config.DefaultWaitTimeout,
 				Sources:     cli.EnvVars(config.ToEnvName("WAIT_TIMEOUT")),
 			},
+			// Both are applied through flag actions so that they take effect wherever they appear,
+			// that is, before or after a sub-command name.
+			&cli.StringFlag{
+				Name:        "dist-dir",
+				Usage:       "A base directory that deployment results are dumped into.",
+				Required:    false,
+				DefaultText: config.DistDirName,
+				Sources:     cli.EnvVars(config.ToEnvName("DIST_DIR")),
+				Action: func(ctx context.Context, cmd *cli.Command, s string) error {
+					config.SetGlobalDistDir(s)
+					return config.CurrentConfig().Validate()
+				},
+			},
+			&cli.StringFlag{
+				Name:        "run-name",
+				Usage:       "A directory name of this execution under the dist directory.",
+				Required:    false,
+				DefaultText: "the current timestamp",
+				Sources:     cli.EnvVars(config.ToEnvName("RUN_NAME")),
+				Action: func(ctx context.Context, cmd *cli.Command, s string) error {
+					config.SetGlobalRunName(s)
+					return config.CurrentConfig().Validate()
+				},
+			},
 		},
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			if logLevel := cmd.String("log-level"); cmd.IsSet("log-level") {

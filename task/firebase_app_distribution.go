@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DeployToFirebaseAppDistribution(ctx context.Context, conf config.FirebaseAppDistributionConfig, filePath string, builder func(req *service.FirebaseAppDistributionDeployRequest) error) error {
+func DeployToFirebaseAppDistribution(ctx context.Context, deploymentName string, conf config.FirebaseAppDistributionConfig, filePath string, builder func(req *service.FirebaseAppDistributionDeployRequest) error) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}
@@ -19,10 +19,20 @@ func DeployToFirebaseAppDistribution(ctx context.Context, conf config.FirebaseAp
 	formatter := NewFormatter()
 	formatter.TableBuilder = firebaseAppDistributionTableBuilder
 
-	if response, err := provider.Deploy(filePath, builder); err != nil {
+	dumper := NewDumper(config.FirebaseAppDistributionService, deploymentName, filePath)
+
+	response, err := provider.Deploy(filePath, builder)
+
+	if err != nil {
 		return errors.Wrap(err, "cannot deploy this app")
-	} else if err := formatter.Format(response); err != nil {
+	}
+
+	if err := formatter.Format(response); err != nil {
 		return errors.Wrap(err, "cannot format the response")
+	}
+
+	if err := dumper.Dump(response); err != nil {
+		return errors.Wrap(err, "cannot dump the response")
 	}
 
 	return nil

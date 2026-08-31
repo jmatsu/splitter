@@ -5,6 +5,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -328,36 +330,114 @@ deployments:
 	}
 }
 
-func Test_E2E_deployWithLifecycleSteps(t *testing.T) {
-	dir := t.TempDir()
-
-	source := writeFile(t, filepath.Join(dir, "app.apk"), "app content")
-	destination := filepath.Join(dir, "dist", "app.apk")
-	copied := filepath.Join(dir, "dist", "app.copied.apk")
-
-	config := writeFile(t, filepath.Join(dir, "splitter.yml"), fmt.Sprintf(`
-deployments:
-  local1:
-    service: local
-    destination-path: %s
-    allow-overwrite: true
-    pre-steps:
-      - ["mkdir", "-p", "%s"]
-    post-steps:
-      - ["cp", "-f", "%s", "%s"]
-`, destination, filepath.Dir(destination), destination, copied))
-
-	result := run(t, nil, "--config", config, "deploy", "-n", "local1", "-f", source)
-
-	if result.exitCode != 0 {
-		t.Fatalf("deploy is expected to exit with 0 but %d: %s", result.exitCode, result.combined())
+func Test_E2E_deployDumpsTheResult(t *testing.T) {
+	cases := map[string]struct {
+		args            []string
+		expectedRunName string
+	}{
+		"generated run name": {},
+		"given run name": {
+			args:            []string{"--run-name", "pr-1234"},
+			expectedRunName: "pr-1234",
+		},
+		"given dist dir": {
+			args:            []string{"--run-name", "pr-1234", "--dist-dir", "build/splitter"},
+			expectedRunName: "pr-1234",
+		},
 	}
 
-	assertFileContent(t, destination, "app content")
-	assertFileContent(t, copied, "app content")
+	for name, c := range cases {
+		name, c := name, c
+
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+
+			source := writeFile(t, filepath.Join(dir, "app.apk"), "app content")
+			destination := filepath.Join(dir, "dist", "app.apk")
+
+			if err := os.MkdirAll(filepath.Dir(destination), 0755); err != nil {
+				t.Fatalf("failed to create the destination dir: %v", err)
+			}
+
+			config := writeFile(t, filepath.Join(dir, "splitter.yml"), fmt.Sprintf(`
+deployments:
+  local1:
+    service: local
+    destination-path: %s
+`, destination))
+
+			args := append([]string{"--config", config, "deploy", "-n", "local1", "-f", source}, c.args...)
+
+			if result := runIn(t, dir, nil, args...); result.exitCode != 0 {
+				t.Fatalf("deploy is expected to exit with 0 but %d: %s", result.exitCode, result.combined())
+			}
+
+			distDir := filepath.Join(dir, ".splitter-dist")
+
+			if slices.Contains(c.args, "--dist-dir") {
+				distDir = filepath.Join(dir, "build", "splitter")
+			}
+
+			runs, err := os.ReadDir(distDir)
+
+			if err != nil {
+				t.Fatalf("%s is expected to be created but not: %v", distDir, err)
+			}
+
+			if len(runs) != 1 {
+				t.Fatalf("%s is expected to hold exactly one run but %d", distDir, len(runs))
+			}
+
+			if c.expectedRunName != "" && runs[0].Name() != c.expectedRunName {
+				t.Errorf("the run directory is expected to be %s but %s", c.expectedRunName, runs[0].Name())
+			}
+
+			path := filepath.Join(distDir, runs[0].Name(), "local1.json")
+
+			bytes, err := os.ReadFile(path)
+
+			if err != nil {
+				t.Fatalf("%s is expected to be dumped but not: %v", path, err)
+			}
+
+			var dumped struct {
+				Service    string  `json:"service"`
+				Deployment *string `json:"deployment"`
+				RunName    string  `json:"run_name"`
+				Release    struct {
+					DestinationPath *string `json:"destination_path"`
+				} `json:"release"`
+				Raw map[string]any `json:"raw"`
+			}
+
+			if err := json.Unmarshal(bytes, &dumped); err != nil {
+				t.Fatalf("%s is expected to be a json but %s: %v", path, string(bytes), err)
+			}
+
+			if dumped.Service != "local" {
+				t.Errorf("the service is expected to be local but %s", dumped.Service)
+			}
+
+			if dumped.Deployment == nil || *dumped.Deployment != "local1" {
+				t.Errorf("the deployment is expected to be local1 but %v", dumped.Deployment)
+			}
+
+			if dumped.RunName != runs[0].Name() {
+				t.Errorf("the run name is expected to be %s but %s", runs[0].Name(), dumped.RunName)
+			}
+
+			if dumped.Release.DestinationPath == nil || *dumped.Release.DestinationPath != destination {
+				t.Errorf("the destination path is expected to be %s but %v", destination, dumped.Release.DestinationPath)
+			}
+
+			if _, found := dumped.Raw["destination_file_path"]; !found {
+				t.Errorf("the raw response is expected to be kept but %v", dumped.Raw)
+			}
+		})
+	}
 }
 
-func Test_E2E_deployWithFailingPreStep(t *testing.T) {
+func Test_E2E_deployRejectsAnInvalidRunName(t *testing.T) {
 	dir := t.TempDir()
 
 	source := writeFile(t, filepath.Join(dir, "app.apk"), "app content")
@@ -368,14 +448,12 @@ deployments:
   local1:
     service: local
     destination-path: %s
-    pre-steps:
-      - ["false"]
 `, destination))
 
-	result := run(t, nil, "--config", config, "deploy", "-n", "local1", "-f", source)
+	result := runIn(t, dir, nil, "--config", config, "deploy", "-n", "local1", "-f", source, "--run-name", "pulls/1234")
 
 	if result.exitCode == 0 {
-		t.Fatalf("a failing pre-step is expected to halt the deployment but not: %s", result.combined())
+		t.Fatalf("a run name with a path separator is expected to be rejected but not: %s", result.combined())
 	}
 
 	if _, err := os.Stat(destination); err == nil {

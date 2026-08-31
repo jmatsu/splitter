@@ -50,7 +50,7 @@ func (r *LocalDeployRequest) NewMoveRequest() *LocalMoveRequest {
 
 type LocalDeployResult struct {
 	LocalMoveResponse
-	RawJson string
+	RawJson string `json:"-"`
 }
 
 var _ DeployResult = &LocalDeployResult{}
@@ -61,6 +61,14 @@ func (r *LocalDeployResult) RawJsonResponse() string {
 
 func (r *LocalDeployResult) ValueResponse() any {
 	return *r
+}
+
+func (r *LocalDeployResult) NormalizedResponse() NormalizedResult {
+	return NormalizedResult{
+		Release: NormalizedRelease{
+			DestinationPath: nullable(r.DestinationFilePath),
+		},
+	}
 }
 
 func (p *LocalProvider) Deploy(filePath string) (*LocalDeployResult, error) {

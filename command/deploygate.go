@@ -91,7 +91,7 @@ func DeployGate(name string, aliases []string) *cli.Command {
 				ApiToken:     cmd.String(deployGateApiTokenFlag),
 			}
 
-			return task.DeployToDeployGate(ctx, conf, cmd.String(deployGateSourcePathFlag), func(req *service.DeployGateDeployRequest) error {
+			return task.DeployToDeployGate(ctx, "", conf, cmd.String(deployGateSourcePathFlag), func(req *service.DeployGateDeployRequest) error {
 				if v := cmd.String(deployGateMessageFlag); cmd.IsSet(deployGateMessageFlag) {
 					req.SetMessage(v)
 				}

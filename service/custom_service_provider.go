@@ -89,6 +89,11 @@ func (r *CustomServiceDeployResult) ValueResponse() any {
 	return *r
 }
 
+// NormalizedResponse is empty because a custom service response has no known shape.
+func (r *CustomServiceDeployResult) NormalizedResponse() NormalizedResult {
+	return NormalizedResult{}
+}
+
 func (p *CustomServiceProvider) Deploy(filePath string, builder func(req *CustomServiceDeployRequest) error) (*CustomServiceDeployResult, error) {
 	request := &CustomServiceDeployRequest{
 		filePath: filePath,
