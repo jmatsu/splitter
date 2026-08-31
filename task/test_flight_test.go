@@ -15,7 +15,10 @@ func Test_testFlightTableBuilder(t *testing.T) {
 		},
 		"regular": {
 			result: service.TestFlightDeployResult{
-				TestFlightUploadAppResponse: service.TestFlightUploadAppResponse{},
+				TestFlightUploadAppResponse: service.TestFlightUploadAppResponse{
+					SuccessMessage: "No errors uploading app.ipa",
+					ToolVersion:    "4.029.1194",
+				},
 			},
 		},
 	}

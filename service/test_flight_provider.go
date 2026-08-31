@@ -7,6 +7,7 @@ import (
 	"github.com/jmatsu/splitter/internal/logger"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"strings"
 )
 
 var testFlightLogger zerolog.Logger
@@ -79,14 +80,23 @@ func (p *TestFlightProvider) Deploy(filePath string, builder func(req *TestFligh
 
 	var response TestFlightUploadAppResponse
 
-	if bytes, err := p.uploadApp(request.NewUploadAppRequest()); err != nil {
+	bytes, err := p.uploadApp(request.NewUploadAppRequest())
+
+	if err != nil {
 		return nil, err
-	} else if err := json.Unmarshal(bytes, &response); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal")
-	} else {
-		return &TestFlightDeployResult{
-			TestFlightUploadAppResponse: response,
-			RawJson:                     string(bytes),
-		}, nil
 	}
+
+	// altool prints nothing on stdout for some of the successful uploads.
+	if len(strings.TrimSpace(string(bytes))) > 0 {
+		if err := json.Unmarshal(bytes, &response); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse the altool output: %s", string(bytes))
+		}
+	} else {
+		bytes = []byte("{}")
+	}
+
+	return &TestFlightDeployResult{
+		TestFlightUploadAppResponse: response,
+		RawJson:                     string(bytes),
+	}, nil
 }
