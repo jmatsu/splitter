@@ -63,13 +63,21 @@ func (e execution) combined() string {
 func run(t *testing.T, env []string, args ...string) execution {
 	t.Helper()
 
+	// keep the runs away from the config file of this repository
+	return runIn(t, t.TempDir(), env, args...)
+}
+
+// runIn executes the built binary on the given working directory.
+func runIn(t *testing.T, dir string, env []string, args ...string) execution {
+	t.Helper()
+
 	if testing.Short() {
 		t.Skip("e2e tests are skipped in the short mode")
 	}
 
 	cmd := exec.Command(splitterPath, args...)
 	cmd.Env = append(os.Environ(), append([]string{"SPLITTER_LOG_LEVEL=info"}, env...)...)
-	cmd.Dir = t.TempDir() // keep the runs away from the config file of this repository
+	cmd.Dir = dir
 
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout
@@ -537,6 +545,54 @@ services:
 
 	if formParam != "extra-value" {
 		t.Errorf("the form param is expected to be extra-value but %s", formParam)
+	}
+}
+
+func Test_E2E_deploymentNameIsCaseSensitive(t *testing.T) {
+	dir := t.TempDir()
+
+	source := writeFile(t, filepath.Join(dir, "app.apk"), "app content")
+	destination := filepath.Join(dir, "dist", "app.apk")
+
+	if err := os.MkdirAll(filepath.Dir(destination), 0755); err != nil {
+		t.Fatalf("failed to create the destination dir: %v", err)
+	}
+
+	config := writeFile(t, filepath.Join(dir, "splitter.yml"), fmt.Sprintf(`
+deployments:
+  MyDeploy:
+    service: local
+    destination-path: %s
+    allow-overwrite: true
+`, destination))
+
+	if result := run(t, nil, "--config", config, "deploy", "-n", "MyDeploy", "-f", source); result.exitCode != 0 {
+		t.Fatalf("deploy is expected to exit with 0 but %d: %s", result.exitCode, result.combined())
+	}
+
+	assertFileContent(t, destination, "app content")
+
+	if result := run(t, nil, "--config", config, "deploy", "-n", "mydeploy", "-f", source); result.exitCode == 0 {
+		t.Errorf("a lowercased name is expected to be rejected but not: %s", result.combined())
+	}
+}
+
+func Test_E2E_malformedConfigOnTheWorkingDirectory(t *testing.T) {
+	dir := t.TempDir()
+
+	source := writeFile(t, filepath.Join(dir, "app.apk"), "app content")
+
+	// A tab cannot be used for the indentation in yaml.
+	writeFile(t, filepath.Join(dir, "splitter.yml"), "deployments:\n\tlocal1:\n")
+
+	result := runIn(t, dir, nil, "deploy", "-n", "local1", "-f", source)
+
+	if result.exitCode == 0 {
+		t.Fatalf("a malformed config file is expected to be reported but not: %s", result.combined())
+	}
+
+	if !strings.Contains(result.combined(), "splitter.yml") {
+		t.Errorf("the config file is expected to be named in the error but not:\n%s", result.combined())
 	}
 }
 
