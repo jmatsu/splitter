@@ -101,6 +101,10 @@ func (c *HttpClient) setDefaultHeaders(headers http.Header) {
 		return
 	}
 
+	if c.headers == nil {
+		c.headers = http.Header{}
+	}
+
 	maps.Copy(c.headers, headers)
 }
 
@@ -133,14 +137,25 @@ func (c *HttpClient) DoPost(ctx context.Context, paths []string, queries map[str
 }
 
 func (c *HttpClient) DoPostFileBody(ctx context.Context, paths []string, queries map[string][]string, filePath string) (*HttpResponse, error) {
-	if f, err := os.Open(filePath); err != nil {
+	f, err := os.Open(filePath)
+
+	if err != nil {
 		return nil, errors.Wrapf(err, "%s is not found", filePath)
-	} else if b, err := io.ReadAll(f); err != nil {
-		return nil, errors.Wrapf(err, "%s cannot be read", filePath)
-	} else {
-		buffer := bytes.NewBuffer(b)
-		return c.DoPost(ctx, paths, queries, "application/octet-stream", buffer)
 	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// The body is buffered instead of being streamed so that Content-Length is set. Some of the
+	// services reject a chunked upload.
+	b, err := io.ReadAll(f)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "%s cannot be read", filePath)
+	}
+
+	return c.DoPost(ctx, paths, queries, "application/octet-stream", bytes.NewBuffer(b))
 }
 
 func (c *HttpClient) DoPostMultipartForm(ctx context.Context, paths []string, queries map[string][]string, form *Form) (*HttpResponse, error) {
@@ -239,6 +254,7 @@ func (c *HttpClient) do(ctx context.Context, paths []string, queries map[string]
 func (c *HttpClient) clone(mapper func(newClient *HttpClient)) HttpClient {
 	//goland:noinspection SpellCheckingInspection
 	copiee := *c
+	copiee.headers = c.headers.Clone() // headers is a map so the clone must not share it with the original
 	mapper(&copiee)
 	return copiee
 }

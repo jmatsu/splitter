@@ -237,6 +237,39 @@ func Test_LocalProvider_Deploy_result(t *testing.T) {
 	}
 }
 
+func Test_LocalProvider_Deploy_withUnusableTempDir(t *testing.T) {
+	// The copy must not go through the temp dir because os.Rename cannot cross filesystems.
+	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "not-found"))
+
+	source := newSourceFile(t, "app.apk", "app content")
+	dir := t.TempDir()
+	destination := filepath.Join(dir, "app.apk")
+
+	provider := NewLocalProvider(context.TODO(), &config.LocalConfig{
+		DestinationPath: destination,
+	})
+
+	if _, err := provider.Deploy(source); err != nil {
+		t.Fatalf("failed to deploy: %v", err)
+	}
+
+	if bytes, err := os.ReadFile(destination); err != nil {
+		t.Errorf("failed to read the destination: %v", err)
+	} else if string(bytes) != "app content" {
+		t.Errorf("the destination is expected to hold the source content but %s", string(bytes))
+	}
+
+	entries, err := os.ReadDir(dir)
+
+	if err != nil {
+		t.Fatalf("failed to read the destination dir: %v", err)
+	}
+
+	if len(entries) != 1 {
+		t.Errorf("the destination dir is expected to hold the destination only but %v", entries)
+	}
+}
+
 func Test_LocalProvider_Deploy_failures(t *testing.T) {
 	t.Parallel()
 
