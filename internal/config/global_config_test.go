@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -637,6 +638,13 @@ func Test_GlobalConfig_AddDeployment(t *testing.T) {
 				t.Errorf("service name is expected to be %s but %s", c.serviceName, d.ServiceName)
 			}
 
+			// The generated placeholders must be interpolated with the deployment name.
+			if bytes, err := yaml.Marshal(config.rawConfig.Deployments["new1"]); err != nil {
+				t.Errorf("failed to marshal the generated deployment: %v", err)
+			} else if strings.Contains(string(bytes), "%s") {
+				t.Errorf("the generated deployment is expected to have no placeholder but:\n%s", string(bytes))
+			}
+
 			if _, ok := config.rawConfig.Deployments["new1"]; !ok {
 				t.Errorf("new1 is not added to the raw config so it won't be dumped")
 			}
@@ -802,6 +810,27 @@ func Test_GlobalConfig_Validate(t *testing.T) {
 			rawConfig: rawConfig{
 				FormatStyle:    DefaultFormat,
 				NetworkTimeout: DefaultNetworkTimeout,
+			},
+		},
+		"zero network timeout": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: "0s",
+				WaitTimeout:    DefaultWaitTimeout,
+			},
+		},
+		"zero wait timeout": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: DefaultNetworkTimeout,
+				WaitTimeout:    "0s",
+			},
+		},
+		"negative network timeout": {
+			rawConfig: rawConfig{
+				FormatStyle:    DefaultFormat,
+				NetworkTimeout: "-1m",
+				WaitTimeout:    DefaultWaitTimeout,
 			},
 		},
 		"zero": {

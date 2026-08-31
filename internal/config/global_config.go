@@ -90,7 +90,6 @@ func SetGlobalWaitTimeout(value string) {
 }
 
 func CurrentConfig() *GlobalConfig {
-	config := config // create a shallow copy
 	return config
 }
 
@@ -338,7 +337,7 @@ func (c *GlobalConfig) Validate() error {
 	if c.rawConfig.NetworkTimeout != "" {
 		if v, err := time.ParseDuration(c.rawConfig.NetworkTimeout); err != nil {
 			return errors.Wrapf(err, "network timeout is not valid time format: %s", c.rawConfig.NetworkTimeout)
-		} else if v < 0 {
+		} else if v <= 0 {
 			return errors.New("network timeout must be positive")
 		} else if v.Minutes() > 30 {
 			return errors.New("network timeout must be equal or less than 30 minutes")
@@ -350,7 +349,7 @@ func (c *GlobalConfig) Validate() error {
 	if c.rawConfig.WaitTimeout != "" {
 		if v, err := time.ParseDuration(c.rawConfig.WaitTimeout); err != nil {
 			return errors.Wrapf(err, "wait timeout is not valid time format: %s", c.rawConfig.WaitTimeout)
-		} else if v < 0 {
+		} else if v <= 0 {
 			return errors.New("wait timeout must be positive")
 		} else if v.Minutes() > 10 {
 			return errors.New("wait timeout must be equal or less than 10 minutes")
@@ -470,7 +469,7 @@ func (c *GlobalConfig) AddDeployment(name string, serviceName string) error {
 					Name: TestFlightService,
 				},
 				AppleID:  "Your AppleID",
-				ApiKey:   "format:${%s_TESTFLIGHT_API_KEY}",
+				ApiKey:   fmt.Sprintf("format:${%s_TESTFLIGHT_API_KEY}", name),
 				IssuerID: "Issuer ID of ApiKey. You can use app-specific password instead of api key and issuer id",
 			}
 		default:
