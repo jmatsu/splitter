@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DeployToLocal(ctx context.Context, conf config.LocalConfig, filePath string) error {
+func DeployToLocal(ctx context.Context, deploymentName string, conf config.LocalConfig, filePath string) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}
@@ -18,10 +18,20 @@ func DeployToLocal(ctx context.Context, conf config.LocalConfig, filePath string
 	formatter := NewFormatter()
 	formatter.TableBuilder = localTableBuilder
 
-	if response, err := provider.Deploy(filePath); err != nil {
+	dumper := NewDumper(config.LocalService, deploymentName, filePath)
+
+	response, err := provider.Deploy(filePath)
+
+	if err != nil {
 		return errors.Wrap(err, "cannot deploy this app")
-	} else if err := formatter.Format(response); err != nil {
+	}
+
+	if err := formatter.Format(response); err != nil {
 		return errors.Wrap(err, "cannot format the response")
+	}
+
+	if err := dumper.Dump(response); err != nil {
+		return errors.Wrap(err, "cannot dump the response")
 	}
 
 	return nil

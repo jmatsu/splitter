@@ -7,6 +7,7 @@ import (
 	"github.com/jmatsu/splitter/internal/net"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"strings"
 )
 
 var deployGateLogger zerolog.Logger
@@ -79,6 +80,30 @@ func (r *DeployGateDeployResult) RawJsonResponse() string {
 
 func (r *DeployGateDeployResult) ValueResponse() any {
 	return *r
+}
+
+func (r *DeployGateDeployResult) NormalizedResponse() NormalizedResult {
+	binary := r.Results
+
+	result := NormalizedResult{
+		App: NormalizedApp{
+			Name:        nullable(binary.Name),
+			Identifier:  nullable(binary.PackageName),
+			Os:          nullable(strings.ToLower(binary.OsName)),
+			VersionName: nullable(binary.VersionName),
+			VersionCode: nullable(binary.VersionCode),
+		},
+		Release: NormalizedRelease{
+			DownloadUrl: nullable(binary.DownloadUrl),
+		},
+	}
+
+	if distribution := binary.Distribution; distribution != nil {
+		result.Release.InstallUrl = nullable(distribution.Url)
+		result.Release.ReleaseNote = nullable(distribution.ReleaseNote)
+	}
+
+	return result
 }
 
 func (p *DeployGateProvider) Deploy(filePath string, builder func(req *DeployGateDeployRequest) error) (*DeployGateDeployResult, error) {

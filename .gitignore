@@ -252,3 +252,6 @@ dist/
 
 .fixtures/
 /splitter
+
+# splitter deployment results
+.splitter-dist/

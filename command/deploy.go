@@ -53,51 +53,47 @@ func Deploy(name string, aliases []string) *cli.Command {
 				return err
 			}
 
-			executor := task.NewExecutor(ctx, nil, &deployment.Lifecycle)
+			sourceFilePath := cmd.String("source-path")
 
-			return executor.Execute(func() error {
-				sourceFilePath := cmd.String("source-path")
+			switch deployment.ServiceName {
+			case config.DeploygateService:
+				dg := deployment.ServiceConfig.(config.DeployGateConfig)
 
-				switch deployment.ServiceName {
-				case config.DeploygateService:
-					dg := deployment.ServiceConfig.(config.DeployGateConfig)
+				return task.DeployToDeployGate(ctx, name, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) error {
+					if v := cmd.String("release-note"); cmd.IsSet("release-note") {
+						req.SetMessage(v)
+						req.SetDistributionReleaseNote(v)
+					}
 
-					return task.DeployToDeployGate(ctx, dg, sourceFilePath, func(req *service.DeployGateDeployRequest) error {
-						if v := cmd.String("release-note"); cmd.IsSet("release-note") {
-							req.SetMessage(v)
-							req.SetDistributionReleaseNote(v)
-						}
+					return nil
+				})
+			case config.LocalService:
+				lo := deployment.ServiceConfig.(config.LocalConfig)
 
-						return nil
-					})
-				case config.LocalService:
-					lo := deployment.ServiceConfig.(config.LocalConfig)
+				return task.DeployToLocal(ctx, name, lo, sourceFilePath)
+			case config.FirebaseAppDistributionService:
+				fad := deployment.ServiceConfig.(config.FirebaseAppDistributionConfig)
 
-					return task.DeployToLocal(ctx, lo, sourceFilePath)
-				case config.FirebaseAppDistributionService:
-					fad := deployment.ServiceConfig.(config.FirebaseAppDistributionConfig)
+				return task.DeployToFirebaseAppDistribution(ctx, name, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) error {
+					if v := cmd.String("release-note"); cmd.IsSet("release-note") {
+						req.SetReleaseNote(v)
+					}
 
-					return task.DeployToFirebaseAppDistribution(ctx, fad, sourceFilePath, func(req *service.FirebaseAppDistributionDeployRequest) error {
-						if v := cmd.String("release-note"); cmd.IsSet("release-note") {
-							req.SetReleaseNote(v)
-						}
+					return nil
+				})
+			case config.TestFlightService:
+				tf := deployment.ServiceConfig.(config.TestFlightConfig)
 
-						return nil
-					})
-				case config.TestFlightService:
-					tf := deployment.ServiceConfig.(config.TestFlightConfig)
+				return task.DeployToTestFlight(ctx, name, tf, sourceFilePath, func(req *service.TestFlightDeployRequest) error {
+					return nil
+				})
+			default:
+				custom := deployment.ServiceConfig.(config.CustomServiceConfig)
 
-					return task.DeployToTestFlight(ctx, tf, sourceFilePath, func(req *service.TestFlightDeployRequest) error {
-						return nil
-					})
-				default:
-					custom := deployment.ServiceConfig.(config.CustomServiceConfig)
-
-					return task.DeployToCustomService(ctx, definition, custom, sourceFilePath, func(req *service.CustomServiceDeployRequest) error {
-						return nil
-					})
-				}
-			})
+				return task.DeployToCustomService(ctx, name, deployment.ServiceName, definition, custom, sourceFilePath, func(req *service.CustomServiceDeployRequest) error {
+					return nil
+				})
+			}
 		},
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DeployToTestFlight(ctx context.Context, conf config.TestFlightConfig, filePath string, builder func(req *service.TestFlightDeployRequest) error) error {
+func DeployToTestFlight(ctx context.Context, deploymentName string, conf config.TestFlightConfig, filePath string, builder func(req *service.TestFlightDeployRequest) error) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}
@@ -18,10 +18,20 @@ func DeployToTestFlight(ctx context.Context, conf config.TestFlightConfig, fileP
 	formatter := NewFormatter()
 	formatter.TableBuilder = testFlightTableBuilder
 
-	if response, err := provider.Deploy(filePath, builder); err != nil {
+	dumper := NewDumper(config.TestFlightService, deploymentName, filePath)
+
+	response, err := provider.Deploy(filePath, builder)
+
+	if err != nil {
 		return errors.Wrap(err, "cannot deploy this app")
-	} else if err := formatter.Format(response); err != nil {
+	}
+
+	if err := formatter.Format(response); err != nil {
 		return errors.Wrap(err, "cannot format the response")
+	}
+
+	if err := dumper.Dump(response); err != nil {
+		return errors.Wrap(err, "cannot dump the response")
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -16,6 +17,9 @@ const (
 	envPrefix = "SPLITTER_" // The prefix of environment variables used for splitter's global options.
 
 	DefaultConfigName = "splitter.yml"
+
+	// DistDirName is the default directory that deployment results are dumped into.
+	DistDirName = ".splitter-dist"
 
 	DeploygateService              = "deploygate"                // represents DeployGateConfig
 	LocalService                   = "local"                     // represents LocalConfig
@@ -32,6 +36,9 @@ type GlobalConfig struct {
 	rawConfig   rawConfig
 	deployments map[string]Deployment
 	services    map[string]CustomServiceDefinition
+
+	// runName is scoped to one execution, not to the config file, so it is not a part of rawConfig.
+	runName string
 }
 
 type rawConfig struct {
@@ -40,13 +47,13 @@ type rawConfig struct {
 	FormatStyle    string                 `yaml:"format-style,omitempty"`
 	NetworkTimeout string                 `yaml:"network-timeout,omitempty"`
 	WaitTimeout    string                 `yaml:"wait-timeout,omitempty"`
+	DistDir        string                 `yaml:"dist-dir,omitempty"`
 }
 
 // Deployment holds a service name and its config struct
 type Deployment struct {
 	ServiceName   string
 	ServiceConfig any // See serviceConfig interface
-	Lifecycle     ExecutionConfig
 }
 
 type FormatStyle = string
@@ -60,7 +67,13 @@ const (
 
 	DefaultNetworkTimeout = "10m"
 	DefaultWaitTimeout    = "5m"
+
+	// runNameLayout is a sortable and path-safe timestamp layout for generated run names.
+	runNameLayout = "20060102T150405Z"
 )
+
+// runNamePattern keeps run names usable as a single directory name.
+var runNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 
 // configNameCandidates are looked up on the working directory in this order when --config is absent.
 var configNameCandidates = []string{DefaultConfigName, "splitter.yaml"}
@@ -87,6 +100,14 @@ func SetGlobalNetworkTimeout(value string) {
 
 func SetGlobalWaitTimeout(value string) {
 	config.rawConfig.WaitTimeout = value
+}
+
+func SetGlobalDistDir(value string) {
+	config.rawConfig.DistDir = value
+}
+
+func SetGlobalRunName(value string) {
+	config.runName = value
 }
 
 func CurrentConfig() *GlobalConfig {
@@ -179,6 +200,10 @@ func (c *GlobalConfig) configure() error {
 		c.rawConfig.WaitTimeout = DefaultWaitTimeout
 	}
 
+	if c.rawConfig.DistDir == "" {
+		c.rawConfig.DistDir = DistDirName
+	}
+
 	for name, values := range c.rawConfig.Services {
 		logger.Logger.Debug().Msgf("Configuring the service of %s", name)
 
@@ -233,7 +258,6 @@ func (c *GlobalConfig) configure() error {
 			c.deployments[name] = Deployment{
 				ServiceName:   deploygate.Name,
 				ServiceConfig: deploygate,
-				Lifecycle:     deploygate.ExecutionConfig,
 			}
 		case FirebaseAppDistributionService:
 			firebase := FirebaseAppDistributionConfig{}
@@ -245,7 +269,6 @@ func (c *GlobalConfig) configure() error {
 			c.deployments[name] = Deployment{
 				ServiceName:   firebase.Name,
 				ServiceConfig: firebase,
-				Lifecycle:     firebase.ExecutionConfig,
 			}
 		case LocalService:
 			local := LocalConfig{}
@@ -257,7 +280,6 @@ func (c *GlobalConfig) configure() error {
 			c.deployments[name] = Deployment{
 				ServiceName:   local.Name,
 				ServiceConfig: local,
-				Lifecycle:     local.ExecutionConfig,
 			}
 		case TestFlightService:
 			testFlight := TestFlightConfig{}
@@ -269,7 +291,6 @@ func (c *GlobalConfig) configure() error {
 			c.deployments[name] = Deployment{
 				ServiceName:   testFlight.Name,
 				ServiceConfig: testFlight,
-				Lifecycle:     testFlight.ExecutionConfig,
 			}
 		default:
 			if _, ok := c.services[service.Name]; ok {
@@ -284,7 +305,6 @@ func (c *GlobalConfig) configure() error {
 				c.deployments[name] = Deployment{
 					ServiceName:   service.Name,
 					ServiceConfig: custom,
-					Lifecycle:     custom.ExecutionConfig,
 				}
 			} else {
 				return errors.New(fmt.Sprintf("%s of %s is an unknown service", service.Name, name))
@@ -325,7 +345,34 @@ func (c *GlobalConfig) WaitTimeout() time.Duration {
 	return timeout
 }
 
+// DistDir is a base directory that deployment results are dumped into.
+func (c *GlobalConfig) DistDir() string {
+	if c.rawConfig.DistDir != "" {
+		return c.rawConfig.DistDir
+	}
+
+	return DistDirName
+}
+
+// RunName is a directory name of the current execution under DistDir. A generated name is
+// memoized so that all deployments in one execution share the same directory.
+func (c *GlobalConfig) RunName() string {
+	if c.runName == "" {
+		c.runName = time.Now().UTC().Format(runNameLayout)
+	}
+
+	return c.runName
+}
+
 func (c *GlobalConfig) Validate() error {
+	if c.runName != "" && !runNamePattern.MatchString(c.runName) {
+		return errors.New(fmt.Sprintf("%s is not a valid run name. alphanumerics, dots, dashes and underscores are allowed", c.runName))
+	}
+
+	if c.rawConfig.DistDir != "" && strings.TrimSpace(c.rawConfig.DistDir) == "" {
+		return errors.New("blank dist dir is invalid")
+	}
+
 	if c.rawConfig.FormatStyle != "" {
 		if !slices.Contains(styles, c.rawConfig.FormatStyle) {
 			return errors.New(fmt.Sprintf("%s is unknown format style", c.rawConfig.FormatStyle))

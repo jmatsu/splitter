@@ -3,7 +3,6 @@ package config
 // DeployGateConfig contains the enough values to use DeployGate.
 type DeployGateConfig struct {
 	serviceNameHolder `yaml:",inline"`
-	ExecutionConfig   `yaml:",inline"`
 
 	// User#name or Organization#name of DeployGate
 	AppOwnerName string `yaml:"app-owner-name" env:"DEPLOYGATE_APP_OWNER_NAME" required:"true"`

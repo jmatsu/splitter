@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func DeployToDeployGate(ctx context.Context, conf config.DeployGateConfig, filePath string, builder func(req *service.DeployGateDeployRequest) error) error {
+func DeployToDeployGate(ctx context.Context, deploymentName string, conf config.DeployGateConfig, filePath string, builder func(req *service.DeployGateDeployRequest) error) error {
 	if err := conf.Validate(); err != nil {
 		return errors.Wrap(err, "the built config is invalid")
 	}
@@ -19,10 +19,20 @@ func DeployToDeployGate(ctx context.Context, conf config.DeployGateConfig, fileP
 	formatter := NewFormatter()
 	formatter.TableBuilder = deployGateTableBuilder
 
-	if response, err := provider.Deploy(filePath, builder); err != nil {
+	dumper := NewDumper(config.DeploygateService, deploymentName, filePath)
+
+	response, err := provider.Deploy(filePath, builder)
+
+	if err != nil {
 		return errors.Wrap(err, "cannot deploy this app")
-	} else if err := formatter.Format(response); err != nil {
+	}
+
+	if err := formatter.Format(response); err != nil {
 		return errors.Wrap(err, "cannot format the response")
+	}
+
+	if err := dumper.Dump(response); err != nil {
+		return errors.Wrap(err, "cannot dump the response")
 	}
 
 	return nil

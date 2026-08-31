@@ -70,16 +70,6 @@ deployments: # Array<Map>
         # Required
         auth-token: string
 
-    any-services: # the following parameters are available for all services
-        # command calls will be executed before the deployment
-        # Optional
-        pre-steps: # [][]string
-            - ["cmd", "arg1", ..., "argN"]
-        # command calls will be executed after the successful deployment
-        # Optional
-        post-steps: # [][]string
-            - ["cmd", "arg1", ..., "argN"]
-
 # Define unsupported services as custom services.
 # This section cannot use variable expansion.
 # Optional
@@ -118,6 +108,9 @@ services: # Array<Map>
                 <query_param>:
                     - value1
                     - value2
+
+# A base directory that deployment results are dumped into
+dist-dir: string e.g. .splitter-dist
 
 # The output format (Values: pretty, raw, markdown)
 format-style: enum string

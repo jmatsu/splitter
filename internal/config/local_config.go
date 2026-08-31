@@ -5,7 +5,6 @@ import "os"
 // LocalConfig contains the enough values to use local file system.
 type LocalConfig struct {
 	serviceNameHolder `yaml:",inline"`
-	ExecutionConfig   `yaml:",inline"`
 
 	// A destination file path. Absolute and/or relative paths are supported.
 	DestinationPath string `yaml:"destination-path" required:"true"`

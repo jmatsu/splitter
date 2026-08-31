@@ -8,7 +8,6 @@ import (
 // TestFlightConfig contains the enough values to use TestFlight.
 type TestFlightConfig struct {
 	serviceNameHolder `yaml:",inline"`
-	ExecutionConfig   `yaml:",inline"`
 
 	// An Apple ID.
 	AppleID string `yaml:"apple-id" required:"true"`
