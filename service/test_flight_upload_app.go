@@ -18,8 +18,10 @@ func (r *TestFlightUploadAppRequest) NewAltoolCredential() *exec.AltoolCredentia
 	}
 }
 
+// TestFlightUploadAppResponse holds what `altool --upload-app --output-format json` reports.
 type TestFlightUploadAppResponse struct {
-	// TODO assign attributes
+	SuccessMessage string `json:"success-message"`
+	ToolVersion    string `json:"tool-version"`
 }
 
 func (p *TestFlightProvider) uploadApp(request *TestFlightUploadAppRequest) ([]byte, error) {

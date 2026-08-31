@@ -28,5 +28,18 @@ func DeployToTestFlight(ctx context.Context, conf config.TestFlightConfig, fileP
 }
 
 var testFlightTableBuilder = func(w table.Writer, v any) {
-	_ = v.(service.TestFlightDeployResult)
+	resp := v.(service.TestFlightDeployResult)
+
+	w.AppendHeader(table.Row{
+		"Key", "Value",
+	})
+
+	w.AppendRows([]table.Row{
+		{"TestFlight Property", ""},
+	})
+	w.AppendSeparator()
+	w.AppendRows([]table.Row{
+		{"Result", resp.SuccessMessage},
+		{"altool Version", resp.ToolVersion},
+	})
 }
