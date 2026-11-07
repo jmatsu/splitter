@@ -1,9 +1,9 @@
 module github.com/jmatsu/splitter
 
-go 1.25.0
+go 1.26.0
 
 require (
-	github.com/caarlos0/env/v11 v11.4.1
+	github.com/caarlos0/env/v11 v11.4.2
 	github.com/jedib0t/go-pretty/v6 v6.8.3
 	github.com/magiconair/properties v1.18.12
 	github.com/pkg/errors v0.9.1
