@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/caarlos0/env/v11 v11.4.2
-	github.com/jedib0t/go-pretty/v6 v6.8.3
+	github.com/jedib0t/go-pretty/v6 v6.9.3
 	github.com/magiconair/properties v1.18.13
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.35.1
@@ -21,6 +21,7 @@ require (
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mattn/go-runewidth v0.0.28 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
